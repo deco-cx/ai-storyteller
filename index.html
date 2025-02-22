@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Storyteller - Create Amazing Stories</title>
+    <!-- Google Fonts - Onest -->
+    <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue.js CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Vue Router CDN -->
+    <script src="https://unpkg.com/vue-router@4"></script>
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#ffffff">
+    <meta name="description" content="AI Storyteller - Create Amazing Stories">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body class="bg-gray-50 font-['Onest']">
+    <div id="app">
+        <router-view></router-view>
+    </div>
+
+    <!-- Route Components -->
+    <script type="module" src="routes/index.vue.js"></script>
+    <script type="module" src="routes/login.vue.js"></script>
+    <script type="module" src="routes/create.vue.js"></script>
+    
+    <!-- Main App -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>

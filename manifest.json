@@ -1,0 +1,10 @@
+{
+    "name": "AI Storyteller",
+    "short_name": "AI Stories",
+    "description": "Create Amazing Stories with AI",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#ffffff",
+    "icons": []
+} 
