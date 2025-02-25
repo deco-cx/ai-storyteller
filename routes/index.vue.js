@@ -27,7 +27,7 @@ window.IndexPage = {
                             <i class="fa-solid fa-book-open"></i>
                             Create new story!
                         </router-link>
-                        <router-link to="/stories" class="text-lg border border-[#00B7EA] text-[#00B7EA] px-6 py-3 rounded-full hover:bg-[#F0F9FF] font-medium flex items-center gap-2 w-full max-w-sm justify-center">
+                        <router-link to="/my-stories" class="text-lg border border-[#00B7EA] text-[#00B7EA] px-6 py-3 rounded-full hover:bg-[#F0F9FF] font-medium flex items-center gap-2 w-full max-w-sm justify-center">
                             <i class="fa-solid fa-book"></i>
                             My stories
                         </router-link>
@@ -102,6 +102,13 @@ window.IndexPage = {
                                         </div>
                                     </div>
                                 </div>
+                                
+                                <!-- View Full Story Button -->
+                                <router-link :to="'/story?db=examples&name=' + encodeURIComponent(example.title)" 
+                                             class="mt-4 text-[#0284C7] hover:text-[#0EA5E9] flex items-center justify-center gap-1">
+                                    <span>View full story</span>
+                                    <i class="fa-solid fa-arrow-right text-sm"></i>
+                                </router-link>
                             </div>
                         </div>
                         <template v-if="user">

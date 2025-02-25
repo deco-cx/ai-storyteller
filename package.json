@@ -4,7 +4,7 @@
   "description": "Create bedtime stories for your kids with AI",
   "main": "index.html",
   "scripts": {
-    "start": "browser-sync start --server --files '**/*.html, **/*.js, **/*.css' --port 3000 --no-notify",
+    "start": "browser-sync start --server --files '**/*.html, **/*.js, **/*.css' --port 3000 --no-notify --single",
     "dev": "npm start"
   },
   "keywords": [

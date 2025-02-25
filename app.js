@@ -6,7 +6,9 @@ const router = createRouter({
     routes: [
         { path: '/', component: window.IndexPage },
         { path: '/login', component: window.LoginPage },
-        { path: '/create', component: window.CreatePage }
+        { path: '/create', component: window.CreatePage },
+        { path: '/story', component: window.StoryPage },
+        { path: '/my-stories', component: window.MyStoriesPage }
     ]
 });
 
