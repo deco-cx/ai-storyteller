@@ -1,3 +1,7 @@
+import { SDK } from "https://webdraw.com/webdraw-sdk@v1";
+
+const sdk = SDK;
+
 window.CreatePage = {
   data() {
     return {
@@ -10,11 +14,13 @@ window.CreatePage = {
       isPlaying: false,
       audioProgress: 0,
       taskStatus: {
+        plot: "waiting",
         story: "waiting",
         image: "waiting",
         audio: "waiting",
       },
       streamingText: "",
+      formattedStory: "",
       voices: [
         { 
           id: "D38z5RcWu1voky8WS1ja", 
@@ -56,6 +62,7 @@ window.CreatePage = {
       selectedVoice: null,
       isPreviewPlaying: null,
       previewAudioElement: null,
+      BASE_FS_URL: "https://fs.webdraw.com",
     };
   },
   mounted() {
@@ -64,6 +71,26 @@ window.CreatePage = {
     this.previewAudioElement.addEventListener('ended', () => {
       this.isPreviewPlaying = null;
     });
+    
+    // Set up audio player event listeners when component is mounted
+    this.$nextTick(() => {
+      const audioPlayer = this.$refs.audioPlayer;
+      if (audioPlayer) {
+        audioPlayer.addEventListener('timeupdate', this.updateAudioProgress);
+        audioPlayer.addEventListener('ended', () => {
+          this.isPlaying = false;
+          this.audioProgress = 0;
+        });
+      }
+    });
+  },
+  beforeUnmount() {
+    // Clean up event listeners when component is unmounted
+    const audioPlayer = this.$refs.audioPlayer;
+    if (audioPlayer) {
+      audioPlayer.removeEventListener('timeupdate', this.updateAudioProgress);
+      audioPlayer.removeEventListener('ended', () => {});
+    }
   },
   methods: {
     selectVoice(voice) {
@@ -126,7 +153,13 @@ window.CreatePage = {
       if (voice.previewAudio) {
         voice.isLoading = true;
         
-        this.previewAudioElement.src = voice.previewAudio;
+        // Add domain prefix if needed
+        let previewUrl = voice.previewAudio;
+        if (!previewUrl.startsWith('http') && !previewUrl.startsWith('data:')) {
+          previewUrl = `https://fs.webdraw.com${previewUrl.startsWith('/') ? '' : '/'}${previewUrl}`;
+        }
+        
+        this.previewAudioElement.src = previewUrl;
         this.previewAudioElement.oncanplaythrough = () => {
           voice.isLoading = false;
           this.previewAudioElement.play();
@@ -140,62 +173,356 @@ window.CreatePage = {
         };
       }
     },
-    generateStory() {
+    async generateStory() {
+      if (!this.childName || !this.interests || !this.selectedVoice) {
+        alert("Please fill in all fields and select a voice before creating a story.");
+        return;
+      }
+      
       this.screen = "loading";
       
       // Reset states
       this.storyData = null;
-      this.storyImage = "";
-      this.audioSource = "";
+      this.storyImage = null;
+      this.audioSource = null;
+      this.streamingText = "";
       this.taskStatus = {
-        story: "loading",
-        image: "loading",
-        audio: "idle",
+        plot: "loading",
+        story: "waiting",
+        image: "waiting",
+        audio: "waiting",
       };
       
-      // Simulate story generation
-      setTimeout(() => {
-        this.streamingText = "Once upon a time in a magical forest...";
+      try {
+        // Step 1: Generate plot and title
+        console.log("Starting plot generation...");
+        const { object } = await sdk.ai.generateObject({
+          schema: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              plot: { type: "string" }
+            },
+            required: ["title", "plot"]
+          },
+          messages: [
+            {
+              role: "user",
+              content: `Create a children's story title and plot for a ${this.childName} who is interested in ${this.interests}. The story should be educational, engaging, and appropriate for children. Keep the plot brief (2-3 sentences).`
+            }
+          ]
+        });
+        
+        console.log("Plot generation complete:", object);
+        this.taskStatus.plot = "done";
+        this.storyData = {
+          title: object.title,
+          plot: object.plot,
+          story: ""
+        };
+        
+        // Step 2: Start image generation in parallel
+        this.taskStatus.image = "loading";
+        console.log("Starting image generation...");
+        const imagePromise = sdk.ai.generateImage({
+          model: "stability:core",
+          prompt: `Create a colorful, child-friendly illustration for a children's story titled "${object.title}" about ${this.interests}. The image should be vibrant, engaging, and suitable for children.`
+        });
+        
+        // Step 3: Generate the full story with streaming
+        this.taskStatus.story = "loading";
+        console.log("Starting story generation...");
+        const storyStream = await sdk.ai.streamText({
+          messages: [
+            {
+              role: "user",
+              content: `Write a children's story based on the following title and plot. Make it engaging, educational, and appropriate for children. Include the child's name (${this.childName}) as the main character. The story should be about ${this.interests}.
+              
+              Title: ${object.title}
+              Plot: ${object.plot}
+              
+              Write a complete story with a beginning, middle, and end. The story should be 3-4 paragraphs long.`
+            }
+          ]
+        });
+        
+        // Process the streaming story text
+        this.storyData.story = "";
+        for await (const chunk of storyStream) {
+          this.streamingText += chunk.text;
+          this.storyData.story += chunk.text;
+        }
+        
+        // Format the story text to handle markdown and line breaks
+        this.storyData.story = this.formatStoryText(this.storyData.story);
+        
+        console.log("Story generation complete:", this.storyData.story);
         this.taskStatus.story = "done";
         
-        // Simulate image generation completion
-        setTimeout(() => {
-          this.storyImage = "https://placehold.co/600x400/e6fcc7/005B79?text=Story+Illustration";
-          this.taskStatus.image = "done";
-          
-          // Simulate audio generation
-          this.taskStatus.audio = "loading";
-          setTimeout(() => {
-            this.audioSource = "https://example.com/audio.mp3";
-            this.taskStatus.audio = "done";
-            
-            // Set story data
-            this.storyData = {
-              title: "The Magical Adventure",
-              story: "Once upon a time in a magical forest, " + this.childName + " discovered a hidden path. Following it led to an amazing adventure with new friends and valuable lessons about " + this.interests + "."
-            };
-            
-            // Show result
-            this.screen = "result";
-          }, 2000);
-        }, 1500);
-      }, 2000);
+        // Wait for image generation to complete
+        const imageResult = await imagePromise;
+        console.log("Raw image generation result:", JSON.stringify(imageResult));
+        
+        // Extract the image URL from the response
+        if (imageResult.url) {
+          this.storyImage = imageResult.url;
+        } else if (imageResult.filepath) {
+          this.storyImage = imageResult.filepath;
+        } else if (imageResult.images && imageResult.images.length > 0) {
+          this.storyImage = imageResult.images[0];
+        } else {
+          console.warn("Unexpected image result format:", imageResult);
+          this.storyImage = null;
+        }
+        
+        // Ensure image URL has the correct domain prefix
+        if (this.storyImage && !this.storyImage.startsWith('http')) {
+          this.storyImage = `https://fs.webdraw.com${this.storyImage.startsWith('/') ? '' : '/'}${this.storyImage}`;
+        }
+        
+        console.log("Final image URL:", this.storyImage);
+        this.taskStatus.image = "done";
+        
+        // Step 4: Generate audio narration
+        this.taskStatus.audio = "loading";
+        console.log("Starting audio generation...");
+        const audioText = `${this.storyData.title}. ${this.storyData.story}`;
+        
+        const chosenVoice = this.selectedVoice || this.voices[0];
+        
+        const audioResponse = await sdk.ai.generateAudio({
+          model: "elevenlabs:tts",
+          prompt: audioText,
+          providerOptions: {
+            elevenLabs: {
+              voiceId: chosenVoice.id,
+              model_id: "eleven_turbo_v2_5",
+              optimize_streaming_latency: 0,
+              voice_settings: {
+                speed: 0.9,
+                similarity_boost: 0.85,
+                stability: 0.75,
+                style: 0,
+              },
+            },
+          },
+        });
+        
+        console.log("Audio generation complete:", audioResponse);
+        
+        // Handle the audio response format and ensure proper domain prefix
+        let audioPath = null;
+        
+        if (audioResponse.filepath && audioResponse.filepath.length > 0) {
+          audioPath = audioResponse.filepath[0];
+          console.log("Using filepath as audio source:", audioPath);
+        } else if (audioResponse.audios && audioResponse.audios.length > 0) {
+          audioPath = audioResponse.audios[0];
+          console.log("Using audios array as audio source:", audioPath);
+        } else if (audioResponse.url) {
+          audioPath = audioResponse.url;
+          console.log("Using url as audio source:", audioPath);
+        } else {
+          console.warn("No recognizable audio source found in response:", audioResponse);
+          alert("Audio was generated but the source format is not recognized. The audio playback may not work.");
+        }
+        
+        // Add domain prefix if needed
+        if (audioPath) {
+          if (!audioPath.startsWith('http') && !audioPath.startsWith('data:')) {
+            this.audioSource = `https://fs.webdraw.com${audioPath.startsWith('/') ? '' : '/'}${audioPath}`;
+          } else {
+            this.audioSource = audioPath;
+          }
+          console.log("Final audio source with domain:", this.audioSource);
+        }
+        
+        this.taskStatus.audio = "done";
+        
+        // Show result screen
+        this.screen = "result";
+        
+        // Save the story
+        await this.saveStory();
+        
+      } catch (error) {
+        console.error("Error generating story:", error);
+        alert("There was an error generating your story. Please try again.");
+        this.screen = "form";
+      }
     },
     toggleAudio() {
-      this.isPlaying = !this.isPlaying;
-      // In a real implementation, this would control audio playback
+      const audioPlayer = this.$refs.audioPlayer;
+      if (audioPlayer) {
+        if (this.isPlaying) {
+          audioPlayer.pause();
+        } else {
+          audioPlayer.play().catch(error => {
+            console.error("Error playing audio:", error);
+            alert("There was an error playing the audio. Please try again.");
+          });
+        }
+        this.isPlaying = !this.isPlaying;
+      }
+    },
+    updateAudioProgress() {
+      const audioPlayer = this.$refs.audioPlayer;
+      if (audioPlayer && !isNaN(audioPlayer.duration)) {
+        this.audioProgress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+      }
     },
     seekAudio(e) {
-      this.audioProgress = e.target.value;
-      // In a real implementation, this would seek the audio
+      const audioPlayer = this.$refs.audioPlayer;
+      if (audioPlayer && !isNaN(audioPlayer.duration)) {
+        const seekPosition = (e.target.value / 100) * audioPlayer.duration;
+        audioPlayer.currentTime = seekPosition;
+        this.audioProgress = e.target.value;
+      }
     },
     downloadAudio() {
-      // In a real implementation, this would download the audio
-      alert("Audio download functionality would be implemented here");
+      if (this.audioSource) {
+        // Create a temporary anchor element
+        const a = document.createElement('a');
+        a.href = this.audioSource;
+        a.download = `${this.storyData.title.replace(/\s+/g, '_')}.mp3`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        console.log("Downloading audio from:", this.audioSource);
+      }
     },
     goBack() {
       this.screen = "form";
-    }
+    },
+    // Add a method to format the story text
+    formatStoryText(text) {
+      if (!text) return '';
+      
+      // Replace markdown headings with proper formatting
+      text = text.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+      text = text.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+      text = text.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+      
+      // Replace markdown bold with proper formatting
+      text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      
+      // Replace markdown italic with proper formatting
+      text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+      
+      // Replace markdown line breaks with proper line breaks
+      text = text.replace(/\n\n/g, '\n\n');
+      
+      return text;
+    },
+    // Add a method to create a safe folder name
+    safeFolderName(name) {
+      if (!name) return 'untitled';
+      // Replace invalid characters with underscores and limit length
+      return name.replace(/[^a-zA-Z0-9_\-\s]/g, '_').substring(0, 100);
+    },
+    
+    // Add a method to generate an excerpt from the story
+    generateExcerpt(story) {
+      if (!story) return '';
+      // Strip HTML tags and get first 150 characters
+      const plainText = story.replace(/<[^>]*>/g, '');
+      return plainText.substring(0, 150) + (plainText.length > 150 ? '...' : '');
+    },
+    
+    // Add a method to save the story
+    async saveStory() {
+      if (!this.storyData || !this.storyData.title) {
+        console.error("Cannot save story: No story data available");
+        return;
+      }
+      
+      try {
+        const timestamp = new Date().toISOString();
+        const safeName = this.safeFolderName(this.storyData.title);
+        const excerpt = this.generateExcerpt(this.storyData.story);
+        
+        console.log("Debug - Story image URL before processing:", this.storyImage);
+        
+        // Extract filepaths from URLs
+        let imageFilepath = null;
+        if (this.storyImage) {
+          // Check if the URL contains the base FS URL
+          if (this.storyImage.includes(this.BASE_FS_URL)) {
+            imageFilepath = this.storyImage.replace(this.BASE_FS_URL, '');
+            console.log("Extracted image filepath from URL:", imageFilepath);
+          } else {
+            // If it doesn't contain the base URL, use the full URL
+            imageFilepath = this.storyImage;
+            console.log("Using full image URL as filepath:", imageFilepath);
+          }
+        } else {
+          console.warn("No story image URL available");
+        }
+        
+        let audioFilepath = null;
+        if (this.audioSource) {
+          // Check if the URL contains the base FS URL
+          if (this.audioSource.includes(this.BASE_FS_URL)) {
+            audioFilepath = this.audioSource.replace(this.BASE_FS_URL, '');
+            console.log("Extracted audio filepath from URL:", audioFilepath);
+          } else {
+            // If it doesn't contain the base URL, use the full URL
+            audioFilepath = this.audioSource;
+            console.log("Using full audio URL as filepath:", audioFilepath);
+          }
+        } else {
+          console.warn("No audio source URL available");
+        }
+        
+        // Create the story object to save
+        const newGeneration = {
+          title: this.storyData.title,
+          coverUrl: this.storyImage || null, // Use the full image URL directly
+          excerpt: excerpt,
+          story: this.storyData.story,
+          audioUrl: this.audioSource || null, // Use the full audio URL directly
+          createdAt: timestamp,
+          voice: this.selectedVoice
+        };
+        
+        console.log("Story object to save:", JSON.stringify(newGeneration, null, 2));
+        
+        // Check if file already exists and find a unique name
+        let baseFilename = `~/AI Storyteller/${safeName}`;
+        let filename = `${baseFilename}.json`;
+        let counter = 1;
+        
+        try {
+          // Try to read the file to see if it exists
+          while (true) {
+            try {
+              await sdk.fs.read(filename);
+              // If we get here, the file exists, so try a new name
+              filename = `${baseFilename}_${counter}.json`;
+              counter++;
+            } catch (e) {
+              // File doesn't exist, we can use this name
+              break;
+            }
+          }
+        } catch (e) {
+          console.log("Error checking for existing file:", e);
+          // If there's an error reading, we'll just try to write with the original name
+        }
+        
+        // Write the file
+        console.log("Saving story to:", filename);
+        await sdk.fs.write(filename, JSON.stringify(newGeneration, null, 2));
+        console.log("Story saved successfully!");
+        
+        return true;
+      } catch (error) {
+        console.error("Error saving story:", error);
+        alert("There was an error saving your story. Please try again.");
+        return false;
+      }
+    },
   },
   template: `
     <div class="min-h-screen" style="background-color: #FFF9F6;">
@@ -236,10 +563,19 @@ window.CreatePage = {
                 </div>
                 <div class="flex-1 flex items-center justify-between gap-2">
                   <span class="text-lg capitalize whitespace-nowrap">
-                    {{ task === 'story' ? 'Writing Story' : task === 'image' ? 'Creating Illustration' : 'Generating Narration' }}
+                    {{ task === 'plot' ? 'Creating Plot' : task === 'story' ? 'Writing Story' : task === 'image' ? 'Creating Illustration' : 'Generating Narration' }}
                   </span>
-                  <span v-if="task === 'story' && streamingText" class="text-sm text-gray-500 italic truncate">
-                    "...{{ streamingText }}"
+                  <span v-if="task === 'story' && streamingText" class="text-sm text-gray-500 italic truncate max-w-md">
+                    "...{{ streamingText.slice(-50) }}"
+                  </span>
+                  <span v-else-if="task === 'plot' && storyData && storyData.title" class="text-sm text-gray-500 italic truncate max-w-md">
+                    "{{ storyData.title }}"
+                  </span>
+                  <span v-else-if="task === 'image' && taskStatus.image === 'done'" class="text-sm text-gray-500 italic">
+                    "Image created successfully"
+                  </span>
+                  <span v-else-if="task === 'audio' && taskStatus.audio === 'done'" class="text-sm text-gray-500 italic">
+                    "Audio narration ready"
                   </span>
                 </div>
               </div>
@@ -356,7 +692,7 @@ window.CreatePage = {
           <!-- Story Text -->
           <div v-if="storyData" class="prose-lg text-gray-700 space-y-4">
             <h2 class="text-3xl font-bold text-sky-500 mb-6">{{ storyData.title }}</h2>
-            <div class="space-y-6">{{ storyData.story }}</div>
+            <div class="space-y-6 whitespace-pre-line" v-html="storyData.story"></div>
           </div>
 
           <!-- Link to My Stories -->
@@ -372,8 +708,8 @@ window.CreatePage = {
       </div>
 
       <!-- Hidden Audio Element -->
-      <audio ref="audioPlayer">
-        <source :src="audioSource" type="audio/mpeg" />
+      <audio ref="audioPlayer" @error="console.error('Audio error:', $event)">
+        <source v-if="audioSource" :src="audioSource" type="audio/mpeg" />
         Your browser does not support the audio element.
       </audio>
     </div>
