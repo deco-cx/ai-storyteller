@@ -176,7 +176,9 @@ window.MyStoriesPage = {
     methods: {
         async loadGenerations() {
             try {
-                let data;
+                this.loading = true;
+                let storyFiles = [];
+                let stories = [];
                 
                 // Check if running on localhost
                 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -184,25 +186,202 @@ window.MyStoriesPage = {
                 // Use fallback data if on localhost or if SDK.fs is not available
                 if (isLocalhost) {
                     console.log("Running on localhost, using fallback data");
-                    data = this.fallbackGenerations;
+                    this.generations = this.fallbackGenerations.generations
+                        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
                 } else if (sdk && typeof sdk.fs?.read === 'function') {
-                    const content = await sdk.fs.read("~/AI Storyteller/generations.json");
-                    data = JSON.parse(content);
+                    try {
+                        // First try the old way - reading from generations.json
+                        console.log("Trying to read from generations.json...");
+                        const content = await sdk.fs.read("~/AI Storyteller/generations.json");
+                        const data = JSON.parse(content);
+                        
+                        if (data && data.generations && Array.isArray(data.generations)) {
+                            console.log("Successfully read from generations.json");
+                            stories = data.generations.map((gen) => ({
+                                ...gen,
+                                story: gen.story || (gen.chapters ? gen.chapters.map(ch => ch.story).join("\n\n") : ""),
+                            }));
+                        }
+                    } catch (error) {
+                        console.log("Could not read from generations.json, will try individual files:", error);
+                    }
+                    
+                    // Then try the new way - reading individual files
+                    if (typeof sdk.fs?.list === 'function') {
+                        try {
+                            console.log("Trying to read individual story files...");
+                            // List all files in the AI Storyteller directory
+                            const files = await sdk.fs.list("~/AI Storyteller");
+                            console.log("Files returned by sdk.fs.list:", files);
+                            
+                            // Check if files is an array of strings (full paths)
+                            if (Array.isArray(files) && files.length > 0 && typeof files[0] === 'string') {
+                                console.log("Files are strings (full paths)");
+                                
+                                // Filter for JSON files (excluding generations.json)
+                                storyFiles = files.filter(filePath => {
+                                    // Extract the filename from the path
+                                    const parts = filePath.split('/');
+                                    const filename = parts[parts.length - 1];
+                                    
+                                    console.log("Checking file:", filename);
+                                    
+                                    return filename.endsWith('.json') && filename !== 'generations.json';
+                                });
+                            } else if (!Array.isArray(files)) {
+                                console.log("Files is not an array, it's a:", typeof files);
+                                // If it's not an array, try to convert it to one if possible
+                                const filesArray = files && typeof files === 'object' ? 
+                                    Object.values(files) : 
+                                    [];
+                                console.log("Converted to array:", filesArray);
+                                
+                                // Filter for JSON files (excluding generations.json)
+                                storyFiles = filesArray.filter(file => 
+                                    file && 
+                                    typeof file === 'object' && 
+                                    file.name && 
+                                    typeof file.name === 'string' &&
+                                    file.name.endsWith('.json') && 
+                                    file.name !== 'generations.json'
+                                );
+                            } else {
+                                // Filter for JSON files (excluding generations.json)
+                                storyFiles = files.filter(file => 
+                                    file && 
+                                    typeof file === 'object' && 
+                                    file.name && 
+                                    typeof file.name === 'string' &&
+                                    file.name.endsWith('.json') && 
+                                    file.name !== 'generations.json'
+                                );
+                            }
+                            console.log("Found individual story files:", storyFiles.length);
+                            console.log("Story files:", storyFiles);
+                            
+                            // Read each story file
+                            const individualStories = [];
+                            for (const file of storyFiles) {
+                                try {
+                                    // Determine the file path
+                                    let filePath;
+                                    if (typeof file === 'string') {
+                                        // If file is already a full path
+                                        filePath = file;
+                                    } else if (file && typeof file === 'object' && file.name) {
+                                        filePath = `~/AI Storyteller/${file.name}`;
+                                    } else if (file && typeof file === 'object' && file.path) {
+                                        filePath = file.path;
+                                    } else {
+                                        console.log("Skipping file with invalid format:", file);
+                                        continue;
+                                    }
+                                    
+                                    console.log("Reading file:", filePath);
+                                    const content = await sdk.fs.read(filePath);
+                                    
+                                    // Validate content
+                                    if (!content) {
+                                        console.log("Empty content for file:", filePath);
+                                        continue;
+                                    }
+                                    
+                                    // Parse JSON
+                                    let storyData;
+                                    try {
+                                        storyData = JSON.parse(content);
+                                    } catch (parseError) {
+                                        console.error(`Error parsing JSON for file ${filePath}:`, parseError);
+                                        continue;
+                                    }
+                                    
+                                    // Validate story data
+                                    if (!storyData || typeof storyData !== 'object') {
+                                        console.log("Invalid story data for file:", filePath);
+                                        continue;
+                                    }
+                                    
+                                    // Extract filename for logging
+                                    const parts = filePath.split('/');
+                                    const filename = parts[parts.length - 1];
+                                    console.log("Successfully read story from:", filename);
+                                    
+                                    // Add the story to our array
+                                    individualStories.push({
+                                        ...storyData,
+                                        // Ensure story field exists
+                                        story: storyData.story || (storyData.chapters ? storyData.chapters.map(ch => ch.story).join("\n\n") : ""),
+                                        // Convert ISO string to timestamp if needed
+                                        createdAt: storyData.createdAt ? 
+                                            (typeof storyData.createdAt === 'string' ? new Date(storyData.createdAt).getTime() / 1000 : storyData.createdAt) : 
+                                            (Date.now() / 1000),
+                                        // Store the original file path for deletion
+                                        _filePath: filePath
+                                    });
+                                } catch (error) {
+                                    console.error(`Error reading story file:`, error);
+                                }
+                            }
+                            
+                            // Combine stories from both sources, avoiding duplicates
+                            if (individualStories.length > 0) {
+                                console.log("Successfully read individual story files");
+                                
+                                // If we have stories from both sources, merge them
+                                if (stories.length > 0) {
+                                    console.log("Merging stories from both sources");
+                                    
+                                    // Use title as a unique identifier to avoid duplicates
+                                    const titleMap = new Map();
+                                    
+                                    // Add stories from generations.json first
+                                    stories.forEach(story => {
+                                        if (story.title) {
+                                            titleMap.set(story.title, story);
+                                        }
+                                    });
+                                    
+                                    // Add individual stories, overriding duplicates
+                                    individualStories.forEach(story => {
+                                        if (story.title) {
+                                            titleMap.set(story.title, story);
+                                        }
+                                    });
+                                    
+                                    // Convert map back to array
+                                    stories = Array.from(titleMap.values());
+                                } else {
+                                    // If we only have individual stories, use those
+                                    stories = individualStories;
+                                }
+                            }
+                        } catch (error) {
+                            console.error("Error reading individual story files:", error);
+                            // If we couldn't read individual files but have stories from generations.json, use those
+                            if (stories.length === 0) {
+                                console.log("Falling back to fallback data");
+                                stories = this.fallbackGenerations.generations;
+                            }
+                        }
+                    }
+                    
+                    // If we still have no stories, use fallback data
+                    if (stories.length === 0) {
+                        console.log("No stories found, using fallback data");
+                        stories = this.fallbackGenerations.generations;
+                    }
+                    
+                    // Sort stories by creation date (newest first)
+                    this.generations = stories.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                    console.log("Total loaded stories:", this.generations.length);
                 } else {
                     // Fallback to local variable if SDK.fs is not available
                     console.log("SDK.fs not available, using fallback data");
-                    data = this.fallbackGenerations;
+                    this.generations = this.fallbackGenerations.generations
+                        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
                 }
-                
-                this.generations = data.generations
-                    .map((gen) => ({
-                        ...gen,
-                        story: gen.story || (gen.chapters ? gen.chapters.map(ch => ch.story).join("\n\n") : ""),
-                    }))
-                    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-                console.log("Loaded generations:", this.generations.length);
             } catch (error) {
-                console.error("Error loading generations:", error);
+                console.error("Error loading stories:", error);
                 this.generations = [];
             } finally {
                 this.loading = false;
@@ -238,11 +417,37 @@ window.MyStoriesPage = {
         },
         deleteStory(index) {
             if (confirm("Are you sure you want to delete this story?")) {
+                const story = this.generations[index];
                 this.generations.splice(index, 1);
                 
-                // Try to update the file if SDK.fs is available
-                if (sdk && typeof sdk.fs?.write === 'function') {
-                    this.saveGenerations();
+                // Try to update both storage methods if SDK.fs is available
+                if (sdk && typeof sdk.fs?.read === 'function') {
+                    // 1. Try to delete the individual file if it exists
+                    if (typeof sdk.fs?.delete === 'function') {
+                        try {
+                            // First try using the stored file path if available
+                            if (story._filePath) {
+                                console.log("Attempting to delete file using stored path:", story._filePath);
+                                
+                                // Try to delete the file
+                                sdk.fs.delete(story._filePath)
+                                    .then(() => console.log("Individual story file deleted successfully using stored path"))
+                                    .catch(err => {
+                                        console.log("Could not delete using stored path:", err);
+                                        // Fall back to title-based deletion
+                                        this.deleteByTitle(story);
+                                    });
+                            } else if (story.title) {
+                                // Fall back to title-based deletion
+                                this.deleteByTitle(story);
+                            }
+                        } catch (error) {
+                            console.log("Error during individual story deletion:", error);
+                        }
+                    }
+                    
+                    // 2. Try to update the generations.json file if it exists
+                    this.updateGenerationsFile();
                 } else {
                     // Update fallback data if SDK.fs is not available
                     this.fallbackGenerations.generations = [...this.generations];
@@ -250,9 +455,53 @@ window.MyStoriesPage = {
                 }
             }
         },
-        async saveGenerations() {
+        
+        // Method to delete a story by its title
+        deleteByTitle(story) {
+            if (!story.title) return;
+            
+            // Find the filename based on the story title
+            const safeName = this.safeFolderName(story.title);
+            const baseFilename = `~/AI Storyteller/${safeName}`;
+            
+            console.log("Attempting to delete file by title:", `${baseFilename}.json`);
+            
+            // Try to delete the file
+            sdk.fs.delete(`${baseFilename}.json`)
+                .then(() => console.log("Individual story file deleted successfully by title"))
+                .catch(err => {
+                    console.log("Individual story file not found or could not be deleted by title:", err);
+                    
+                    // Try with counter suffixes if the base name doesn't work
+                    this.tryDeleteWithCounters(safeName);
+                });
+        },
+        
+        // Try to delete files with counter suffixes
+        async tryDeleteWithCounters(safeName) {
             try {
-                // First read the current file to get the complete structure
+                // Try with counter suffixes (up to 5)
+                for (let i = 1; i <= 5; i++) {
+                    const filename = `~/AI Storyteller/${safeName}_${i}.json`;
+                    console.log("Trying to delete with counter:", filename);
+                    
+                    try {
+                        await sdk.fs.delete(filename);
+                        console.log("Successfully deleted file with counter:", filename);
+                        break; // Exit the loop if successful
+                    } catch (err) {
+                        console.log(`File with counter ${i} not found:`, err);
+                    }
+                }
+            } catch (error) {
+                console.log("Error in tryDeleteWithCounters:", error);
+            }
+        },
+        
+        // Method to update the generations.json file
+        async updateGenerationsFile() {
+            try {
+                // First try to read the current file to get the complete structure
                 const content = await sdk.fs.read("~/AI Storyteller/generations.json");
                 const data = JSON.parse(content);
                 
@@ -261,10 +510,18 @@ window.MyStoriesPage = {
                 
                 // Write back to the file
                 await sdk.fs.write("~/AI Storyteller/generations.json", JSON.stringify(data, null, 2));
-                console.log("Generations saved successfully");
+                console.log("generations.json updated successfully");
             } catch (error) {
-                console.error("Error saving generations:", error);
+                console.log("Could not update generations.json:", error);
             }
+        },
+        
+        // Helper method to create safe folder names (copied from create.vue.js)
+        safeFolderName(name) {
+            return name
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '_')
+                .replace(/^_+|_+$/g, '');
         },
         goToNewStory() {
             // Use Vue Router to navigate to the create page
