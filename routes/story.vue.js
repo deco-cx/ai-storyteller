@@ -1,49 +1,65 @@
-import { SDK } from "https://webdraw.com/webdraw-sdk@v1";
-
-// Initialize the SDK
-const sdk = SDK;
+import { sdk } from "../sdk.js";
 
 window.StoryPage = {
     template: `
         <div class="min-h-screen bg-[#FFF9F6]">
             <!-- Navigation -->
-            <nav class="flex justify-between items-center px-6 py-4 bg-white/80 backdrop-blur-sm border-b border-sky-100">
-                <div class="flex items-center gap-3">
-                    <img src="https://webdraw.com/image-optimize?src=https%3A%2F%2Fai-storyteller.webdraw.app%2F.webdraw%2Fassets%2Ficon-b8a9e1bd-cf34-46f5-8f72-a98c365e9b09.png&width=80&height=80&fit=cover" 
-                         alt="AI Storyteller Logo" 
-                         class="w-10 h-10 rounded-xl object-cover" />
-                    <h1 class="text-2xl font-medium text-[#006D95]">AI Storyteller</h1>
+            <nav class="bg-white shadow-md py-4 px-4 sm:px-6 flex items-center justify-between">
+                <div class="flex items-center space-x-1 sm:space-x-4 overflow-x-auto whitespace-nowrap">
+                    <router-link to="/" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base">
+                        {{ $t('ui.home') }}
+                    </router-link>
+                    <router-link to="/create" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base">
+                        {{ $t('ui.new') }}
+                    </router-link>
+                    <router-link to="/my-stories" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base">
+                        {{ $t('ui.myStories') }}
+                    </router-link>
                 </div>
-                <router-link to="/" class="text-[#00B7EA] hover:text-[#0284C7]">
-                    <i class="fa-solid fa-arrow-left mr-2"></i>Back to Home
-                </router-link>
+                <div class="flex items-center gap-2">
+                    <router-link v-if="isPreviewEnvironment" to="/_admin" class="text-[#00B7EA] hover:text-[#0284C7] text-sm sm:text-base px-2 py-1">
+                        <i class="fa-solid fa-gear"></i>
+                    </router-link>
+                    <language-switcher></language-switcher>
+                </div>
             </nav>
 
             <!-- Loading State -->
             <div v-if="loading" class="max-w-4xl mx-auto px-6 py-12 flex flex-col items-center justify-center min-h-[70vh]">
                 <div class="w-16 h-16 border-4 border-[#BAE6FD] border-t-[#0284C7] rounded-full animate-spin mb-6"></div>
-                <p class="text-xl text-[#0284C7] font-medium">Loading your story...</p>
+                <p class="text-xl text-[#0284C7] font-medium">{{ $t('story.loadingStory') }}</p>
+            </div>
+
+            <!-- Error State -->
+            <div v-else-if="error" class="max-w-4xl mx-auto px-6 py-12 flex flex-col items-center justify-center min-h-[70vh]">
+                <div class="bg-red-100 border border-red-300 text-red-700 px-8 py-6 rounded-xl mb-6">
+                    <h3 class="text-xl font-medium mb-2">{{ $t('story.errorLoadingStory') }}</h3>
+                    <p>{{ error }}</p>
+                </div>
+                <router-link to="/" class="bg-[#0EA5E9] text-white px-6 py-3 rounded-full hover:bg-[#0284C7] font-medium">
+                    {{ $t('ui.returnHome') }}
+                </router-link>
             </div>
 
             <!-- Story Display -->
             <main v-else class="max-w-4xl mx-auto px-6 py-12">
                 <div class="bg-[#E0F2FE] border border-[#BAE6FD] rounded-xl p-8">
-                    <h2 class="text-3xl font-semibold text-[#00B7EA] mb-8 text-center">{{ story.title }}</h2>
+                    <h1 class="text-3xl font-semibold text-[#00B7EA] mb-8 text-center">{{ formatTitle(story.title) }}</h1>
                     
                     <!-- Story Content -->
                     <div class="bg-[#F0F9FF] border border-[#BAE6FD] rounded-xl p-6 mb-8">
-                        <img :src="story.image" 
+                        <img :src="story.coverUrl" 
                              :alt="story.title" 
                              class="w-full h-64 object-cover rounded-lg mb-6" />
                         
                         <!-- Audio Player -->
                         <div class="flex items-center gap-4 mb-6">
                             <button @click="toggleAudio" class="bg-[#0EA5E9] text-white p-3 rounded-full w-12 h-12 flex items-center justify-center hover:bg-[#0284C7] transition-colors">
-                                <i :class="story.isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'"></i>
+                                <i :class="isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'"></i>
                             </button>
                             <div class="flex-1 h-10 bg-[#E0F2FE] rounded-full relative cursor-pointer" @click="seekAudio($event)">
                                 <div class="absolute inset-0 flex items-center px-2">
-                                    <div class="h-2 bg-[#7DD3FC] rounded-full" :style="{ width: story.progress }"></div>
+                                    <div class="h-2 bg-[#7DD3FC] rounded-full" :style="{ width: audioProgress + '%' }"></div>
                                 </div>
                             </div>
                             <audio ref="audioPlayer" :src="story.audioUrl" @timeupdate="updateProgress" @ended="audioEnded"></audio>
@@ -51,29 +67,27 @@ window.StoryPage = {
                         
                         <!-- Story Text -->
                         <div class="mt-4">
-                            <label class="block text-sm font-medium text-[#005B79] mb-2">Story Text:</label>
-                            <textarea 
-                                class="w-full bg-white border border-gray-200 rounded-lg p-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#7DD3FC]" 
-                                rows="4" 
-                                readonly
-                                style="resize: vertical; min-height: 100px;"
-                            >{{ story.story }}</textarea>
+                            <label class="block text-sm font-medium text-[#005B79] mb-2">{{ $t('ui.storyText') }}</label>
+                            <div class="w-full bg-white border border-gray-200 rounded-lg p-4 text-gray-700 max-h-96 overflow-y-auto">
+                                <div v-if="hasHtmlContent(story.story)" v-html="story.story" class="prose prose-sky max-w-none"></div>
+                                <div v-else class="whitespace-pre-wrap">{{ story.story }}</div>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Action Buttons -->
                     <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-                        <button class="bg-[#0EA5E9] text-white px-6 py-3 rounded-full hover:bg-[#0284C7] font-medium flex items-center justify-center gap-2">
+                        <a :href="story.audioUrl" download class="bg-[#0EA5E9] text-white px-6 py-3 rounded-full hover:bg-[#0284C7] font-medium flex items-center justify-center gap-2">
                             <i class="fa-solid fa-download"></i>
-                            Download Story
-                        </button>
-                        <button class="border border-[#00B7EA] text-[#00B7EA] px-6 py-3 rounded-full hover:bg-[#F0F9FF] font-medium flex items-center justify-center gap-2">
+                            {{ $t('ui.downloadAudio') }}
+                        </a>
+                        <button @click="shareStory" class="border border-[#00B7EA] text-[#00B7EA] px-6 py-3 rounded-full hover:bg-[#F0F9FF] font-medium flex items-center justify-center gap-2">
                             <i class="fa-solid fa-share-nodes"></i>
-                            Share Story
+                            {{ $t('ui.shareStory') }}
                         </button>
                         <router-link to="/create" class="border border-[#00B7EA] text-[#00B7EA] px-6 py-3 rounded-full hover:bg-[#F0F9FF] font-medium flex items-center justify-center gap-2">
                             <i class="fa-solid fa-plus"></i>
-                            Create New Story
+                            {{ $t('ui.createNewStory') }}
                         </router-link>
                     </div>
                     
@@ -81,28 +95,28 @@ window.StoryPage = {
                     <details class="bg-[#F0F9FF] border border-[#BAE6FD] rounded-xl p-4">
                         <summary class="text-[#0284C7] font-medium cursor-pointer hover:text-[#00B7EA] flex items-center">
                             <i class="fa-solid fa-gear mr-2"></i>
-                            Story Settings
+                            {{ $t('ui.storySettings') }}
                         </summary>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-                            <div class="space-y-2">
-                                <label class="block text-sm font-medium text-[#005B79]">Child's Name:</label>
+                            <div v-if="story.childName" class="space-y-2">
+                                <label class="block text-sm font-medium text-[#005B79]">{{ $t('ui.childName') }}</label>
                                 <div class="bg-white border border-gray-200 rounded-full px-4 py-2 text-lg text-gray-600">
                                     {{ story.childName }}
                                 </div>
                             </div>
                             
-                            <div class="space-y-2">
-                                <label class="block text-sm font-medium text-[#005B79]">Themes:</label>
+                            <div v-if="story.themes || story.interests" class="space-y-2">
+                                <label class="block text-sm font-medium text-[#005B79]">{{ $t('ui.themes') }}</label>
                                 <div class="bg-white border border-gray-200 rounded-full px-4 py-2 text-lg text-gray-600">
-                                    {{ story.themes }}
+                                    {{ story.themes || story.interests }}
                                 </div>
                             </div>
 
-                            <div class="space-y-2">
-                                <label class="block text-sm font-medium text-[#005B79]">Voice:</label>
+                            <div v-if="story.voice" class="space-y-2">
+                                <label class="block text-sm font-medium text-[#005B79]">{{ $t('ui.voice') }}</label>
                                 <div class="bg-white border border-gray-200 rounded-full p-2 text-lg text-gray-600 flex items-center gap-2">
-                                    <img :src="story.voiceAvatar" class="w-8 h-8 rounded-full" />
-                                    <span>{{ story.voice }}</span>
+                                    <img v-if="story.voice.avatar" :src="story.voice.avatar" class="w-8 h-8 rounded-full" />
+                                    <span>{{ typeof story.voice === 'object' ? story.voice.name : story.voice }}</span>
                                 </div>
                             </div>
                         </div>
@@ -114,65 +128,179 @@ window.StoryPage = {
     data() {
         return {
             loading: true,
+            error: null,
             story: null,
-            dbParam: null,
-            nameParam: null
+            isPlaying: false,
+            audioProgress: 0,
+            fileUrl: null,
+            storyIndex: null,
+            BASE_FS_URL: "https://fs.webdraw.com",
+            isPreviewEnvironment: false
+        }
+    },
+    watch: {
+        // Watch for route changes to reload the story when navigating between stories
+        '$route.query': {
+            handler(newQuery) {
+                if (newQuery.file !== this.fileUrl || newQuery.index !== this.storyIndex) {
+                    this.fileUrl = newQuery.file;
+                    this.storyIndex = newQuery.index;
+                    this.loadStory();
+                }
+            },
+            immediate: false,
+            deep: true
         }
     },
     async mounted() {
         // Get query parameters
         const urlParams = new URLSearchParams(window.location.search);
-        this.dbParam = urlParams.get('db');
-        this.nameParam = urlParams.get('name');
+        this.fileUrl = urlParams.get('file');
+        this.storyIndex = urlParams.get('index');
         
-        console.log('Story params:', this.dbParam, this.nameParam);
+        // Check if we're in the preview environment
+        this.isPreviewEnvironment = window.location.origin.includes('preview.webdraw.app');
         
-        // Simulate loading
-        setTimeout(() => {
-            // Set static example data
-            this.story = { 
-                title: "The Magic Garden Adventure", 
-                childName: "Sarah", 
-                themes: "Nature, Magic and Friendship", 
-                voice: "Fairy Godmother", 
-                voiceAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=jBpfuIE2acCO8z3wKNLl", 
-                image: "https://ai-storyteller.webdraw.app/joe.png", 
-                isPlaying: false, 
-                progress: "33%", 
-                audioUrl: "http://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Audio/LinasRocketAdventure.mp3",
-                story: "Once upon a time, in a small town in Brazil, lived a bright and curious boy named João Paulo. João Paulo had a deep love for antique cars. He spent hours reading about them, drawing them, and dreaming about them. One day, while exploring his grandfather's old garage, he discovered a dusty, old car covered with a tarp. To his surprise, it was a 1920 Ford Model T, a car he had only seen in his books!\n\nJoão Paulo spent days and nights fixing the old car, using the knowledge he had gained from his countless hours of reading. One night, as he turned the key in the ignition, the car started with a loud rumble, and suddenly, everything around him started to blur. When he opened his eyes, he found himself in a bustling city with people dressed in old-fashioned clothes. He had traveled back in time to the 1920s!\n\nIn this new world, João Paulo had many adventures. He met Henry Ford, the creator of his beloved Model T, and even got a chance to visit the Ford factory. He learned about the assembly line production method and how it revolutionized the automobile industry. He also helped solve a mystery of a missing car part at the factory, using his knowledge of antique cars.\n\nHowever, João Paulo started to miss his home. He realized that while the past was exciting, he belonged in his own time. So, he bid farewell to his new friends and set off in his Model T. As he turned the key in the ignition, he was transported back to his grandfather's garage.\n\nBack home, João Paulo had a newfound appreciation for his love of antique cars. He had not only read and dreamt about them, but he had also lived an adventure in one. He continued to learn and dream, knowing that knowledge could take him on the most incredible journeys. And every time he missed his adventure, he would sit in his Model T, close his eyes, and let his imagination take him back to the 1920s."
-            };
-            
-            this.loading = false;
-            
-            // Initialize audio player
-            if (this.$refs.audioPlayer) {
-                this.$refs.audioPlayer.load();
-            }
-        }, 2000); // 2 second loading simulation
+        await this.loadStory();
     },
     methods: {
+        async loadStory() {
+            this.loading = true;
+            this.error = null;
+            this.story = null;
+            this.isPlaying = false;
+            this.audioProgress = 0;
+            
+            if (!this.fileUrl) {
+                this.error = this.$t('story.noStorySpecified');
+                this.loading = false;
+                return;
+            }
+            
+            try {
+                console.log("Loading story from:", this.fileUrl);
+                
+                let storyData;
+                
+                // Check if the file path starts with ~ (indicating it's a local file path)
+                if (this.fileUrl.startsWith('~') && sdk && typeof sdk.fs?.read === 'function') {
+                    console.log("Loading story from local file system");
+                    
+                    // Read the file using the SDK
+                    const content = await sdk.fs.read(this.fileUrl);
+                    
+                    if (!content) {
+                        throw new Error(`Empty content from file: ${this.fileUrl}`);
+                    }
+                    
+                    try {
+                        const data = JSON.parse(content);
+                        
+                        // Check if this is a generations.json file with an index parameter
+                        if (this.storyIndex !== null && data.generations && Array.isArray(data.generations)) {
+                            console.log("Loading story from generations.json with index:", this.storyIndex);
+                            const index = parseInt(this.storyIndex, 10);
+                            if (isNaN(index) || index < 0 || index >= data.generations.length) {
+                                throw new Error(this.$t('story.invalidIndex'));
+                            }
+                            storyData = data.generations[index];
+                        } else {
+                            // Direct story JSON file
+                            console.log("Loading story from individual JSON file");
+                            storyData = data;
+                        }
+                    } catch (parseError) {
+                        console.error("Error parsing JSON:", parseError);
+                        throw new Error(`Failed to parse story data: ${parseError.message}`);
+                    }
+                } else {
+                    // It's a URL, fetch it
+                    console.log("Loading story from URL");
+                    
+                    // If the URL doesn't start with http, add the base FS URL
+                    let fetchUrl = this.fileUrl;
+                    if (!fetchUrl.startsWith('http')) {
+                        fetchUrl = `${this.BASE_FS_URL}${fetchUrl.startsWith('/') ? '' : '/'}${fetchUrl}`;
+                    }
+                    
+                    console.log("Fetching from URL:", fetchUrl);
+                    const response = await fetch(fetchUrl);
+                    
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch story: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Check if this is a generations.json file with an index parameter
+                    if (this.storyIndex !== null && data.generations && Array.isArray(data.generations)) {
+                        console.log("Loading story from generations.json with index:", this.storyIndex);
+                        const index = parseInt(this.storyIndex, 10);
+                        if (isNaN(index) || index < 0 || index >= data.generations.length) {
+                            throw new Error(this.$t('story.invalidIndex'));
+                        }
+                        storyData = data.generations[index];
+                    } else {
+                        // Direct story JSON file
+                        console.log("Loading story from individual JSON file");
+                        storyData = data;
+                    }
+                }
+                
+                // Process the story data
+                this.story = {
+                    ...storyData,
+                    // Ensure all required fields exist
+                    title: storyData.title || "Untitled Story",
+                    story: this.formatStoryText(storyData.story || (storyData.chapters ? storyData.chapters.map(ch => ch.story).join("\n\n") : this.$t('story.noStoryContent'))),
+                    coverUrl: storyData.coverUrl || "https://webdraw.com/image-optimize?src=https%3A%2F%2Fai-storyteller.webdraw.app%2F.webdraw%2Fassets%2Ficon-b8a9e1bd-cf34-46f5-8f72-a98c365e9b09.png&width=200&height=200&fit=cover",
+                    audioUrl: storyData.audioUrl || null
+                };
+                
+                // Fix URLs for coverUrl and audioUrl if they're relative paths
+                if (this.story.coverUrl && !this.story.coverUrl.startsWith('http') && !this.story.coverUrl.startsWith('data:')) {
+                    this.story.coverUrl = `${this.BASE_FS_URL}${this.story.coverUrl.startsWith('/') ? '' : '/'}${this.story.coverUrl}`;
+                }
+                
+                if (this.story.audioUrl && !this.story.audioUrl.startsWith('http') && !this.story.audioUrl.startsWith('data:')) {
+                    this.story.audioUrl = `${this.BASE_FS_URL}${this.story.audioUrl.startsWith('/') ? '' : '/'}${this.story.audioUrl}`;
+                }
+                
+                this.loading = false;
+                
+                // Initialize audio player
+                this.$nextTick(() => {
+                    if (this.$refs.audioPlayer) {
+                        this.$refs.audioPlayer.load();
+                    }
+                });
+            } catch (error) {
+                console.error("Error loading story:", error);
+                this.error = `Failed to load story: ${error.message}`;
+                this.loading = false;
+            }
+        },
         toggleAudio() {
             if (!this.$refs.audioPlayer) return;
             
-            if (this.story.isPlaying) {
+            if (this.isPlaying) {
                 this.$refs.audioPlayer.pause();
             } else {
                 this.$refs.audioPlayer.play();
             }
             
-            this.story.isPlaying = !this.story.isPlaying;
+            this.isPlaying = !this.isPlaying;
         },
         updateProgress() {
             if (!this.$refs.audioPlayer) return;
             
             const player = this.$refs.audioPlayer;
             const percentage = (player.currentTime / player.duration) * 100;
-            this.story.progress = percentage + '%';
+            this.audioProgress = percentage;
         },
         audioEnded() {
-            this.story.isPlaying = false;
-            this.story.progress = '0%';
+            this.isPlaying = false;
+            this.audioProgress = 0;
         },
         seekAudio(event) {
             if (!this.$refs.audioPlayer) return;
@@ -182,7 +310,65 @@ window.StoryPage = {
             const clickPosition = (event.clientX - progressBar.getBoundingClientRect().left) / progressBar.offsetWidth;
             
             player.currentTime = clickPosition * player.duration;
-            this.story.progress = (clickPosition * 100) + '%';
+            this.audioProgress = clickPosition * 100;
+        },
+        shareStory() {
+            // Create a shareable link to this story
+            const currentUrl = window.location.href;
+            
+            // Try to use the Web Share API if available
+            if (navigator.share) {
+                navigator.share({
+                    title: this.story.title,
+                    text: `Check out this story: ${this.story.title}`,
+                    url: currentUrl
+                }).catch(err => {
+                    console.error('Error sharing:', err);
+                    this.fallbackShare(currentUrl);
+                });
+            } else {
+                this.fallbackShare(currentUrl);
+            }
+        },
+        fallbackShare(url) {
+            // Fallback to copying to clipboard
+            navigator.clipboard.writeText(url).then(() => {
+                alert(this.$t('ui.copied'));
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                // Final fallback - show the URL to manually copy
+                prompt('Copy this link to share the story:', url);
+            });
+        },
+        formatStoryText(text) {
+            if (!text) return "";
+            
+            // Check if the text already contains HTML formatting
+            if (this.hasHtmlContent(text)) {
+                return text; // Return as-is if it contains HTML
+            }
+            
+            // Ensure proper paragraph breaks
+            let formattedText = text
+                // Replace single newlines with spaces (if they're not part of a paragraph break)
+                .replace(/([^\n])\n([^\n])/g, '$1 $2')
+                // Ensure paragraphs have proper spacing
+                .replace(/\n\n+/g, '\n\n')
+                // Trim extra whitespace
+                .trim();
+                
+            return formattedText;
+        },
+        
+        hasHtmlContent(text) {
+            // Simple check for HTML tags
+            return /<[a-z][\s\S]*>/i.test(text);
+        },
+        formatTitle(title) {
+            if (!title) return this.$t('story.untitledStory');
+            
+            // Remove any HTML tags if present
+            return title.replace(/<[^>]*>/g, '');
         }
     }
 }; 

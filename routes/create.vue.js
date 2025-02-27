@@ -1,6 +1,4 @@
-import { SDK } from "https://webdraw.com/webdraw-sdk@v1";
-
-const sdk = SDK;
+import { sdk } from "../sdk.js";
 
 window.CreatePage = {
   data() {
@@ -13,6 +11,8 @@ window.CreatePage = {
       audioSource: null,
       isPlaying: false,
       audioProgress: 0,
+      audioLoading: false,
+      audioCheckInterval: null,
       taskStatus: {
         plot: "waiting",
         story: "waiting",
@@ -63,16 +63,24 @@ window.CreatePage = {
       isPreviewPlaying: null,
       previewAudioElement: null,
       BASE_FS_URL: "https://fs.webdraw.com",
+      currentLanguage: window.i18n.getLanguage()
     };
   },
+  watch: {
+    currentLanguage(newLang, oldLang) {
+      console.log(`Language changed from ${oldLang} to ${newLang}`);
+      this.$forceUpdate();
+    }
+  },
   mounted() {
-    // Create audio element for voice previews
+    // Debug initial translations
+    this.debugTranslations();
+    
     this.previewAudioElement = new Audio();
     this.previewAudioElement.addEventListener('ended', () => {
       this.isPreviewPlaying = null;
     });
     
-    // Set up audio player event listeners when component is mounted
     this.$nextTick(() => {
       const audioPlayer = this.$refs.audioPlayer;
       if (audioPlayer) {
@@ -83,16 +91,54 @@ window.CreatePage = {
         });
       }
     });
+    
+    // Listen for language change events
+    if (window.eventBus) {
+      window.eventBus.on('language-changed', this.handleLanguageChange);
+    }
   },
   beforeUnmount() {
-    // Clean up event listeners when component is unmounted
     const audioPlayer = this.$refs.audioPlayer;
     if (audioPlayer) {
       audioPlayer.removeEventListener('timeupdate', this.updateAudioProgress);
       audioPlayer.removeEventListener('ended', () => {});
     }
+    
+    // Clean up language change event listener
+    if (window.eventBus) {
+      window.eventBus.events['language-changed'] = window.eventBus.events['language-changed']?.filter(
+        callback => callback !== this.handleLanguageChange
+      );
+    }
+    
+    // Clean up audio check interval
+    if (this.audioCheckInterval) {
+      clearInterval(this.audioCheckInterval);
+      this.audioCheckInterval = null;
+    }
   },
   methods: {
+    // Handle language change events
+    handleLanguageChange(lang) {
+      console.log('Language change event received in CreatePage:', lang);
+      this.currentLanguage = lang;
+      
+      // Debug translations
+      this.debugTranslations();
+      
+      // Force re-render
+      this.$forceUpdate();
+    },
+    
+    // Debug translations
+    debugTranslations() {
+      console.log('Current language:', this.currentLanguage);
+      console.log('i18n language:', window.i18n.getLanguage());
+      console.log('Translation for create.title:', window.i18n.t('create.title'));
+      console.log('Translation for create.nameLabel:', window.i18n.t('create.nameLabel'));
+      console.log('Available translations:', window.i18n.translations);
+    },
+    
     selectVoice(voice) {
       this.selectedVoice = voice;
     },
@@ -134,26 +180,21 @@ window.CreatePage = {
       this.addInterest(randomPick);
     },
     playVoicePreview(voice) {
-      // Select the voice when clicking the play button
       this.selectVoice(voice);
       
-      // If this voice is already playing, pause it
       if (this.isPreviewPlaying === voice.id) {
         this.previewAudioElement.pause();
         this.isPreviewPlaying = null;
         return;
       }
       
-      // If another voice is playing, stop it
       if (this.isPreviewPlaying) {
         this.previewAudioElement.pause();
       }
       
-      // Set the audio source to this voice's preview
       if (voice.previewAudio) {
         voice.isLoading = true;
         
-        // Add domain prefix if needed
         let previewUrl = voice.previewAudio;
         if (!previewUrl.startsWith('http') && !previewUrl.startsWith('data:')) {
           previewUrl = `https://fs.webdraw.com${previewUrl.startsWith('/') ? '' : '/'}${previewUrl}`;
@@ -181,7 +222,6 @@ window.CreatePage = {
       
       this.screen = "loading";
       
-      // Reset states
       this.storyData = null;
       this.storyImage = null;
       this.audioSource = null;
@@ -194,7 +234,6 @@ window.CreatePage = {
       };
       
       try {
-        // Step 1: Generate plot and title
         console.log("Starting plot generation...");
         const { object } = await sdk.ai.generateObject({
           schema: {
@@ -221,7 +260,6 @@ window.CreatePage = {
           story: ""
         };
         
-        // Step 2: Start image generation in parallel
         this.taskStatus.image = "loading";
         console.log("Starting image generation...");
         const imagePromise = sdk.ai.generateImage({
@@ -229,7 +267,6 @@ window.CreatePage = {
           prompt: `Create a colorful, child-friendly illustration for a children's story titled "${object.title}" about ${this.interests}. The image should be vibrant, engaging, and suitable for children.`
         });
         
-        // Step 3: Generate the full story with streaming
         this.taskStatus.story = "loading";
         console.log("Starting story generation...");
         const storyStream = await sdk.ai.streamText({
@@ -246,24 +283,20 @@ window.CreatePage = {
           ]
         });
         
-        // Process the streaming story text
         this.storyData.story = "";
         for await (const chunk of storyStream) {
           this.streamingText += chunk.text;
           this.storyData.story += chunk.text;
         }
         
-        // Format the story text to handle markdown and line breaks
         this.storyData.story = this.formatStoryText(this.storyData.story);
         
         console.log("Story generation complete:", this.storyData.story);
         this.taskStatus.story = "done";
         
-        // Wait for image generation to complete
         const imageResult = await imagePromise;
         console.log("Raw image generation result:", JSON.stringify(imageResult));
         
-        // Extract the image URL from the response
         if (imageResult.url) {
           this.storyImage = imageResult.url;
         } else if (imageResult.filepath) {
@@ -275,15 +308,27 @@ window.CreatePage = {
           this.storyImage = null;
         }
         
-        // Ensure image URL has the correct domain prefix
         if (this.storyImage && !this.storyImage.startsWith('http')) {
           this.storyImage = `https://fs.webdraw.com${this.storyImage.startsWith('/') ? '' : '/'}${this.storyImage}`;
         }
         
         console.log("Final image URL:", this.storyImage);
+        
+        // Set permissions for the image file immediately
+        try {
+          if (imageResult.filepath) {
+            await this.setFilePermissions(imageResult.filepath);
+            console.log("Set permissions for image file:", imageResult.filepath);
+          } else if (imageResult.images && imageResult.images.length > 0) {
+            await this.setFilePermissions(imageResult.images[0]);
+            console.log("Set permissions for image file:", imageResult.images[0]);
+          }
+        } catch (permError) {
+          console.warn("Error setting permissions for image file:", permError);
+        }
+        
         this.taskStatus.image = "done";
         
-        // Step 4: Generate audio narration
         this.taskStatus.audio = "loading";
         console.log("Starting audio generation...");
         const audioText = `${this.storyData.title}. ${this.storyData.story}`;
@@ -310,7 +355,6 @@ window.CreatePage = {
         
         console.log("Audio generation complete:", audioResponse);
         
-        // Handle the audio response format and ensure proper domain prefix
         let audioPath = null;
         
         if (audioResponse.filepath && audioResponse.filepath.length > 0) {
@@ -327,22 +371,45 @@ window.CreatePage = {
           alert("Audio was generated but the source format is not recognized. The audio playback may not work.");
         }
         
-        // Add domain prefix if needed
+        let fullAudioUrl = null;
         if (audioPath) {
           if (!audioPath.startsWith('http') && !audioPath.startsWith('data:')) {
-            this.audioSource = `https://fs.webdraw.com${audioPath.startsWith('/') ? '' : '/'}${audioPath}`;
+            fullAudioUrl = `https://fs.webdraw.com${audioPath.startsWith('/') ? '' : '/'}${audioPath}`;
           } else {
-            this.audioSource = audioPath;
+            fullAudioUrl = audioPath;
           }
-          console.log("Final audio source with domain:", this.audioSource);
+          console.log("Final audio source with domain:", fullAudioUrl);
+          
+          // Set permissions for the audio file immediately
+          try {
+            await this.setFilePermissions(audioPath);
+            console.log("Set permissions for audio file:", audioPath);
+          } catch (permError) {
+            console.warn("Error setting permissions for audio file:", permError);
+          }
+          
+          // Set audio source immediately but mark as loading
+          this.audioSource = fullAudioUrl;
+          this.audioLoading = true;
+          
+          // Do an initial check
+          console.log("Checking if audio file is ready...");
+          const isAudioReady = await this.checkAudioReady(fullAudioUrl, 3, 1000);
+          
+          if (isAudioReady) {
+            console.log("Audio file is confirmed ready");
+            this.audioLoading = false;
+          } else {
+            console.log("Audio file not immediately available, will continue checking in background");
+            // Start background checking
+            this.startBackgroundAudioCheck(fullAudioUrl);
+          }
         }
         
         this.taskStatus.audio = "done";
         
-        // Show result screen
         this.screen = "result";
         
-        // Save the story
         await this.saveStory();
         
       } catch (error) {
@@ -351,18 +418,91 @@ window.CreatePage = {
         this.screen = "form";
       }
     },
+    startBackgroundAudioCheck(url) {
+      // Clear any existing interval
+      if (this.audioCheckInterval) {
+        clearInterval(this.audioCheckInterval);
+      }
+      
+      let attempts = 0;
+      const maxAttempts = 30; // Check for up to 5 minutes (30 * 10 seconds)
+      
+      this.audioCheckInterval = setInterval(async () => {
+        attempts++;
+        console.log(`Background audio check attempt ${attempts}/${maxAttempts}`);
+        
+        try {
+          // Use a GET request with range headers instead of HEAD
+          const response = await fetch(url, { 
+            method: 'GET',
+            headers: {
+              'Range': 'bytes=0-1' // Just request the first 2 bytes
+            }
+          });
+          
+          if (response.ok || response.status === 206) { // 206 is Partial Content
+            console.log(`Audio file response status: ${response.status}`);
+            
+            // If we got a response, the file likely exists and is accessible
+            console.log('Audio file is now ready!');
+            
+            // Extract the path from the URL and set permissions
+            try {
+              const audioPath = url.includes(this.BASE_FS_URL) 
+                ? url.replace(this.BASE_FS_URL, '') 
+                : url;
+              
+              await this.setFilePermissions(audioPath);
+              console.log("Set permissions for audio file in background check:", audioPath);
+            } catch (permError) {
+              console.warn("Error setting permissions for audio file in background check:", permError);
+            }
+            
+            this.audioLoading = false;
+            clearInterval(this.audioCheckInterval);
+            this.audioCheckInterval = null;
+            
+            // Force audio element to reload the source
+            this.$nextTick(() => {
+              const audioPlayer = this.$refs.audioPlayer;
+              if (audioPlayer) {
+                audioPlayer.load();
+              }
+            });
+          } else {
+            console.log(`Audio file not ready yet (status: ${response.status}), will continue checking...`);
+          }
+        } catch (error) {
+          console.warn(`Error in background audio check: ${error.message}`);
+        }
+        
+        // Stop checking after max attempts
+        if (attempts >= maxAttempts) {
+          console.warn('Max background check attempts reached');
+          this.audioLoading = false;
+          clearInterval(this.audioCheckInterval);
+          this.audioCheckInterval = null;
+        }
+      }, 10000); // Check every 10 seconds
+    },
     toggleAudio() {
       const audioPlayer = this.$refs.audioPlayer;
-      if (audioPlayer) {
+      if (audioPlayer && !this.audioLoading) {
         if (this.isPlaying) {
           audioPlayer.pause();
+          this.isPlaying = false;
         } else {
           audioPlayer.play().catch(error => {
             console.error("Error playing audio:", error);
-            alert("There was an error playing the audio. Please try again.");
+            // If we get an error playing, it might be that the file isn't ready yet
+            if (error.name === 'NotSupportedError' || error.name === 'NotAllowedError') {
+              console.log("Audio playback failed, checking if file is ready...");
+              this.audioLoading = true;
+              this.startBackgroundAudioCheck(this.audioSource);
+            }
           });
+          this.isPlaying = true;
         }
-        this.isPlaying = !this.isPlaying;
       }
     },
     updateAudioProgress() {
@@ -380,8 +520,7 @@ window.CreatePage = {
       }
     },
     downloadAudio() {
-      if (this.audioSource) {
-        // Create a temporary anchor element
+      if (this.audioSource && !this.audioLoading) {
         const a = document.createElement('a');
         a.href = this.audioSource;
         a.download = `${this.storyData.title.replace(/\s+/g, '_')}.mp3`;
@@ -395,42 +534,67 @@ window.CreatePage = {
     goBack() {
       this.screen = "form";
     },
-    // Add a method to format the story text
+    async checkAudioReady(url, maxAttempts = 10, delayMs = 1000) {
+      if (!url) return false;
+      
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+          console.log(`Checking audio availability (attempt ${attempt + 1}/${maxAttempts})...`);
+          
+          // Use a GET request with range headers instead of HEAD
+          // This requests just the first few bytes of the file
+          const response = await fetch(url, { 
+            method: 'GET',
+            headers: {
+              'Range': 'bytes=0-1' // Just request the first 2 bytes
+            }
+          });
+          
+          if (response.ok || response.status === 206) { // 206 is Partial Content
+            console.log(`Audio file response status: ${response.status}`);
+            
+            // If we got a response, the file likely exists and is accessible
+            console.log('Audio file is ready!');
+            return true;
+          }
+          
+          console.log(`Audio file not ready yet (status: ${response.status}), waiting ${delayMs}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+        } catch (error) {
+          console.warn(`Error checking audio file: ${error.message}`);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+      }
+      
+      console.warn('Max attempts reached, audio file may not be fully available');
+      return false;
+    },
     formatStoryText(text) {
       if (!text) return '';
       
-      // Replace markdown headings with proper formatting
       text = text.replace(/^# (.*$)/gm, '<h1>$1</h1>');
       text = text.replace(/^## (.*$)/gm, '<h2>$1</h2>');
       text = text.replace(/^### (.*$)/gm, '<h3>$1</h3>');
       
-      // Replace markdown bold with proper formatting
       text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
       
-      // Replace markdown italic with proper formatting
       text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
       
-      // Replace markdown line breaks with proper line breaks
       text = text.replace(/\n\n/g, '\n\n');
       
       return text;
     },
-    // Add a method to create a safe folder name
     safeFolderName(name) {
       if (!name) return 'untitled';
-      // Replace invalid characters with underscores and limit length
       return name.replace(/[^a-zA-Z0-9_\-\s]/g, '_').substring(0, 100);
     },
     
-    // Add a method to generate an excerpt from the story
     generateExcerpt(story) {
       if (!story) return '';
-      // Strip HTML tags and get first 150 characters
       const plainText = story.replace(/<[^>]*>/g, '');
       return plainText.substring(0, 150) + (plainText.length > 150 ? '...' : '');
     },
     
-    // Add a method to save the story
     async saveStory() {
       if (!this.storyData || !this.storyData.title) {
         console.error("Cannot save story: No story data available");
@@ -438,132 +602,265 @@ window.CreatePage = {
       }
       
       try {
+        console.log("DEBUG: Starting saveStory method");
+        console.log("DEBUG: SDK available?", !!sdk);
+        console.log("DEBUG: SDK.fs available?", !!(sdk && sdk.fs));
+        console.log("DEBUG: SDK.fs.write available?", !!(sdk && sdk.fs && typeof sdk.fs.write === 'function'));
+        
         const timestamp = new Date().toISOString();
         const safeName = this.safeFolderName(this.storyData.title);
+        console.log("DEBUG: Safe folder name generated:", safeName);
+        
         const excerpt = this.generateExcerpt(this.storyData.story);
         
         console.log("Debug - Story image URL before processing:", this.storyImage);
         
-        // Extract filepaths from URLs
         let imageFilepath = null;
         if (this.storyImage) {
-          // Check if the URL contains the base FS URL
           if (this.storyImage.includes(this.BASE_FS_URL)) {
             imageFilepath = this.storyImage.replace(this.BASE_FS_URL, '');
             console.log("Extracted image filepath from URL:", imageFilepath);
           } else {
-            // If it doesn't contain the base URL, use the full URL
             imageFilepath = this.storyImage;
             console.log("Using full image URL as filepath:", imageFilepath);
           }
+          
+          // Set permissions for image file
+          await this.setFilePermissions(imageFilepath);
         } else {
           console.warn("No story image URL available");
         }
         
         let audioFilepath = null;
         if (this.audioSource) {
-          // Check if the URL contains the base FS URL
           if (this.audioSource.includes(this.BASE_FS_URL)) {
             audioFilepath = this.audioSource.replace(this.BASE_FS_URL, '');
             console.log("Extracted audio filepath from URL:", audioFilepath);
           } else {
-            // If it doesn't contain the base URL, use the full URL
             audioFilepath = this.audioSource;
             console.log("Using full audio URL as filepath:", audioFilepath);
           }
+          
+          // Set permissions for audio file
+          await this.setFilePermissions(audioFilepath);
         } else {
           console.warn("No audio source URL available");
         }
         
-        // Create the story object to save
         const newGeneration = {
           title: this.storyData.title,
-          coverUrl: this.storyImage || null, // Use the full image URL directly
+          coverUrl: this.storyImage || null,
           excerpt: excerpt,
           story: this.storyData.story,
-          audioUrl: this.audioSource || null, // Use the full audio URL directly
+          audioUrl: this.audioSource || null,
           createdAt: timestamp,
-          voice: this.selectedVoice
+          voice: this.selectedVoice,
+          childName: this.childName,
+          themes: this.interests
         };
         
         console.log("Story object to save:", JSON.stringify(newGeneration, null, 2));
         
-        // Check if file already exists and find a unique name
         let baseFilename = `~/AI Storyteller/${safeName}`;
         let filename = `${baseFilename}.json`;
         let counter = 1;
         
         try {
-          // Try to read the file to see if it exists
+          console.log("DEBUG: Checking if file already exists:", filename);
           while (true) {
             try {
               await sdk.fs.read(filename);
-              // If we get here, the file exists, so try a new name
+              console.log("DEBUG: File already exists, incrementing counter:", filename);
               filename = `${baseFilename}_${counter}.json`;
               counter++;
             } catch (e) {
-              // File doesn't exist, we can use this name
+              console.log("DEBUG: File does not exist, will use this filename:", filename);
               break;
             }
           }
         } catch (e) {
           console.log("Error checking for existing file:", e);
-          // If there's an error reading, we'll just try to write with the original name
+          console.log("DEBUG: Error details:", e.message, e.stack);
         }
         
-        // Write the file
         console.log("Saving story to:", filename);
-        await sdk.fs.write(filename, JSON.stringify(newGeneration, null, 2));
-        console.log("Story saved successfully!");
+        try {
+          await sdk.fs.write(filename, JSON.stringify(newGeneration, null, 2));
+          console.log("DEBUG: Write operation completed");
+          
+          // Verify the file was written
+          try {
+            const content = await sdk.fs.read(filename);
+            console.log("DEBUG: Verification - File exists and has content:", !!content);
+          } catch (verifyError) {
+            console.error("DEBUG: Verification failed - Could not read the file after writing:", verifyError);
+          }
+          
+          // Set permissions for story JSON file
+          await this.setFilePermissions(filename);
+          
+          console.log("Story saved successfully!");
+        } catch (writeError) {
+          console.error("DEBUG: Error during write operation:", writeError);
+          console.error("DEBUG: Error details:", writeError.message, writeError.stack);
+          throw writeError;
+        }
         
         return true;
       } catch (error) {
         console.error("Error saving story:", error);
+        console.error("DEBUG: Error details:", error.message, error.stack);
         alert("There was an error saving your story. Please try again.");
         return false;
       }
     },
+    
+    // Helper method to set file permissions
+    async setFilePermissions(filepath) {
+      if (!filepath) return;
+      
+      try {
+        console.log("DEBUG: Starting setFilePermissions for:", filepath);
+        // Clean up the filepath
+        let cleanPath = filepath;
+        
+        // Remove any URL prefix
+        if (cleanPath.startsWith('http')) {
+          const url = new URL(cleanPath);
+          cleanPath = url.pathname;
+          console.log("DEBUG: Removed URL prefix, now:", cleanPath);
+        }
+        
+        // Remove the leading ~ if present
+        if (cleanPath.startsWith('~')) {
+          cleanPath = cleanPath.substring(1);
+          console.log("DEBUG: Removed leading ~, now:", cleanPath);
+        }
+        
+        // Ensure the path doesn't start with double slashes
+        while (cleanPath.startsWith('//')) {
+          cleanPath = cleanPath.substring(1);
+          console.log("DEBUG: Removed extra slash, now:", cleanPath);
+        }
+        
+        console.log(`Setting permissions for: ${cleanPath}`);
+        console.log("DEBUG: SDK.fs.chmod available?", !!(sdk && sdk.fs && typeof sdk.fs.chmod === 'function'));
+        
+        try {
+          await sdk.fs.chmod(cleanPath, 0o444);
+          console.log(`Successfully set read-only permissions for: ${cleanPath}`);
+        } catch (chmodError) {
+          console.warn(`Could not set file permissions with chmod for ${cleanPath}:`, chmodError);
+          console.log("DEBUG: Error details:", chmodError.message, chmodError.stack);
+          
+          // Try alternative approach if chmod fails
+          try {
+            if (typeof sdk.fs.setPermissions === 'function') {
+              console.log("DEBUG: Trying alternative setPermissions method");
+              await sdk.fs.setPermissions(cleanPath, { readable: true, writable: false, executable: false });
+              console.log(`Successfully set permissions using alternative method for: ${cleanPath}`);
+            }
+          } catch (altError) {
+            console.warn("Alternative permission setting also failed:", altError);
+          }
+        }
+      } catch (error) {
+        console.warn(`Could not set file permissions for ${filepath}:`, error);
+        console.log("DEBUG: Error details:", error.message, error.stack);
+      }
+    },
+    handleAudioError(event) {
+      console.error('Audio error:', event);
+      // If we get an error, it might be that the file isn't ready yet or has permission issues
+      if (this.audioSource) {
+        console.log("Audio error occurred, attempting to fix permissions and start background check...");
+        
+        // Try to set permissions for the audio file
+        try {
+          const audioPath = this.audioSource.includes(this.BASE_FS_URL) 
+            ? this.audioSource.replace(this.BASE_FS_URL, '') 
+            : this.audioSource;
+          
+          this.setFilePermissions(audioPath)
+            .then(() => {
+              console.log("Set permissions for audio file after error:", audioPath);
+              
+              // Reload the audio element
+              this.$nextTick(() => {
+                const audioPlayer = this.$refs.audioPlayer;
+                if (audioPlayer) {
+                  audioPlayer.load();
+                }
+              });
+            })
+            .catch(permError => {
+              console.warn("Error setting permissions for audio file after error:", permError);
+            });
+        } catch (error) {
+          console.warn("Error processing audio path for permissions:", error);
+        }
+        
+        // Start background check
+        this.audioLoading = true;
+        this.startBackgroundAudioCheck(this.audioSource);
+      }
+    },
+    handleAudioReady(event) {
+      console.log('Audio canplaythrough event:', event);
+      this.audioLoading = false;
+    },
   },
   template: `
     <div class="min-h-screen" style="background-color: #FFF9F6;">
-      <!-- Back Button (visible in loading and result screens) -->
+      <nav class="bg-white shadow-md py-4 px-4 sm:px-6 flex items-center justify-between">
+        <div class="flex items-center space-x-1 sm:space-x-4 overflow-x-auto whitespace-nowrap">
+          <router-link to="/" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base">
+            {{ $t('ui.home') }}
+          </router-link>
+          <router-link to="/create" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg bg-[#E0F2FE] text-[#0284C7] font-medium text-sm sm:text-base">
+            {{ $t('ui.new') }}
+          </router-link>
+          <router-link to="/my-stories" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base">
+            {{ $t('ui.myStories') }}
+          </router-link>
+        </div>
+        <language-switcher></language-switcher>
+      </nav>
+      
       <button
         v-if="screen === 'loading' || screen === 'result'"
         @click="goBack"
-        class="fixed top-4 left-4 bg-sky-600 hover:bg-sky-500 text-white px-6 py-2 rounded-full shadow-lg transition-all duration-300 z-50 flex items-center gap-2"
+        class="fixed top-20 left-4 bg-sky-600 hover:bg-sky-500 text-white px-6 py-2 rounded-full shadow-lg transition-all duration-300 z-50 flex items-center gap-2"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>
-        Back
+        {{ $t('ui.back') }}
       </button>
 
-      <!-- Form and Loading Screens -->
-      <div v-if="screen === 'form' || screen === 'loading'" class="max-w-3xl mx-auto w-full px-4 py-16">
-        <!-- Loading State -->
+      <div v-if="screen === 'form' || screen === 'loading'" class="max-w-3xl mx-auto w-full px-4 pt-6 pb-16">
         <template v-if="screen === 'loading'">
           <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-12 mb-8 border-4 border-gray-300 min-h-[250px]">
             <div class="space-y-4">
-              <!-- Status of each task -->
               <div class="flex items-center gap-4" v-for="(status, task) in taskStatus" :key="task">
                 <div class="w-8 h-8 flex-shrink-0">
-                  <!-- Spinner -->
                   <svg v-if="status === 'loading'" class="animate-spin" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  <!-- Check -->
                   <svg v-else-if="status === 'done'" class="text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <!-- Error -->
                   <svg v-else-if="status === 'error'" class="text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </div>
                 <div class="flex-1 flex items-center justify-between gap-2">
                   <span class="text-lg capitalize whitespace-nowrap">
-                    {{ task === 'plot' ? 'Creating Plot' : task === 'story' ? 'Writing Story' : task === 'image' ? 'Creating Illustration' : 'Generating Narration' }}
+                    {{ task === 'plot' ? $t('create.generatingPlot') : 
+                       task === 'story' ? $t('create.generatingStory') : 
+                       task === 'image' ? $t('create.generatingImage') : 
+                       $t('create.generatingAudio') }}
                   </span>
                   <span v-if="task === 'story' && streamingText" class="text-sm text-gray-500 italic truncate max-w-md">
                     "...{{ streamingText.slice(-50) }}"
@@ -572,10 +869,7 @@ window.CreatePage = {
                     "{{ storyData.title }}"
                   </span>
                   <span v-else-if="task === 'image' && taskStatus.image === 'done'" class="text-sm text-gray-500 italic">
-                    "Image created successfully"
-                  </span>
-                  <span v-else-if="task === 'audio' && taskStatus.audio === 'done'" class="text-sm text-gray-500 italic">
-                    "Audio narration ready"
+                    "{{ $t('create.imageCreated') }}"
                   </span>
                 </div>
               </div>
@@ -583,31 +877,27 @@ window.CreatePage = {
           </div>
         </template>
 
-        <!-- Form State -->
         <template v-else>
           <div class="rounded-2xl p-8">
-            <h2 class="text-3xl font-semibold text-[#00B7EA] mb-8 text-center">Create Your Story</h2>
+            <h2 class="text-3xl font-semibold text-[#00B7EA] mb-8 text-center">{{ $t('create.title') }}</h2>
             <div class="space-y-8">
-              <!-- Child's Name -->
               <div class="space-y-3">
-                <label class="block text-lg font-medium text-gray-700">Child's Name:</label>
-                <input type="text" placeholder="Name" v-model="childName" :disabled="screen === 'loading'" class="w-full px-6 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white text-lg" />
+                <label class="block text-lg font-medium text-gray-700">{{ $t('create.nameLabel') }}:</label>
+                <input type="text" :placeholder="$t('create.namePlaceholder')" v-model="childName" :disabled="screen === 'loading'" class="w-full px-6 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white text-lg" />
               </div>
 
-              <!-- Themes -->
               <div class="space-y-3">
-                <label class="block text-lg font-medium text-gray-700">Themes</label>
+                <label class="block text-lg font-medium text-gray-700">{{ $t('create.interestsLabel') }}</label>
                 <div class="relative border border-gray-200 rounded-xl">
-                  <textarea placeholder="Type your ideas or select the tags below..." v-model="interests" rows="2" :disabled="screen === 'loading'" class="w-full px-6 py-3 border-0 rounded-xl focus:ring-2 focus:ring-sky-500 resize-none text-lg"></textarea>
+                  <textarea :placeholder="$t('create.interestsPlaceholder')" v-model="interests" rows="2" :disabled="screen === 'loading'" class="w-full px-6 py-3 border-0 rounded-xl focus:ring-2 focus:ring-sky-500 resize-none text-lg"></textarea>
                   <button type="button" @click="randomTheme" class="absolute right-4 bottom-4 bg-[#008CBD] text-white px-3 py-2 rounded-full text-xs flex items-center gap-1">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                       <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
                     </svg>
-                    Random Theme
+                    {{ $t('create.randomTheme') }}
                   </button>
                 </div>
 
-                <!-- Theme Tags -->
                 <div class="flex flex-wrap gap-3 mt-4">
                   <span class="bg-[#22C55E] text-white px-3 py-1 rounded-full text-xs cursor-pointer" @click="addInterest('Rockets')">Rockets</span>
                   <span class="bg-[#00B7EA] text-white px-3 py-1 rounded-full text-xs cursor-pointer" @click="addInterest('Pirates')">Pirates</span>
@@ -618,9 +908,8 @@ window.CreatePage = {
                 </div>
               </div>
 
-              <!-- Voice Selection -->
               <div class="space-y-3">
-                <label class="block text-lg font-medium text-gray-700">Voice</label>
+                <label class="block text-lg font-medium text-gray-700">{{ $t('create.voiceLabel') }}</label>
                 <div class="border border-gray-200 rounded-xl overflow-hidden">
                   <div 
                     v-for="voice in voices" 
@@ -651,37 +940,40 @@ window.CreatePage = {
                 </div>
               </div>
 
-              <!-- Create Story Button -->
               <button @click="generateStory" :disabled="screen === 'loading'" class="w-full px-8 py-4 bg-gradient-to-b from-[#38BDF8] to-[#0284C7] text-white rounded-full flex items-center justify-center gap-3 hover:bg-sky-700 transition-all duration-200 text-xl font-medium mt-8 border border-[#0369A1]">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
                 </svg>
-                Create new story!
+                {{ $t('create.createButton') }}
               </button>
             </div>
           </div>
         </template>
       </div>
 
-      <!-- Result Screen -->
-      <div v-if="screen === 'result'" class="max-w-3xl mx-auto py-16">
+      <div v-if="screen === 'result'" class="max-w-3xl mx-auto pt-6 pb-16 px-4">
         <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 border-4 border-gray-300">
           <div class="space-y-6 mb-6">
-            <!-- Story Illustration -->
             <img v-if="storyImage" :src="storyImage" alt="Magic Illustration" class="w-full rounded-xl border-4 border-gray-200 shadow-lg" />
           </div>
 
-          <!-- Audio Controls -->
           <div class="audio-controls mb-8 space-y-4" v-if="audioSource">
             <div class="flex items-center gap-4">
-              <button @click="toggleAudio" class="p-2 rounded-full bg-gray-400 hover:bg-gray-500 text-white">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <button @click="toggleAudio" class="p-2 rounded-full bg-gray-400 hover:bg-gray-500 text-white" :disabled="audioLoading">
+                <svg v-if="audioLoading" class="w-6 h-6 animate-spin" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path v-if="!isPlaying" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                   <path v-if="isPlaying" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </button>
-              <input type="range" v-model="audioProgress" @input="seekAudio" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" min="0" max="100" />
-              <a @click="downloadAudio" class="p-2 text-sky-500 hover:text-sky-800 cursor-pointer" title="Download">
+              <div class="w-full flex items-center gap-2">
+                <input type="range" v-model="audioProgress" @input="seekAudio" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" min="0" max="100" :disabled="audioLoading" />
+                <span v-if="audioLoading" class="text-xs text-gray-500 animate-pulse">{{ $t('ui.loading') || 'Loading...' }}</span>
+              </div>
+              <a @click="downloadAudio" class="p-2 text-sky-500 hover:text-sky-800 cursor-pointer" :title="$t('ui.download')" :class="{ 'opacity-50 cursor-not-allowed': audioLoading }" :disabled="audioLoading">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
@@ -689,28 +981,29 @@ window.CreatePage = {
             </div>
           </div>
 
-          <!-- Story Text -->
           <div v-if="storyData" class="prose-lg text-gray-700 space-y-4">
             <h2 class="text-3xl font-bold text-sky-500 mb-6">{{ storyData.title }}</h2>
             <div class="space-y-6 whitespace-pre-line" v-html="storyData.story"></div>
           </div>
 
-          <!-- Link to My Stories -->
           <div class="mt-8 text-center">
-            <a href="/my-stories.html" class="inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group">
-              <span class="font-semibold">See all your stories</span>
+            <router-link to="/my-stories" class="inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group">
+              <span class="font-semibold">{{ $t('myStories.pageTitle') }}</span>
               <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
               </svg>
-            </a>
+            </router-link>
           </div>
         </div>
       </div>
 
-      <!-- Hidden Audio Element -->
-      <audio ref="audioPlayer" @error="console.error('Audio error:', $event)">
+      <audio 
+        ref="audioPlayer" 
+        @error="handleAudioError" 
+        @canplaythrough="handleAudioReady"
+      >
         <source v-if="audioSource" :src="audioSource" type="audio/mpeg" />
-        Your browser does not support the audio element.
+        {{ $t('ui.audioNotSupported') }}
       </audio>
     </div>
   `

@@ -1,21 +1,34 @@
 window.LoginPage = {
     template: `
-        <div class="min-h-screen p-6">
-            <nav class="mb-8">
-                <router-link to="/" class="text-blue-600 hover:text-blue-800">&larr; Back to Home</router-link>
+        <div class="min-h-screen bg-[#FFF9F6]">
+            <!-- Navigation -->
+            <nav class="bg-white shadow-md py-4 px-4 sm:px-6 flex items-center justify-between">
+                <div class="flex items-center space-x-1 sm:space-x-4 overflow-x-auto whitespace-nowrap">
+                    <router-link to="/" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base">
+                        {{ $t('ui.home') }}
+                    </router-link>
+                    <router-link to="/create" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base">
+                        {{ $t('ui.new') }}
+                    </router-link>
+                    <router-link to="/my-stories" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base">
+                        {{ $t('ui.myStories') }}
+                    </router-link>
+                </div>
+                <language-switcher></language-switcher>
             </nav>
-            <main class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
-                <h2 class="text-2xl font-semibold mb-6 text-center">Login</h2>
+            
+            <main class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md mt-8">
+                <h2 class="text-2xl font-semibold mb-6 text-center">{{ $t('login.title') }}</h2>
                 <form class="space-y-4" @submit.prevent>
                     <div>
-                        <label class="block text-gray-700 mb-2">Email</label>
-                        <input type="email" class="w-full p-2 border rounded-lg" placeholder="Enter your email">
+                        <label class="block text-gray-700 mb-2">{{ $t('login.email') }}</label>
+                        <input type="email" class="w-full p-2 border rounded-lg" :placeholder="$t('login.emailPlaceholder')">
                     </div>
                     <div>
-                        <label class="block text-gray-700 mb-2">Password</label>
-                        <input type="password" class="w-full p-2 border rounded-lg" placeholder="Enter your password">
+                        <label class="block text-gray-700 mb-2">{{ $t('login.password') }}</label>
+                        <input type="password" class="w-full p-2 border rounded-lg" :placeholder="$t('login.passwordPlaceholder')">
                     </div>
-                    <button class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">Login</button>
+                    <button class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">{{ $t('login.loginButton') }}</button>
                 </form>
             </main>
         </div>

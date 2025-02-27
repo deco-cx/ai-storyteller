@@ -1,29 +1,32 @@
-import { SDK } from "https://webdraw.com/webdraw-sdk@v1";
-
-// Initialize the SDK
-const sdk = SDK;
+import { sdk } from "../sdk.js";
 
 window.MyStoriesPage = {
     template: `
         <div class="min-h-screen bg-[#FFF9F6]">
             <!-- Navigation -->
-            <nav class="flex justify-center items-center px-6 py-4 bg-white/80 backdrop-blur-sm border-b border-sky-100">
-                <div class="flex items-center gap-3">
-                    <img src="https://webdraw.com/image-optimize?src=https%3A%2F%2Fai-storyteller.webdraw.app%2F.webdraw%2Fassets%2Ficon-b8a9e1bd-cf34-46f5-8f72-a98c365e9b09.png&width=80&height=80&fit=cover" 
-                         alt="AI Storyteller Logo" 
-                         class="w-10 h-10 rounded-xl object-cover" />
-                    <h1 class="text-2xl font-medium text-[#006D95]">AI Storyteller</h1>
+            <nav class="bg-white shadow-md py-4 px-4 sm:px-6 flex items-center justify-between">
+                <div class="flex items-center space-x-1 sm:space-x-4 overflow-x-auto whitespace-nowrap">
+                    <router-link to="/" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base">
+                        {{ $t('ui.home') }}
+                    </router-link>
+                    <router-link to="/create" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base">
+                        {{ $t('ui.new') }}
+                    </router-link>
+                    <router-link to="/my-stories" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg bg-[#E0F2FE] text-[#0284C7] font-medium text-sm sm:text-base">
+                        {{ $t('ui.myStories') }}
+                    </router-link>
                 </div>
+                <language-switcher></language-switcher>
             </nav>
 
             <!-- Main Content -->
             <main class="max-w-6xl mx-auto px-6 py-12">
                 <!-- Header with Title and New Story Button -->
                 <div class="flex justify-between items-center mb-8">
-                    <h2 class="text-3xl font-semibold text-[#00B7EA]">{{ texts.pageTitle }}</h2>
+                    <h2 class="text-3xl font-semibold text-[#00B7EA]">{{ $t('myStories.pageTitle') }}</h2>
                     <button @click="goToNewStory" class="bg-gradient-to-b from-[#38BDF8] to-[#0284C7] text-white px-5 py-2.5 rounded-full hover:from-[#0284C7] hover:to-[#0284C7] border border-[#0369A1] font-medium flex items-center gap-2">
                         <i class="fa-solid fa-plus"></i>
-                        {{ texts.newStoryButton }}
+                        {{ $t('myStories.newStoryButton') }}
                     </button>
                 </div>
                 
@@ -33,7 +36,7 @@ window.MyStoriesPage = {
                         <input 
                             v-model="searchQuery"
                             type="text" 
-                            :placeholder="texts.searchPlaceholder"
+                            :placeholder="$t('myStories.searchPlaceholder')"
                             class="w-full px-4 py-3 rounded-lg border border-sky-200 focus:outline-none focus:ring-2 focus:ring-[#38BDF8] pl-10"
                         />
                         <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
@@ -54,19 +57,19 @@ window.MyStoriesPage = {
 
                 <!-- No Stories State -->
                 <div v-else-if="generations.length === 0" class="bg-[#E0F2FE] border border-[#BAE6FD] rounded-xl p-12 text-center">
-                    <div class="text-[#0284C7] text-xl mb-4">{{ texts.noStoriesText }}</div>
+                    <div class="text-[#0284C7] text-xl mb-4">{{ $t('myStories.noStoriesText') }}</div>
                     <button @click="goToNewStory" class="bg-gradient-to-b from-[#38BDF8] to-[#0284C7] text-white px-6 py-3 rounded-full hover:from-[#0284C7] hover:to-[#0284C7] border border-[#0369A1] font-medium flex items-center gap-2 mx-auto">
                         <i class="fa-solid fa-book-open"></i>
-                        {{ texts.createFirstText }}
+                        {{ $t('myStories.createFirstText') }}
                     </button>
                 </div>
                 
                 <!-- No Search Results -->
                 <div v-else-if="filteredGenerations.length === 0" class="bg-[#E0F2FE] border border-[#BAE6FD] rounded-xl p-12 text-center">
-                    <div class="text-[#0284C7] text-xl mb-4">{{ texts.noSearchResults }}</div>
+                    <div class="text-[#0284C7] text-xl mb-4">{{ $t('myStories.noSearchResults') }}</div>
                     <button @click="searchQuery = ''" class="bg-gradient-to-b from-[#38BDF8] to-[#0284C7] text-white px-6 py-3 rounded-full hover:from-[#0284C7] hover:to-[#0284C7] border border-[#0369A1] font-medium flex items-center gap-2 mx-auto">
                         <i class="fa-solid fa-arrow-rotate-left"></i>
-                        Show All Stories
+                        {{ $t('ui.back') }}
                     </button>
                 </div>
 
@@ -109,14 +112,7 @@ window.MyStoriesPage = {
             generations: [],
             loading: true,
             searchQuery: "",
-            texts: {
-                pageTitle: "My Stories",
-                newStoryButton: "New Story",
-                noStoriesText: "You haven't created any stories yet.",
-                createFirstText: "Create your first story!",
-                searchPlaceholder: "Search stories...",
-                noSearchResults: "No stories found matching your search."
-            },
+            BASE_FS_URL: "https://fs.webdraw.com",
             // Fallback data when SDK.fs is not available
             fallbackGenerations: {
                 generations: [
@@ -180,23 +176,24 @@ window.MyStoriesPage = {
                 let storyFiles = [];
                 let stories = [];
                 
-                // Check if running on localhost
-                const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                // Remove the localhost check
+                console.log("DEBUG: Starting loadGenerations method");
+                console.log("DEBUG: SDK available?", !!sdk);
+                console.log("DEBUG: SDK.fs available?", !!(sdk && sdk.fs));
+                console.log("DEBUG: SDK.fs.read available?", !!(sdk && sdk.fs && typeof sdk.fs.read === 'function'));
+                console.log("DEBUG: SDK.fs.list available?", !!(sdk && sdk.fs && typeof sdk.fs.list === 'function'));
                 
-                // Use fallback data if on localhost or if SDK.fs is not available
-                if (isLocalhost) {
-                    console.log("Running on localhost, using fallback data");
-                    this.generations = this.fallbackGenerations.generations
-                        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-                } else if (sdk && typeof sdk.fs?.read === 'function') {
+                if (sdk && typeof sdk.fs?.read === 'function') {
                     try {
                         // First try the old way - reading from generations.json
                         console.log("Trying to read from generations.json...");
                         const content = await sdk.fs.read("~/AI Storyteller/generations.json");
+                        console.log("DEBUG: Content from generations.json:", content ? "Content exists" : "No content");
                         const data = JSON.parse(content);
                         
                         if (data && data.generations && Array.isArray(data.generations)) {
                             console.log("Successfully read from generations.json");
+                            console.log("DEBUG: Number of stories in generations.json:", data.generations.length);
                             stories = data.generations.map((gen) => ({
                                 ...gen,
                                 story: gen.story || (gen.chapters ? gen.chapters.map(ch => ch.story).join("\n\n") : ""),
@@ -211,53 +208,66 @@ window.MyStoriesPage = {
                         try {
                             console.log("Trying to read individual story files...");
                             // List all files in the AI Storyteller directory
+                            console.log("DEBUG: About to call sdk.fs.list");
                             const files = await sdk.fs.list("~/AI Storyteller");
-                            console.log("Files returned by sdk.fs.list:", files);
+                            console.log("DEBUG: Files returned by sdk.fs.list:", files);
                             
-                            // Check if files is an array of strings (full paths)
-                            if (Array.isArray(files) && files.length > 0 && typeof files[0] === 'string') {
-                                console.log("Files are strings (full paths)");
+                            // Process the files based on the format returned
+                            if (Array.isArray(files)) {
+                                console.log("Files is an array with length:", files.length);
                                 
                                 // Filter for JSON files (excluding generations.json)
-                                storyFiles = files.filter(filePath => {
-                                    // Extract the filename from the path
-                                    const parts = filePath.split('/');
-                                    const filename = parts[parts.length - 1];
-                                    
-                                    console.log("Checking file:", filename);
-                                    
-                                    return filename.endsWith('.json') && filename !== 'generations.json';
+                                storyFiles = files.filter(file => {
+                                    if (typeof file === 'string') {
+                                        // If file is a string (full path)
+                                        const parts = file.split('/');
+                                        const filename = parts[parts.length - 1];
+                                        return filename.endsWith('.json') && filename !== 'generations.json';
+                                    } else if (file && typeof file === 'object') {
+                                        // If file is an object with name property
+                                        if (file.name && typeof file.name === 'string') {
+                                            return file.name.endsWith('.json') && file.name !== 'generations.json';
+                                        }
+                                        // If file is an object with path property
+                                        if (file.path && typeof file.path === 'string') {
+                                            const parts = file.path.split('/');
+                                            const filename = parts[parts.length - 1];
+                                            return filename.endsWith('.json') && filename !== 'generations.json';
+                                        }
+                                    }
+                                    return false;
                                 });
-                            } else if (!Array.isArray(files)) {
-                                console.log("Files is not an array, it's a:", typeof files);
-                                // If it's not an array, try to convert it to one if possible
-                                const filesArray = files && typeof files === 'object' ? 
-                                    Object.values(files) : 
-                                    [];
-                                console.log("Converted to array:", filesArray);
+                            } else if (files && typeof files === 'object') {
+                                console.log("Files is an object, trying to convert to array");
+                                // If it's not an array but an object, try to convert it
+                                const filesArray = Object.values(files);
+                                console.log("Converted to array with length:", filesArray.length);
                                 
                                 // Filter for JSON files (excluding generations.json)
-                                storyFiles = filesArray.filter(file => 
-                                    file && 
-                                    typeof file === 'object' && 
-                                    file.name && 
-                                    typeof file.name === 'string' &&
-                                    file.name.endsWith('.json') && 
-                                    file.name !== 'generations.json'
-                                );
-                            } else {
-                                // Filter for JSON files (excluding generations.json)
-                                storyFiles = files.filter(file => 
-                                    file && 
-                                    typeof file === 'object' && 
-                                    file.name && 
-                                    typeof file.name === 'string' &&
-                                    file.name.endsWith('.json') && 
-                                    file.name !== 'generations.json'
-                                );
+                                storyFiles = filesArray.filter(file => {
+                                    if (typeof file === 'string') {
+                                        // If file is a string (full path)
+                                        const parts = file.split('/');
+                                        const filename = parts[parts.length - 1];
+                                        return filename.endsWith('.json') && filename !== 'generations.json';
+                                    } else if (file && typeof file === 'object') {
+                                        // If file is an object with name property
+                                        if (file.name && typeof file.name === 'string') {
+                                            return file.name.endsWith('.json') && file.name !== 'generations.json';
+                                        }
+                                        // If file is an object with path property
+                                        if (file.path && typeof file.path === 'string') {
+                                            const parts = file.path.split('/');
+                                            const filename = parts[parts.length - 1];
+                                            return filename.endsWith('.json') && filename !== 'generations.json';
+                                        }
+                                    }
+                                    return false;
+                                });
                             }
+                            
                             console.log("Found individual story files:", storyFiles.length);
-                            console.log("Story files:", storyFiles);
+                            console.log("DEBUG: Story files:", JSON.stringify(storyFiles));
                             
                             // Read each story file
                             const individualStories = [];
@@ -268,10 +278,15 @@ window.MyStoriesPage = {
                                     if (typeof file === 'string') {
                                         // If file is already a full path
                                         filePath = file;
-                                    } else if (file && typeof file === 'object' && file.name) {
-                                        filePath = `~/AI Storyteller/${file.name}`;
-                                    } else if (file && typeof file === 'object' && file.path) {
-                                        filePath = file.path;
+                                    } else if (file && typeof file === 'object') {
+                                        if (file.name) {
+                                            filePath = `~/AI Storyteller/${file.name}`;
+                                        } else if (file.path) {
+                                            filePath = file.path;
+                                        } else {
+                                            console.log("Skipping file with invalid format:", file);
+                                            continue;
+                                        }
                                     } else {
                                         console.log("Skipping file with invalid format:", file);
                                         continue;
@@ -290,6 +305,8 @@ window.MyStoriesPage = {
                                     let storyData;
                                     try {
                                         storyData = JSON.parse(content);
+                                        console.log("DEBUG: Successfully parsed JSON for file:", filePath);
+                                        console.log("DEBUG: Story title:", storyData.title);
                                     } catch (parseError) {
                                         console.error(`Error parsing JSON for file ${filePath}:`, parseError);
                                         continue;
@@ -320,12 +337,14 @@ window.MyStoriesPage = {
                                     });
                                 } catch (error) {
                                     console.error(`Error reading story file:`, error);
+                                    console.log("DEBUG: Error details:", error.message, error.stack);
                                 }
                             }
                             
                             // Combine stories from both sources, avoiding duplicates
                             if (individualStories.length > 0) {
                                 console.log("Successfully read individual story files");
+                                console.log("DEBUG: Number of individual stories found:", individualStories.length);
                                 
                                 // If we have stories from both sources, merge them
                                 if (stories.length > 0) {
@@ -357,12 +376,15 @@ window.MyStoriesPage = {
                             }
                         } catch (error) {
                             console.error("Error reading individual story files:", error);
+                            console.log("DEBUG: Error details:", error.message, error.stack);
                             // If we couldn't read individual files but have stories from generations.json, use those
                             if (stories.length === 0) {
                                 console.log("Falling back to fallback data");
                                 stories = this.fallbackGenerations.generations;
                             }
                         }
+                    } else {
+                        console.log("DEBUG: sdk.fs.list is not a function");
                     }
                     
                     // If we still have no stories, use fallback data
@@ -382,6 +404,7 @@ window.MyStoriesPage = {
                 }
             } catch (error) {
                 console.error("Error loading stories:", error);
+                console.log("DEBUG: Error details:", error.message, error.stack);
                 this.generations = [];
             } finally {
                 this.loading = false;
@@ -412,8 +435,35 @@ window.MyStoriesPage = {
             });
         },
         viewStory(story) {
-            localStorage.setItem("currentStory", JSON.stringify(story));
-            window.location.href = "/?view=story";
+            // Check if the story has a direct file path
+            if (story._filePath) {
+                console.log("Story has a direct file path:", story._filePath);
+                
+                // Navigate to the story page with the file parameter using Vue Router
+                this.$router.push({
+                    path: '/story',
+                    query: { file: story._filePath }
+                });
+            } else {
+                console.log("Story does not have a direct file path, using index approach");
+                
+                // For legacy stories stored in generations.json, use the index approach
+                // Store the index in localStorage for backward compatibility
+                localStorage.setItem("currentStory", JSON.stringify(story));
+                
+                // Find the index of the story in the generations array
+                const index = this.generations.indexOf(story);
+                console.log("Story index in generations array:", index);
+                
+                // Navigate to the story page with generations.json and index parameter using Vue Router
+                this.$router.push({
+                    path: '/story',
+                    query: { 
+                        file: "~/AI Storyteller/generations.json",
+                        index: index 
+                    }
+                });
+            }
         },
         deleteStory(index) {
             if (confirm("Are you sure you want to delete this story?")) {
@@ -510,6 +560,16 @@ window.MyStoriesPage = {
                 
                 // Write back to the file
                 await sdk.fs.write("~/AI Storyteller/generations.json", JSON.stringify(data, null, 2));
+                
+                // Set file permissions to read-only (0444 in octal)
+                try {
+                    await sdk.fs.chmod("~/AI Storyteller/generations.json", 0o444);
+                    console.log("Set read-only permissions for generations.json");
+                } catch (permError) {
+                    console.warn("Could not set file permissions for generations.json:", permError);
+                    // Continue even if setting permissions fails
+                }
+                
                 console.log("generations.json updated successfully");
             } catch (error) {
                 console.log("Could not update generations.json:", error);
@@ -524,7 +584,7 @@ window.MyStoriesPage = {
                 .replace(/^_+|_+$/g, '');
         },
         goToNewStory() {
-            // Use Vue Router to navigate to the create page
+            // Navigate to the create page using Vue Router
             this.$router.push('/create');
         }
     }
