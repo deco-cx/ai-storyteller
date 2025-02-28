@@ -32,7 +32,8 @@ const translations = {
       audioNotSupported: "Your browser does not support the audio element.",
       home: "Home",
       new: "New",
-      myStories: "My Stories"
+      myStories: "My Stories",
+      admin: "Admin"
     },
     
     // Login page
@@ -236,8 +237,9 @@ const translations = {
       copyLink: "Copie este link para compartilhar a história:",
       audioNotSupported: "Seu navegador não suporta o elemento de áudio.",
       home: "Início",
-      new: "Novo",
-      myStories: "Minhas Histórias"
+      new: "Nova",
+      myStories: "Minhas Histórias",
+      admin: "Admin"
     },
     
     // Login page

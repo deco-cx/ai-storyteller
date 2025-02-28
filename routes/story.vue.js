@@ -251,7 +251,7 @@ window.StoryPage = {
                 this.story = {
                     ...storyData,
                     // Ensure all required fields exist
-                    title: storyData.title || "Untitled Story",
+                    title: storyData.title || this.$t('story.untitledStory'),
                     story: this.formatStoryText(storyData.story || (storyData.chapters ? storyData.chapters.map(ch => ch.story).join("\n\n") : this.$t('story.noStoryContent'))),
                     coverUrl: storyData.coverUrl || "https://webdraw.com/image-optimize?src=https%3A%2F%2Fai-storyteller.webdraw.app%2F.webdraw%2Fassets%2Ficon-b8a9e1bd-cf34-46f5-8f72-a98c365e9b09.png&width=200&height=200&fit=cover",
                     audioUrl: storyData.audioUrl || null
@@ -266,6 +266,9 @@ window.StoryPage = {
                     this.story.audioUrl = `${this.BASE_FS_URL}${this.story.audioUrl.startsWith('/') ? '' : '/'}${this.story.audioUrl}`;
                 }
                 
+                // Fix permissions for media files
+                await this.fixMediaPermissions();
+                
                 this.loading = false;
                 
                 // Initialize audio player
@@ -276,8 +279,71 @@ window.StoryPage = {
                 });
             } catch (error) {
                 console.error("Error loading story:", error);
-                this.error = `Failed to load story: ${error.message}`;
+                this.error = `${this.$t('story.errorLoading')}: ${error.message}`;
                 this.loading = false;
+            }
+        },
+        
+        // Fix permissions for media files
+        async fixMediaPermissions() {
+            try {
+                // Fix permissions for cover image
+                if (this.story.coverUrl) {
+                    await this.fixFilePermissions(this.story.coverUrl);
+                }
+                
+                // Fix permissions for audio file
+                if (this.story.audioUrl) {
+                    await this.fixFilePermissions(this.story.audioUrl);
+                }
+            } catch (error) {
+                console.warn("Error fixing media permissions:", error);
+            }
+        },
+        
+        // Helper method to fix permissions for a file
+        async fixFilePermissions(fileUrl) {
+            if (!fileUrl || fileUrl.startsWith('data:')) return;
+            
+            try {
+                // Extract the file path from the URL
+                let filePath = fileUrl;
+                
+                // If it's a full URL, extract the path
+                if (filePath.startsWith('http')) {
+                    try {
+                        const url = new URL(fileUrl);
+                        filePath = url.pathname;
+                    } catch (e) {
+                        console.warn("Could not parse URL:", fileUrl);
+                        return;
+                    }
+                }
+                
+                // Remove the leading ~ if present
+                if (filePath.startsWith('~')) {
+                    filePath = filePath.substring(1);
+                }
+                
+                // Ensure the path doesn't start with double slashes
+                while (filePath.startsWith('//')) {
+                    filePath = filePath.substring(1);
+                }
+                
+                console.log(`Setting permissions for media file: ${filePath}`);
+                
+                // Use 0o644 (rw-r--r--) to ensure web server can access the files
+                if (sdk && typeof sdk.fs?.chmod === 'function') {
+                    await sdk.fs.chmod(filePath, 0o644);
+                    console.log(`Successfully set permissions (0o644) for media file: ${filePath}`);
+                } else if (sdk && typeof sdk.fs?.setPermissions === 'function') {
+                    await sdk.fs.setPermissions(filePath, { readable: true, writable: true, executable: false });
+                    console.log(`Successfully set permissions using alternative method for media file: ${filePath}`);
+                } else {
+                    console.warn("No permission setting method available");
+                }
+            } catch (error) {
+                console.warn(`Could not set file permissions for ${fileUrl}:`, error);
             }
         },
         toggleAudio() {

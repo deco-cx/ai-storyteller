@@ -16,6 +16,36 @@ window.i18n = i18n;
 // Make translations available globally
 window.i18n.translations = translations;
 
+// Load custom translations if available
+(async function loadCustomTranslations() {
+  try {
+    if (sdk && typeof sdk.fs?.read === 'function') {
+      const translatorPath = "~/AI Storyteller/translations.js";
+      try {
+        const content = await sdk.fs.read(translatorPath);
+        if (content) {
+          // Parse the content to get the translations object
+          const match = content.match(/const\s+translations\s*=\s*({[\s\S]*?});/);
+          if (match && match[1]) {
+            try {
+              const customTranslations = JSON.parse(match[1]);
+              console.log("Loaded custom translations from ~/AI Storyteller/translations.js");
+              // Override default translations with custom translations
+              window.i18n.translations = customTranslations;
+            } catch (parseError) {
+              console.error("Error parsing custom translations:", parseError);
+            }
+          }
+        }
+      } catch (readError) {
+        console.log("No custom translations file found, using default translations");
+      }
+    }
+  } catch (error) {
+    console.error("Error loading custom translations:", error);
+  }
+})();
+
 // Make SDK available globally
 window.sdk = sdk;
 

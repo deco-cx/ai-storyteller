@@ -781,8 +781,9 @@ window.CreatePage = {
         console.log("DEBUG: SDK.fs.chmod available?", !!(sdk && sdk.fs && typeof sdk.fs.chmod === 'function'));
         
         try {
-          await sdk.fs.chmod(cleanPath, 0o444);
-          console.log(`Successfully set read-only permissions for: ${cleanPath}`);
+          // Use 0o644 (rw-r--r--) instead of 0o444 (r--r--r--) to ensure web server can access the files
+          await sdk.fs.chmod(cleanPath, 0o644);
+          console.log(`Successfully set permissions (0o644) for: ${cleanPath}`);
         } catch (chmodError) {
           console.warn(`Could not set file permissions with chmod for ${cleanPath}:`, chmodError);
           console.log("DEBUG: Error details:", chmodError.message, chmodError.stack);
@@ -791,7 +792,7 @@ window.CreatePage = {
           try {
             if (typeof sdk.fs.setPermissions === 'function') {
               console.log("DEBUG: Trying alternative setPermissions method");
-              await sdk.fs.setPermissions(cleanPath, { readable: true, writable: false, executable: false });
+              await sdk.fs.setPermissions(cleanPath, { readable: true, writable: true, executable: false });
               console.log(`Successfully set permissions using alternative method for: ${cleanPath}`);
             }
           } catch (altError) {
