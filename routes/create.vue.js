@@ -21,44 +21,7 @@ window.CreatePage = {
       },
       streamingText: "",
       formattedStory: "",
-      voices: [
-        { 
-          id: "D38z5RcWu1voky8WS1ja", 
-          name: "Fin (Legacy)", 
-          audioUrl: null, 
-          status: "pending", 
-          previewAudio: "/audio/fin_preview.mp3", 
-          isLoading: false,
-          avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=D38z5RcWu1voky8WS1ja&backgroundColor=b6e3f4"
-        },
-        { 
-          id: "NOpBlnGInO9m6vDvFkFC", 
-          name: "Vô Zé", 
-          audioUrl: null, 
-          status: "pending", 
-          previewAudio: "/audio/voze_preview.mp3", 
-          isLoading: false,
-          avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=NOpBlnGInO9m6vDvFkFC&backgroundColor=c0aede"
-        },
-        { 
-          id: "jBpfuIE2acCO8z3wKNLl", 
-          name: "Gigi", 
-          audioUrl: null, 
-          status: "pending", 
-          previewAudio: "/audio/gigi_preview.mp3", 
-          isLoading: false,
-          avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=jBpfuIE2acCO8z3wKNLl&backgroundColor=ffdfbf"
-        },
-        { 
-          id: "pFZP5JQG7iQjIQuC4Bku", 
-          name: "Lily", 
-          audioUrl: null, 
-          status: "pending", 
-          previewAudio: "/audio/lily_preview.mp3", 
-          isLoading: false,
-          avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=pFZP5JQG7iQjIQuC4Bku&backgroundColor=d1f4d9"
-        },
-      ],
+      voices: [],
       selectedVoice: null,
       isPreviewPlaying: null,
       previewAudioElement: null,
@@ -69,6 +32,8 @@ window.CreatePage = {
   watch: {
     currentLanguage(newLang, oldLang) {
       console.log(`Language changed from ${oldLang} to ${newLang}`);
+      // Update the voices array when language changes
+      this.updateVoicesForLanguage();
       this.$forceUpdate();
     }
   },
@@ -76,9 +41,13 @@ window.CreatePage = {
     // Debug initial translations
     this.debugTranslations();
     
+    // Initialize voices based on current language
+    this.updateVoicesForLanguage();
+    
     this.previewAudioElement = new Audio();
     this.previewAudioElement.addEventListener('ended', () => {
       this.isPreviewPlaying = null;
+      console.log('Preview audio playback completed');
     });
     
     this.$nextTick(() => {
@@ -118,10 +87,38 @@ window.CreatePage = {
     }
   },
   methods: {
+    // Get translations for the current language
+    updateVoicesForLanguage() {
+      const lang = this.currentLanguage;
+      console.log(`Updating voices for language: ${lang}`);
+      
+      if (lang && window.i18n.translations[lang] && window.i18n.translations[lang].voices) {
+        this.voices = window.i18n.translations[lang].voices;
+        console.log(`Loaded ${this.voices.length} voices for ${lang}:`, this.voices);
+        
+        // If a voice was previously selected, find its equivalent in the new language
+        if (this.selectedVoice) {
+          const previousIndex = this.voices.findIndex(v => v.id === this.selectedVoice.id);
+          if (previousIndex !== -1) {
+            this.selectedVoice = this.voices[previousIndex];
+          } else {
+            this.selectedVoice = null;
+          }
+        }
+      } else {
+        console.warn(`No voices found for language: ${lang}`);
+        // Default to English voices if translations are not available
+        this.voices = window.i18n.translations.en.voices || [];
+      }
+    },
+    
     // Handle language change events
     handleLanguageChange(lang) {
       console.log('Language change event received in CreatePage:', lang);
       this.currentLanguage = lang;
+      
+      // Update voices for the new language
+      this.updateVoicesForLanguage();
       
       // Debug translations
       this.debugTranslations();
@@ -183,35 +180,67 @@ window.CreatePage = {
       this.selectVoice(voice);
       
       if (this.isPreviewPlaying === voice.id) {
+        // User clicked the same voice that's currently playing - pause it
         this.previewAudioElement.pause();
         this.isPreviewPlaying = null;
         return;
       }
       
+      // If another voice preview is playing, stop it first
       if (this.isPreviewPlaying) {
         this.previewAudioElement.pause();
+        this.isPreviewPlaying = null;
       }
       
       if (voice.previewAudio) {
         voice.isLoading = true;
         
-        let previewUrl = voice.previewAudio;
-        if (!previewUrl.startsWith('http') && !previewUrl.startsWith('data:')) {
-          previewUrl = `https://fs.webdraw.com${previewUrl.startsWith('/') ? '' : '/'}${previewUrl}`;
-        }
-        
-        this.previewAudioElement.src = previewUrl;
-        this.previewAudioElement.oncanplaythrough = () => {
-          voice.isLoading = false;
-          this.previewAudioElement.play();
-          this.isPreviewPlaying = voice.id;
+        // Try remote URL first, fallback to local if needed
+        const tryPlayAudio = (useRemote) => {
+          let audioUrl;
+          
+          if (useRemote) {
+            // Try the remote URL
+            audioUrl = `https://fs.webdraw.com${voice.previewAudio.startsWith('/') ? '' : '/'}${voice.previewAudio}`;
+          } else {
+            // Use local URL - ensure it starts with /audio/
+            const fileName = voice.previewAudio.split('/').pop();
+            audioUrl = `/audio/${fileName}`;
+          }
+          
+          console.log(`Trying to play audio from: ${audioUrl}`);
+          
+          this.previewAudioElement.src = audioUrl;
+          this.previewAudioElement.oncanplaythrough = () => {
+            voice.isLoading = false;
+            this.previewAudioElement.play()
+              .then(() => {
+                this.isPreviewPlaying = voice.id;
+                console.log(`Successfully playing ${useRemote ? 'remote' : 'local'} audio: ${audioUrl}`);
+              })
+              .catch(playError => {
+                console.error(`Error playing audio for ${voice.name}:`, playError);
+                voice.isLoading = false;
+              });
+          };
+          
+          this.previewAudioElement.onerror = () => {
+            console.error(`Error loading audio from ${audioUrl}`);
+            
+            if (useRemote) {
+              // If remote fails, try local
+              console.log("Falling back to local audio file");
+              tryPlayAudio(false);
+            } else {
+              // Both remote and local failed
+              voice.isLoading = false;
+              alert(`Could not play audio preview for ${voice.name}. The audio file may be missing.`);
+            }
+          };
         };
         
-        this.previewAudioElement.onerror = () => {
-          voice.isLoading = false;
-          console.error("Error loading audio preview for", voice.name);
-          alert(`Could not load audio preview for ${voice.name}`);
-        };
+        // Start with remote URL
+        tryPlayAudio(true);
       }
     },
     async generateStory() {
@@ -775,40 +804,25 @@ window.CreatePage = {
       }
     },
     handleAudioError(event) {
-      console.error('Audio error:', event);
-      // If we get an error, it might be that the file isn't ready yet or has permission issues
-      if (this.audioSource) {
-        console.log("Audio error occurred, attempting to fix permissions and start background check...");
-        
-        // Try to set permissions for the audio file
-        try {
-          const audioPath = this.audioSource.includes(this.BASE_FS_URL) 
-            ? this.audioSource.replace(this.BASE_FS_URL, '') 
-            : this.audioSource;
-          
-          this.setFilePermissions(audioPath)
-            .then(() => {
-              console.log("Set permissions for audio file after error:", audioPath);
-              
-              // Reload the audio element
-              this.$nextTick(() => {
-                const audioPlayer = this.$refs.audioPlayer;
-                if (audioPlayer) {
-                  audioPlayer.load();
-                }
-              });
-            })
-            .catch(permError => {
-              console.warn("Error setting permissions for audio file after error:", permError);
-            });
-        } catch (error) {
-          console.warn("Error processing audio path for permissions:", error);
+      console.warn("Audio error occurred:", event);
+      
+      // Try to set file permissions if it's a permission issue
+      try {
+        if (this.audioSource) {
+          this.setFilePermissions(this.audioSource);
+          // Reload audio element
+          const audioElement = this.$refs.audioPlayer;
+          if (audioElement) {
+            audioElement.load();
+          }
         }
-        
-        // Start background check
-        this.audioLoading = true;
-        this.startBackgroundAudioCheck(this.audioSource);
+      } catch (error) {
+        console.warn("Error processing audio path for permissions:", error);
       }
+      
+      // Start background check
+      this.audioLoading = true;
+      this.startBackgroundAudioCheck(this.audioSource);
     },
     handleAudioReady(event) {
       console.log('Audio canplaythrough event:', event);
@@ -929,12 +943,12 @@ window.CreatePage = {
                     </div>
                     <button 
                       @click.stop="playVoicePreview(voice)"
-                      class="w-8 h-8 bg-[#2563EB] rounded-full flex items-center justify-center text-white"
+                      class="w-8 h-8 bg-[#0284C7] hover:bg-[#0369A1] rounded-full flex items-center justify-center text-white transition-colors duration-200"
                       :title="isPreviewPlaying === voice.id ? 'Pause preview' : 'Play preview'"
                     >
                       <svg v-if="!voice.isLoading" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path v-if="isPreviewPlaying !== voice.id" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
-                        <path v-else d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" />
+                        <path v-if="isPreviewPlaying !== voice.id" fill-rule="evenodd" clip-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
+                        <path v-else fill-rule="evenodd" clip-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" />
                       </svg>
                       <svg v-else class="animate-spin w-4 h-4" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />

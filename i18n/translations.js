@@ -158,28 +158,28 @@ const translations = {
     // Voice options
     voices: [
       { 
-        id: "D38z5RcWu1voky8WS1ja", 
-        name: "Fin (Legacy)", 
-        previewAudio: "/audio/fin_preview.mp3", 
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=D38z5RcWu1voky8WS1ja&backgroundColor=b6e3f4"
+        id: "IKne3meq5aSn9XLyUdCD", 
+        name: "Uncle Joe", 
+        previewAudio: "/audio/uncle_2.mp3", 
+        avatar: "https://api.dicebear.com/9.x/open-peeps/svg?seed=Eden&accessories=glasses&clothingColor=78e185,ffcf77&face=cheeky,smile,smileBig,calm&facialHair=full&facialHairProbability=100&head=grayShort&headContrastColor=2c1b18&skinColor=ae5d29&backgroundColor=b6e3f4"
       },
       { 
         id: "NOpBlnGInO9m6vDvFkFC", 
-        name: "Grandpa Joe", 
-        previewAudio: "/audio/voze_preview.mp3", 
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=NOpBlnGInO9m6vDvFkFC&backgroundColor=c0aede"
+        name: "Grandpa Solomon", 
+        previewAudio: "/audio/grandpa_1.mp3", 
+        avatar: "https://api.dicebear.com/9.x/open-peeps/svg?seed=Luis&accessories[]&clothingColor=9ddadb&face=cheeky,smile,calm&facialHair=full3&facialHairProbability=100&head=noHair2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=ffdfbf"
       },
       { 
-        id: "jBpfuIE2acCO8z3wKNLl", 
-        name: "Gigi", 
-        previewAudio: "/audio/gigi_preview.mp3", 
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=jBpfuIE2acCO8z3wKNLl&backgroundColor=ffdfbf"
+        id: "ZqvIIuD5aI9JFejebHiH", 
+        name: "Aunt Dora", 
+        previewAudio: "/audio/aunt_1.mp3", 
+        avatar: "https://api.dicebear.com/9.x/open-peeps/svg?seed=Chase&accessories[]&clothingColor=e279c7&face=cheeky,smile,calm&facialHair[]&facialHairProbability=0&head=long,bun2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=d1d4f9"
       },
       { 
-        id: "pFZP5JQG7iQjIQuC4Bku", 
-        name: "Lily", 
-        previewAudio: "/audio/lily_preview.mp3", 
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=pFZP5JQG7iQjIQuC4Bku&backgroundColor=d1f4d9"
+        id: "S9EY1qVDizdxKWghP5FL", 
+        name: "Grandma Beatriz", 
+        previewAudio: "/audio/grandma_1.mp3", 
+        avatar: "https://api.dicebear.com/9.x/open-peeps/svg?seed=Kimberly&accessories=glasses&clothingColor=e78276&face=cheeky,smile,smileBig,calm&facialHair[]&head=grayBun&headContrastColor=e8e1e1&skinColor=ae5d29&backgroundColor=ffd5dc,ffdfbf"
       }
     ],
     
@@ -363,28 +363,28 @@ const translations = {
     // Voice options
     voices: [
       { 
-        id: "D38z5RcWu1voky8WS1ja", 
-        name: "Finn", 
-        previewAudio: "/audio/fin_preview.mp3", 
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=D38z5RcWu1voky8WS1ja&backgroundColor=b6e3f4"
+        id: "IKne3meq5aSn9XLyUdCD", 
+        name: "Tio José", 
+        previewAudio: "/audio/uncle_2pt.mp3", 
+        avatar: "https://api.dicebear.com/9.x/open-peeps/svg?seed=Eden&accessories=glasses&clothingColor=78e185,ffcf77&face=cheeky,smile,smileBig,calm&facialHair=full&facialHairProbability=100&head=grayShort&headContrastColor=2c1b18&skinColor=ae5d29&backgroundColor=b6e3f4"
       },
       { 
         id: "NOpBlnGInO9m6vDvFkFC", 
-        name: "Vô Zé", 
-        previewAudio: "/audio/voze_preview.mp3", 
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=NOpBlnGInO9m6vDvFkFC&backgroundColor=c0aede"
+        name: "Vô Pedro", 
+        previewAudio: "/audio/grandpa_1pt.mp3", 
+        avatar: "https://api.dicebear.com/9.x/open-peeps/svg?seed=Luis&accessories[]&clothingColor=9ddadb&face=cheeky,smile,calm&facialHair=full3&facialHairProbability=100&head=noHair2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=ffdfbf"
       },
       { 
-        id: "jBpfuIE2acCO8z3wKNLl", 
-        name: "Gigi", 
-        previewAudio: "/audio/gigi_preview.mp3", 
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=jBpfuIE2acCO8z3wKNLl&backgroundColor=ffdfbf"
+        id: "ZqvIIuD5aI9JFejebHiH", 
+        name: "Tia Dora", 
+        previewAudio: "/audio/aunt_1pt.mp3", 
+        avatar: "https://api.dicebear.com/9.x/open-peeps/svg?seed=Chase&accessories[]&clothingColor=e279c7&face=cheeky,smile,calm&facialHair[]&facialHairProbability=0&head=long,bun2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=d1d4f9"
       },
       { 
-        id: "pFZP5JQG7iQjIQuC4Bku", 
-        name: "Lili", 
-        previewAudio: "/audio/lily_preview.mp3", 
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=pFZP5JQG7iQjIQuC4Bku&backgroundColor=d1f4d9"
+        id: "S9EY1qVDizdxKWghP5FL", 
+        name: "Vó Eunice", 
+        previewAudio: "/audio/grandma_1pt.mp3", 
+        avatar: "https://api.dicebear.com/9.x/open-peeps/svg?seed=Kimberly&accessories=glasses&clothingColor=e78276&face=cheeky,smile,smileBig,calm&facialHair[]&head=grayBun&headContrastColor=e8e1e1&skinColor=ae5d29&backgroundColor=ffd5dc,ffdfbf"
       }
     ],
     
