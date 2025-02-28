@@ -167,9 +167,159 @@ window.MyStoriesPage = {
         }
     },
     async mounted() {
-        this.loadGenerations();
+        console.log("MyStoriesPage mounted");
+        await this.loadGenerations();
+        
+        // Fix permissions for existing story files
+        await this.fixStoryPermissions();
     },
     methods: {
+        // Fix permissions for existing story files
+        async fixStoryPermissions() {
+            try {
+                console.log("Fixing permissions for existing story files...");
+                
+                // Get all story files in the AI Storyteller directory
+                const storyFiles = await sdk.fs.glob("~/AI Storyteller/*.json");
+                console.log("Found story files:", storyFiles);
+                
+                // Track all media files that need permission fixes
+                const mediaFiles = new Set();
+                
+                // Update permissions for each file and collect media references
+                for (const file of storyFiles) {
+                    try {
+                        console.log(`Setting permissions for: ${file}`);
+                        
+                        // Use 0o644 (rw-r--r--) to ensure web server can access the files
+                        await sdk.fs.chmod(file, 0o644);
+                        console.log(`Successfully set permissions (0o644) for: ${file}`);
+                        
+                        // Read the story file to find media references
+                        try {
+                            const content = await sdk.fs.read(file);
+                            const storyData = JSON.parse(content);
+                            
+                            // Check if it's a single story or a collection
+                            if (storyData.generations && Array.isArray(storyData.generations)) {
+                                // It's a collection of stories
+                                for (const story of storyData.generations) {
+                                    this.collectMediaFiles(story, mediaFiles);
+                                }
+                            } else {
+                                // It's a single story
+                                this.collectMediaFiles(storyData, mediaFiles);
+                            }
+                        } catch (readError) {
+                            console.warn(`Could not read story file ${file} to find media references:`, readError);
+                        }
+                    } catch (error) {
+                        console.warn(`Could not set file permissions for ${file}:`, error);
+                        
+                        // Try alternative approach if chmod fails
+                        try {
+                            if (typeof sdk.fs.setPermissions === 'function') {
+                                console.log("Trying alternative setPermissions method");
+                                await sdk.fs.setPermissions(file, { readable: true, writable: true, executable: false });
+                                console.log(`Successfully set permissions using alternative method for: ${file}`);
+                            }
+                        } catch (altError) {
+                            console.warn("Alternative permission setting also failed:", altError);
+                        }
+                    }
+                }
+                
+                // Now fix permissions for all the media files
+                console.log(`Found ${mediaFiles.size} media files to fix permissions for`);
+                for (const mediaFile of mediaFiles) {
+                    try {
+                        // Skip URLs that are not local files
+                        if (mediaFile.startsWith('http') || mediaFile.startsWith('data:')) {
+                            continue;
+                        }
+                        
+                        // Clean up the file path
+                        let cleanPath = mediaFile;
+                        
+                        // Remove the leading ~ if present
+                        if (cleanPath.startsWith('~')) {
+                            cleanPath = cleanPath.substring(1);
+                        }
+                        
+                        // Ensure the path doesn't start with double slashes
+                        while (cleanPath.startsWith('//')) {
+                            cleanPath = cleanPath.substring(1);
+                        }
+                        
+                        console.log(`Setting permissions for media file: ${cleanPath}`);
+                        
+                        // Use 0o644 (rw-r--r--) to ensure web server can access the files
+                        await sdk.fs.chmod(cleanPath, 0o644);
+                        console.log(`Successfully set permissions (0o644) for media file: ${cleanPath}`);
+                    } catch (error) {
+                        console.warn(`Could not set file permissions for media file ${mediaFile}:`, error);
+                        
+                        // Try alternative approach if chmod fails
+                        try {
+                            if (typeof sdk.fs.setPermissions === 'function') {
+                                let cleanPath = mediaFile;
+                                if (cleanPath.startsWith('~')) {
+                                    cleanPath = cleanPath.substring(1);
+                                }
+                                while (cleanPath.startsWith('//')) {
+                                    cleanPath = cleanPath.substring(1);
+                                }
+                                
+                                console.log("Trying alternative setPermissions method for media file");
+                                await sdk.fs.setPermissions(cleanPath, { readable: true, writable: true, executable: false });
+                                console.log(`Successfully set permissions using alternative method for media file: ${cleanPath}`);
+                            }
+                        } catch (altError) {
+                            console.warn("Alternative permission setting also failed for media file:", altError);
+                        }
+                    }
+                }
+                
+                console.log("Finished fixing permissions for all files");
+            } catch (error) {
+                console.error("Error fixing story permissions:", error);
+            }
+        },
+        
+        // Helper method to collect media files from a story
+        collectMediaFiles(story, mediaFiles) {
+            if (!story) return;
+            
+            // Check for cover image URL
+            if (story.coverUrl) {
+                // If it's a full URL to fs.webdraw.com, extract the path
+                if (story.coverUrl.includes('fs.webdraw.com')) {
+                    try {
+                        const url = new URL(story.coverUrl);
+                        mediaFiles.add(url.pathname);
+                    } catch (e) {
+                        mediaFiles.add(story.coverUrl);
+                    }
+                } else {
+                    mediaFiles.add(story.coverUrl);
+                }
+            }
+            
+            // Check for audio URL
+            if (story.audioUrl) {
+                // If it's a full URL to fs.webdraw.com, extract the path
+                if (story.audioUrl.includes('fs.webdraw.com')) {
+                    try {
+                        const url = new URL(story.audioUrl);
+                        mediaFiles.add(url.pathname);
+                    } catch (e) {
+                        mediaFiles.add(story.audioUrl);
+                    }
+                } else {
+                    mediaFiles.add(story.audioUrl);
+                }
+            }
+        },
         async loadGenerations() {
             try {
                 this.loading = true;

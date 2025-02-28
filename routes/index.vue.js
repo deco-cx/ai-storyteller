@@ -15,6 +15,10 @@ window.IndexPage = {
                     <router-link to="/my-stories" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base">
                         {{ $t('ui.myStories') }}
                     </router-link>
+                    <router-link v-if="isAdmin" to="/_admin" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base">
+                        <i class="fa-solid fa-gear mr-1"></i>
+                        {{ $t('ui.admin') }}
+                    </router-link>
                 </div>
                 <div class="flex items-center gap-2">
                     <router-link v-if="isPreviewEnvironment" to="/_admin" class="text-[#00B7EA] hover:text-[#0284C7] text-sm sm:text-base px-2 py-1">
@@ -141,7 +145,8 @@ window.IndexPage = {
         return {
             user: null,
             examples: [],
-            isPreviewEnvironment: false
+            isPreviewEnvironment: false,
+            isAdmin: false
         }
     },
     async mounted() {
@@ -172,10 +177,35 @@ window.IndexPage = {
         
         // Check if we're in the preview environment
         this.isPreviewEnvironment = window.location.origin.includes('preview.webdraw.app');
+        
+        // Check if we can access the translator.js file
+        await this.checkTranslatorAccess();
     },
     methods: {
         handleLogin() {
             sdk.redirectToLogin({ appReturnUrl: '?goToCreate=true' });
+        },
+        
+        async checkTranslatorAccess() {
+            try {
+                // Check if we can read and write to the i18n/translations.js file
+                if (sdk && typeof sdk.fs?.read === 'function' && typeof sdk.fs?.write === 'function') {
+                    // Try to read the file
+                    const content = await sdk.fs.read("i18n/translations.js");
+                    
+                    if (content) {
+                        // Try to write the file (write the same content back)
+                        await sdk.fs.write("i18n/translations.js", content);
+                        
+                        // If we get here, we have read and write access
+                        this.isAdmin = true;
+                        console.log("Admin access granted - translations.js can be read and written");
+                    }
+                }
+            } catch (error) {
+                console.log("Not showing admin menu - translations.js cannot be accessed:", error);
+                this.isAdmin = false;
+            }
         }
     }
 }; 
