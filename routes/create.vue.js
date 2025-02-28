@@ -262,9 +262,14 @@ window.CreatePage = {
         
         this.taskStatus.image = "loading";
         console.log("Starting image generation...");
+        const imagePrompt = this.$tf('prompts.generateImage', {
+          title: object.title,
+          plot: object.plot
+        });
+        console.log("Using image prompt:", imagePrompt);
         const imagePromise = sdk.ai.generateImage({
           model: "stability:core",
-          prompt: `Create a colorful, child-friendly illustration for a children's story titled "${object.title}" about ${this.interests}. The image should be vibrant, engaging, and suitable for children.`
+          prompt: imagePrompt
         });
         
         this.taskStatus.story = "loading";
@@ -808,7 +813,7 @@ window.CreatePage = {
     handleAudioReady(event) {
       console.log('Audio canplaythrough event:', event);
       this.audioLoading = false;
-    },
+    }
   },
   template: `
     <div class="min-h-screen" style="background-color: #FFF9F6;">

@@ -201,7 +201,7 @@ const translations = {
     prompts: {
       generatePlot: "Create a children's story title and plot for a {childName} who is interested in {interests}. The story should be educational, engaging, and appropriate for children. Keep the plot brief (2-3 sentences).",
       generateStory: "Write a children's story based on the following title and plot. Make it engaging, educational, and appropriate for children. Include the child's name ({childName}) as the main character. The story should be about {interests}.\n\nTitle: {title}\nPlot: {plot}\n\nWrite a complete story with a beginning, middle, and end. The story should be 3-4 paragraphs long.",
-      generateImage: "Create a colorful, child-friendly illustration for a children's story titled \"{title}\" about {interests}. The image should be vibrant, engaging, and suitable for children."
+      generateImage: "Create a colorful, child-friendly illustration for a children's story titled \"{title}\" with the following plot: {plot}. The image should be vibrant, engaging, and suitable for children."
     }
   },
   
@@ -406,7 +406,7 @@ const translations = {
     prompts: {
       generatePlot: "Crie um título e enredo de história infantil para {childName} que se interessa por {interests}. A história deve ser educativa, envolvente e apropriada para crianças. Mantenha o enredo breve (2-3 frases).",
       generateStory: "Escreva uma história infantil baseada no seguinte título e enredo. Torne-a envolvente, educativa e apropriada para crianças. Inclua o nome da criança ({childName}) como personagem principal. A história deve ser sobre {interests}.\n\nTítulo: {title}\nEnredo: {plot}\n\nEscreva uma história completa com começo, meio e fim. A história deve ter 3-4 parágrafos.",
-      generateImage: "Crie uma ilustração colorida e amigável para crianças para uma história infantil intitulada \"{title}\" sobre {interests}. A imagem deve ser vibrante, envolvente e adequada para crianças."
+      generateImage: "Crie uma ilustração colorida e amigável para crianças para uma história infantil intitulada \"{title}\" com o seguinte enredo: {plot}. A imagem deve ser vibrante, envolvente e adequada para crianças."
     }
   }
 };
