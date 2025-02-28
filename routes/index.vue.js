@@ -157,6 +157,25 @@ window.IndexPage = {
             this.user = null;
         }
         
+        // Log the contents of translations.js on startup
+        try {
+            if (sdk && typeof sdk.fs?.read === 'function') {
+                console.log("Current working directory:", await sdk.fs.cwd());
+                const translatorPath = "~/AI Storyteller/translations.js";
+                try {
+                    const translationsContent = await sdk.fs.read(translatorPath);
+                    console.log("Translator file content on startup:", translationsContent ? "Content loaded successfully" : "No content");
+                    console.log("First 500 characters:", translationsContent ? translationsContent.substring(0, 500) : "N/A");
+                } catch (readError) {
+                    console.log("Translator file doesn't exist yet:", readError.message);
+                }
+            } else {
+                console.log("SDK.fs.read is not available, cannot read translator file");
+            }
+        } catch (error) {
+            console.error("Error reading translator file on startup:", error);
+        }
+        
         // Get examples from translations for the current language
         try {
             const currentLang = window.i18n.getLanguage();
@@ -188,22 +207,30 @@ window.IndexPage = {
         
         async checkTranslatorAccess() {
             try {
-                // Check if we can read and write to the i18n/translations.js file
+                // Check if we can read and write to the ~/AI Storyteller/translations.js file
                 if (sdk && typeof sdk.fs?.read === 'function' && typeof sdk.fs?.write === 'function') {
-                    // Try to read the file
-                    const content = await sdk.fs.read("i18n/translations.js");
+                    const translatorPath = "~/AI Storyteller/translations.js";
+                    let content;
                     
-                    if (content) {
+                    try {
+                        // Try to read the file
+                        content = await sdk.fs.read(translatorPath);
+                        console.log("Translator file exists and can be read");
+                        
                         // Try to write the file (write the same content back)
-                        await sdk.fs.write("i18n/translations.js", content);
+                        await sdk.fs.write(translatorPath, content);
                         
                         // If we get here, we have read and write access
                         this.isAdmin = true;
-                        console.log("Admin access granted - translations.js can be read and written");
+                        console.log("Admin access granted - ~/AI Storyteller/translations.js can be read and written");
+                    } catch (readError) {
+                        // File doesn't exist or can't be read
+                        console.log("Translator file doesn't exist or can't be read:", readError.message);
+                        this.isAdmin = false;
                     }
                 }
             } catch (error) {
-                console.log("Not showing admin menu - translations.js cannot be accessed:", error);
+                console.log("Not showing admin menu - ~/AI Storyteller/translations.js cannot be accessed:", error);
                 this.isAdmin = false;
             }
         }

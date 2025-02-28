@@ -102,6 +102,34 @@ window.AdminPage = {
     }
   },
   methods: {
+    async loadCustomTranslations() {
+      try {
+        if (sdk && typeof sdk.fs?.read === 'function') {
+          const translatorPath = "~/AI Storyteller/translations.js";
+          try {
+            const content = await sdk.fs.read(translatorPath);
+            if (content) {
+              // Parse the content to get the translations object
+              const match = content.match(/const\s+translations\s*=\s*({[\s\S]*?});/);
+              if (match && match[1]) {
+                try {
+                  const customTranslations = JSON.parse(match[1]);
+                  console.log("Loaded custom translations from ~/AI Storyteller/translations.js");
+                  // Update the editedTranslations with the custom translations
+                  this.editedTranslations = JSON.parse(JSON.stringify(customTranslations));
+                } catch (parseError) {
+                  console.error("Error parsing custom translations:", parseError);
+                }
+              }
+            }
+          } catch (readError) {
+            console.warn("Could not read custom translations file:", readError);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading custom translations:", error);
+      }
+    },
     changeLanguage(lang) {
       this.currentLanguage = lang;
     },
@@ -161,15 +189,29 @@ const translations = ${JSON.stringify(this.editedTranslations, null, 2)};
 // Export the translations
 export default translations;`;
         
+        // Save to both locations for compatibility
+        // 1. Save to the original location
         await sdk.fs.writeFile('i18n/translations.js', content);
         
         // Set file permissions to allow read and write (0644 in octal)
-        // This gives read/write to owner, and read-only to group and others
         try {
           await sdk.fs.chmod('i18n/translations.js', 0o644);
-          console.log("Set read-write permissions for translations.js");
+          console.log("Set read-write permissions for i18n/translations.js");
         } catch (permError) {
-          console.warn("Could not set file permissions for translations.js:", permError);
+          console.warn("Could not set file permissions for i18n/translations.js:", permError);
+          // Continue even if setting permissions fails
+        }
+        
+        // 2. Save to the new location in AI Storyteller directory
+        const translatorPath = "~/AI Storyteller/translations.js";
+        await sdk.fs.write(translatorPath, content);
+        
+        // Set file permissions for the new location
+        try {
+          await sdk.fs.chmod(translatorPath, 0o644);
+          console.log("Set read-write permissions for ~/AI Storyteller/translations.js");
+        } catch (permError) {
+          console.warn("Could not set file permissions for ~/AI Storyteller/translations.js:", permError);
           // Continue even if setting permissions fails
         }
         
@@ -258,6 +300,10 @@ export default translations;`;
         this.editedTranslations[this.currentLanguage].examples.splice(index, 1);
       }
     }
+  },
+  mounted() {
+    // Try to load custom translations
+    this.loadCustomTranslations();
   },
   template: `
     <div class="min-h-screen bg-[#FFF9F6]">
