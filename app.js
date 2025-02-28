@@ -60,8 +60,15 @@ const app = createApp({
         // Listen for language change events using our event bus
         window.eventBus.on('language-changed', (lang) => {
             this.currentLanguage = lang;
-            // Force update all components
+            
+            // Update app first
             this.$forceUpdate();
+            
+            // Update all components
+            setTimeout(() => {
+                // Dispatch event to notify all components
+                document.dispatchEvent(new CustomEvent('language-updated', { detail: lang }));
+            }, 0);
         });
     }
 });
@@ -81,6 +88,25 @@ app.mixin({
         // Translate a key with variables
         $tf(key, variables) {
             return i18n.tf(key, variables);
+        }
+    },
+    mounted() {
+        // Add language update listener
+        const updateComponentLanguage = () => {
+            if (this.$el && this.$forceUpdate) {
+                this.$forceUpdate();
+            }
+        };
+        
+        document.addEventListener('language-updated', updateComponentLanguage);
+        
+        // Store listener reference for cleanup
+        this._languageUpdateListener = updateComponentLanguage;
+    },
+    beforeUnmount() {
+        // Remove listener on component unmount
+        if (this._languageUpdateListener) {
+            document.removeEventListener('language-updated', this._languageUpdateListener);
         }
     }
 });
