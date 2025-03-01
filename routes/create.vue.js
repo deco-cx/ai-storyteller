@@ -195,19 +195,9 @@ window.CreatePage = {
       if (voice.previewAudio) {
         voice.isLoading = true;
         
-        // Try remote URL first, fallback to local if needed
-        const tryPlayAudio = (useRemote) => {
-          let audioUrl;
-          
-          if (useRemote) {
-            // Try the remote URL
-            audioUrl = `https://fs.webdraw.com${voice.previewAudio.startsWith('/') ? '' : '/'}${voice.previewAudio}`;
-          } else {
-            // Use local URL - ensure it starts with /audio/
-            const fileName = voice.previewAudio.split('/').pop();
-            audioUrl = `/audio/${fileName}`;
-          }
-          
+        const tryPlayAudio = () => {
+          const fileName = voice.previewAudio.split('/').pop();
+          let audioUrl = `/assets/audio/preview/${fileName}`;
           console.log(`Trying to play audio from: ${audioUrl}`);
           
           this.previewAudioElement.src = audioUrl;
@@ -216,7 +206,7 @@ window.CreatePage = {
             this.previewAudioElement.play()
               .then(() => {
                 this.isPreviewPlaying = voice.id;
-                console.log(`Successfully playing ${useRemote ? 'remote' : 'local'} audio: ${audioUrl}`);
+                console.log(`Successfully playing audio: ${audioUrl}`);
               })
               .catch(playError => {
                 console.error(`Error playing audio for ${voice.name}:`, playError);
@@ -226,21 +216,13 @@ window.CreatePage = {
           
           this.previewAudioElement.onerror = () => {
             console.error(`Error loading audio from ${audioUrl}`);
-            
-            if (useRemote) {
-              // If remote fails, try local
-              console.log("Falling back to local audio file");
-              tryPlayAudio(false);
-            } else {
-              // Both remote and local failed
-              voice.isLoading = false;
-              alert(`Could not play audio preview for ${voice.name}. The audio file may be missing.`);
-            }
+            voice.isLoading = false;
+            alert(`Could not play audio preview for ${voice.name}. The audio file may be missing.`);
           };
         };
         
-        // Start with remote URL
-        tryPlayAudio(true);
+        // Play the audio
+        tryPlayAudio();
       }
     },
     async generateStory() {
