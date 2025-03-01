@@ -49,7 +49,7 @@ window.StoryPage = {
                     
                     <!-- Story Content -->
                     <div class="bg-[#F0F9FF] border border-[#BAE6FD] rounded-xl p-6 mb-8">
-                        <img :src="story.coverUrl" 
+                        <img :src="getOptimizedImageUrl(story.coverUrl, 800, 400)" 
                              :alt="story.title" 
                              class="w-full h-64 object-cover rounded-lg mb-6" />
                         
@@ -579,6 +579,12 @@ window.StoryPage = {
             } finally {
                 this.addingAsExample = false;
             }
+        },
+        getOptimizedImageUrl(url, width, height) {
+            if (!url || url.startsWith('data:')) return url;
+            
+            // Use the webdraw.com image optimization service
+            return `https://webdraw.com/image-optimize?src=${encodeURIComponent(url)}&width=${width}&height=${height}&fit=cover`;
         }
     }
 }; 

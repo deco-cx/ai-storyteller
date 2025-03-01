@@ -86,7 +86,7 @@ window.MyStoriesPage = {
                         
                         <!-- Cover Image (if available) -->
                         <div v-if="story.coverUrl" class="mb-4 h-40 overflow-hidden rounded-lg cursor-pointer" @click="viewStory(story)">
-                            <img :src="story.coverUrl" :alt="story.title" class="w-full h-full object-cover hover:scale-105 transition-transform">
+                            <img :src="getOptimizedImageUrl(story.coverUrl, 400, 200)" :alt="story.title" class="w-full h-full object-cover hover:scale-105 transition-transform">
                         </div>
                         
                         <!-- Story Excerpt -->
@@ -821,6 +821,12 @@ window.MyStoriesPage = {
         goToNewStory() {
             // Navigate to the create page using Vue Router
             this.$router.push('/create');
+        },
+        getOptimizedImageUrl(url, width, height) {
+            if (!url || url.startsWith('data:')) return url;
+            
+            // Use the webdraw.com image optimization service
+            return `https://webdraw.com/image-optimize?src=${encodeURIComponent(url)}&width=${width}&height=${height}&fit=cover`;
         }
     }
 }; 

@@ -826,6 +826,12 @@ window.CreatePage = {
     handleAudioReady(event) {
       console.log('Audio canplaythrough event:', event);
       this.audioLoading = false;
+    },
+    getOptimizedImageUrl(url, width, height) {
+      if (!url || url.startsWith('data:')) return url;
+      
+      // Use the webdraw.com image optimization service
+      return `https://webdraw.com/image-optimize?src=${encodeURIComponent(url)}&width=${width}&height=${height}&fit=cover`;
     }
   },
   template: `
@@ -972,7 +978,7 @@ window.CreatePage = {
       <div v-if="screen === 'result'" class="max-w-3xl mx-auto pt-6 pb-16 px-4">
         <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 border-4 border-gray-300">
           <div class="space-y-6 mb-6">
-            <img v-if="storyImage" :src="storyImage" alt="Magic Illustration" class="w-full rounded-xl border-4 border-gray-200 shadow-lg" />
+            <img v-if="storyImage" :src="getOptimizedImageUrl(storyImage, 800, 400)" alt="Magic Illustration" class="w-full rounded-xl border-4 border-gray-200 shadow-lg" />
           </div>
 
           <div class="audio-controls mb-8 space-y-4" v-if="audioSource">

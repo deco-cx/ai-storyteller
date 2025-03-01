@@ -99,7 +99,7 @@ window.IndexPage = {
 
                             <!-- Generated Content -->
                             <div class="bg-[#F0F9FF] border border-[#BAE6FD] rounded-xl p-4">
-                                <img :src="example.image" 
+                                <img :src="getOptimizedImageUrl(example.image, 400, 200)" 
                                      :alt="example.title" 
                                      class="w-full h-48 object-cover rounded-lg mb-4" />
                                 
@@ -268,6 +268,12 @@ window.IndexPage = {
             // Force component re-render by incrementing the refresh key
             this.refreshKey++;
             this.$forceUpdate();
+        },
+        getOptimizedImageUrl(url, width, height) {
+            if (!url || url.startsWith('data:')) return url;
+            
+            // Use the webdraw.com image optimization service
+            return `https://webdraw.com/image-optimize?src=${encodeURIComponent(url)}&width=${width}&height=${height}&fit=cover`;
         }
     },
     beforeUnmount() {
