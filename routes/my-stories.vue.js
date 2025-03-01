@@ -299,9 +299,9 @@ window.MyStoriesPage = {
                         
                         // Try alternative approach if chmod fails
                         try {
-                            if (typeof sdk.fs.setPermissions === 'function') {
-                                console.log("Trying alternative setPermissions method");
-                                await sdk.fs.setPermissions(file, { readable: true, writable: true, executable: false });
+                            if (typeof sdk.fs.chmod === 'function') {
+                                console.log("Trying alternative chmod approach");
+                                await sdk.fs.chmod(file, 0o644);
                                 console.log(`Successfully set permissions using alternative method for: ${file}`);
                             }
                         } catch (altError) {
@@ -346,7 +346,7 @@ window.MyStoriesPage = {
                         
                         // Try alternative approach if chmod fails
                         try {
-                            if (typeof sdk.fs.setPermissions === 'function') {
+                            if (typeof sdk.fs.chmod === 'function') {
                                 let cleanPath = mediaFile;
                                 if (cleanPath.startsWith('~')) {
                                     cleanPath = cleanPath.substring(1);
@@ -355,8 +355,8 @@ window.MyStoriesPage = {
                                     cleanPath = cleanPath.substring(1);
                                 }
                                 
-                                console.log("Trying alternative setPermissions method for media file");
-                                await sdk.fs.setPermissions(cleanPath, { readable: true, writable: true, executable: false });
+                                console.log("Trying alternative chmod method for media file");
+                                await sdk.fs.chmod(cleanPath, 0o644);
                                 console.log(`Successfully set permissions using alternative method for media file: ${cleanPath}`);
                             }
                         } catch (altError) {

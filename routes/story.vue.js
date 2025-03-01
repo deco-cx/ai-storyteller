@@ -393,9 +393,6 @@ window.StoryPage = {
                 if (sdk && typeof sdk.fs?.chmod === 'function') {
                     await sdk.fs.chmod(filePath, 0o644);
                     console.log(`Successfully set permissions (0o644) for media file: ${filePath}`);
-                } else if (sdk && typeof sdk.fs?.setPermissions === 'function') {
-                    await sdk.fs.setPermissions(filePath, { readable: true, writable: true, executable: false });
-                    console.log(`Successfully set permissions using alternative method for media file: ${filePath}`);
                 } else {
                     console.warn("No permission setting method available");
                 }

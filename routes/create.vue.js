@@ -788,13 +788,11 @@ window.CreatePage = {
           console.warn(`Could not set file permissions with chmod for ${cleanPath}:`, chmodError);
           console.log("DEBUG: Error details:", chmodError.message, chmodError.stack);
           
-          // Try alternative approach if chmod fails
+          // Try again with a different approach if needed
           try {
-            if (typeof sdk.fs.setPermissions === 'function') {
-              console.log("DEBUG: Trying alternative setPermissions method");
-              await sdk.fs.setPermissions(cleanPath, { readable: true, writable: true, executable: false });
-              console.log(`Successfully set permissions using alternative method for: ${cleanPath}`);
-            }
+            console.log("DEBUG: Trying alternative chmod approach");
+            await sdk.fs.chmod(cleanPath, 0o644);
+            console.log(`Successfully set permissions using alternative approach for: ${cleanPath}`);
           } catch (altError) {
             console.warn("Alternative permission setting also failed:", altError);
           }
