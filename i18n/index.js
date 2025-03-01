@@ -49,17 +49,12 @@ const setLanguage = (lang) => {
 
 // Get available languages
 const getAvailableLanguages = () => {
-  if (!window.i18n || !window.i18n.translations) {
-    return [{ code: 'en', name: 'English' }];
-  }
-  
-  return Object.keys(window.i18n.translations).map(code => ({
-    code,
-    name: code === 'en' ? 'English' : code === 'pt' ? 'Português' : code
-  }));
+    return [
+      { code: 'en', name: 'English' },
+      { code: 'pt', name: 'Português' }
+    ];
 };
 
-// Get translation for a key
 const t = (key) => {
   if (!window.i18n || !window.i18n.translations) {
     return key; // Return the key itself if translations aren't loaded yet
