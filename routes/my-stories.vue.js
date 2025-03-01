@@ -180,7 +180,65 @@ window.MyStoriesPage = {
                 console.log("Fixing permissions for existing story files...");
                 
                 // Get all story files in the AI Storyteller directory
-                const storyFiles = await sdk.fs.glob("~/AI Storyteller/*.json");
+                let storyFiles = [];
+                try {
+                    const files = await sdk.fs.list("~/AI Storyteller");
+                    console.log("Found files in AI Storyteller directory:", files);
+                    
+                    // Process the files based on the format returned
+                    if (Array.isArray(files)) {
+                        // Filter for JSON files
+                        storyFiles = files.filter(file => {
+                            if (typeof file === 'string') {
+                                // If file is a string (full path)
+                                const parts = file.split('/');
+                                const filename = parts[parts.length - 1];
+                                return filename.endsWith('.json');
+                            } else if (file && typeof file === 'object') {
+                                // If file is an object with name property
+                                if (file.name && typeof file.name === 'string') {
+                                    return file.name.endsWith('.json');
+                                }
+                                // If file is an object with path property
+                                if (file.path && typeof file.path === 'string') {
+                                    const parts = file.path.split('/');
+                                    const filename = parts[parts.length - 1];
+                                    return filename.endsWith('.json');
+                                }
+                            }
+                            return false;
+                        });
+                    } else if (files && typeof files === 'object') {
+                        // If it's not an array but an object, try to convert it
+                        const filesArray = Object.values(files);
+                        
+                        // Filter for JSON files
+                        storyFiles = filesArray.filter(file => {
+                            if (typeof file === 'string') {
+                                // If file is a string (full path)
+                                const parts = file.split('/');
+                                const filename = parts[parts.length - 1];
+                                return filename.endsWith('.json');
+                            } else if (file && typeof file === 'object') {
+                                // If file is an object with name property
+                                if (file.name && typeof file.name === 'string') {
+                                    return file.name.endsWith('.json');
+                                }
+                                // If file is an object with path property
+                                if (file.path && typeof file.path === 'string') {
+                                    const parts = file.path.split('/');
+                                    const filename = parts[parts.length - 1];
+                                    return filename.endsWith('.json');
+                                }
+                            }
+                            return false;
+                        });
+                    }
+                } catch (listError) {
+                    console.warn("Could not list files in AI Storyteller directory:", listError);
+                    storyFiles = [];
+                }
+                
                 console.log("Found story files:", storyFiles);
                 
                 // Track all media files that need permission fixes
@@ -189,15 +247,38 @@ window.MyStoriesPage = {
                 // Update permissions for each file and collect media references
                 for (const file of storyFiles) {
                     try {
-                        console.log(`Setting permissions for: ${file}`);
+                        // Determine the file path
+                        let filePath;
+                        if (typeof file === 'string') {
+                            // If file is already a full path
+                            filePath = file;
+                        } else if (file && typeof file === 'object') {
+                            if (file.name) {
+                                filePath = `~/AI Storyteller/${file.name}`;
+                            } else if (file.path) {
+                                filePath = file.path;
+                            } else {
+                                console.log("Skipping file with invalid format:", file);
+                                continue;
+                            }
+                        } else {
+                            console.log("Skipping file with invalid format:", file);
+                            continue;
+                        }
+                        
+                        console.log(`Setting permissions for: ${filePath}`);
                         
                         // Use 0o644 (rw-r--r--) to ensure web server can access the files
-                        await sdk.fs.chmod(file, 0o644);
-                        console.log(`Successfully set permissions (0o644) for: ${file}`);
+                        if (typeof sdk.fs.chmod === 'function') {
+                            await sdk.fs.chmod(filePath, 0o644);
+                            console.log(`Successfully set permissions (0o644) for: ${filePath}`);
+                        } else {
+                            console.log("chmod function not available, skipping permission setting");
+                        }
                         
                         // Read the story file to find media references
                         try {
-                            const content = await sdk.fs.read(file);
+                            const content = await sdk.fs.read(filePath);
                             const storyData = JSON.parse(content);
                             
                             // Check if it's a single story or a collection
@@ -211,7 +292,7 @@ window.MyStoriesPage = {
                                 this.collectMediaFiles(storyData, mediaFiles);
                             }
                         } catch (readError) {
-                            console.warn(`Could not read story file ${file} to find media references:`, readError);
+                            console.warn(`Could not read story file ${filePath} to find media references:`, readError);
                         }
                     } catch (error) {
                         console.warn(`Could not set file permissions for ${file}:`, error);
@@ -254,8 +335,12 @@ window.MyStoriesPage = {
                         console.log(`Setting permissions for media file: ${cleanPath}`);
                         
                         // Use 0o644 (rw-r--r--) to ensure web server can access the files
-                        await sdk.fs.chmod(cleanPath, 0o644);
-                        console.log(`Successfully set permissions (0o644) for media file: ${cleanPath}`);
+                        if (typeof sdk.fs.chmod === 'function') {
+                            await sdk.fs.chmod(cleanPath, 0o644);
+                            console.log(`Successfully set permissions (0o644) for media file: ${cleanPath}`);
+                        } else {
+                            console.log("chmod function not available, skipping permission setting for media file");
+                        }
                     } catch (error) {
                         console.warn(`Could not set file permissions for media file ${mediaFile}:`, error);
                         

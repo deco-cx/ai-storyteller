@@ -1,5 +1,4 @@
 import i18n from '../i18n/index.js';
-import translations from '../i18n/translations.js';
 import { sdk } from '../sdk.js';
 
 window.AdminPage = {
@@ -19,7 +18,7 @@ window.AdminPage = {
         { id: 'prompts', label: 'AI Prompts' }
       ],
       currentSection: 'ui',
-      editedTranslations: JSON.parse(JSON.stringify(translations)),
+      editedTranslations: {},
       isSaving: false,
       saveMessage: '',
       saveError: false,
@@ -27,12 +26,14 @@ window.AdminPage = {
       newLanguageCode: '',
       newLanguageName: '',
       searchQuery: '',
-      expandedItems: {}
+      expandedItems: {},
+      isLoading: true,
+      allowEditingEnglish: false
     };
   },
   computed: {
     currentSectionData() {
-      if (!this.currentSection) return {};
+      if (!this.currentSection || this.isLoading || !this.editedTranslations.en) return [];
       
       const en = this.editedTranslations.en[this.currentSection];
       const current = this.editedTranslations[this.currentLanguage][this.currentSection];
@@ -44,7 +45,7 @@ window.AdminPage = {
             return {
               key: index.toString(),
               enValue: item,
-              currentValue: current[index] || ''
+              currentValue: this.currentLanguage === 'en' ? item : (current[index] || '')
             };
           } else {
             // For objects in arrays (like voices)
@@ -54,7 +55,7 @@ window.AdminPage = {
               properties: Object.keys(item).map(propKey => ({
                 key: propKey,
                 enValue: item[propKey],
-                currentValue: (current[index] && current[index][propKey]) || ''
+                currentValue: this.currentLanguage === 'en' ? item[propKey] : ((current[index] && current[index][propKey]) || '')
               }))
             };
           }
@@ -70,14 +71,14 @@ window.AdminPage = {
             properties: Object.keys(en[key]).map(subKey => ({
               key: subKey,
               enValue: en[key][subKey],
-              currentValue: (current[key] && current[key][subKey]) || ''
+              currentValue: this.currentLanguage === 'en' ? en[key][subKey] : ((current[key] && current[key][subKey]) || '')
             }))
           };
         } else {
           return {
             key,
             enValue: en[key],
-            currentValue: current[key] || ''
+            currentValue: this.currentLanguage === 'en' ? en[key] : (current[key] || '')
           };
         }
       });
@@ -103,31 +104,40 @@ window.AdminPage = {
   },
   methods: {
     async loadCustomTranslations() {
+      this.isLoading = true;
       try {
-        if (sdk && typeof sdk.fs?.read === 'function') {
-          const translatorPath = "~/AI Storyteller/translations.js";
-          try {
-            const content = await sdk.fs.read(translatorPath);
-            if (content) {
-              // Parse the content to get the translations object
-              const match = content.match(/const\s+translations\s*=\s*({[\s\S]*?});/);
-              if (match && match[1]) {
+        // First, make sure we have the global translations
+        if (window.i18n && window.i18n.translations) {
+          // Create a deep copy of the translations
+          this.editedTranslations = JSON.parse(JSON.stringify(window.i18n.translations));
+          
+          // Now try to load custom translations if they exist
+          if (sdk && typeof sdk.fs?.read === 'function') {
+            const translatorPath = "~/AI Storyteller/translations.json";
+            try {
+              const content = await sdk.fs.read(translatorPath);
+              if (content) {
                 try {
-                  const customTranslations = JSON.parse(match[1]);
-                  console.log("Loaded custom translations from ~/AI Storyteller/translations.js");
+                  // Parse JSON directly
+                  const customTranslations = JSON.parse(content);
+                  console.log("Loaded custom translations from ~/AI Storyteller/translations.json");
                   // Update the editedTranslations with the custom translations
                   this.editedTranslations = JSON.parse(JSON.stringify(customTranslations));
                 } catch (parseError) {
                   console.error("Error parsing custom translations:", parseError);
                 }
               }
+            } catch (readError) {
+              console.warn("Could not read custom translations file:", readError);
             }
-          } catch (readError) {
-            console.warn("Could not read custom translations file:", readError);
           }
+        } else {
+          console.error("Global translations not available");
         }
       } catch (error) {
-        console.error("Error loading custom translations:", error);
+        console.error("Error loading translations:", error);
+      } finally {
+        this.isLoading = false;
       }
     },
     changeLanguage(lang) {
@@ -148,6 +158,20 @@ window.AdminPage = {
       }
       
       target[keys[keys.length - 1]] = value;
+      
+      // If we're editing English, we need to update both the display value and the stored value
+      if (this.currentLanguage === 'en') {
+        // The item.enValue is already updated via v-model, but we need to make sure
+        // the actual translations object is updated too
+        let enTarget = this.editedTranslations.en[this.currentSection];
+        for (let i = 0; i < keys.length - 1; i++) {
+          if (!enTarget[keys[i]]) {
+            enTarget[keys[i]] = {};
+          }
+          enTarget = enTarget[keys[i]];
+        }
+        enTarget[keys[keys.length - 1]] = value;
+      }
     },
     updateObjectTranslation(item, prop, value) {
       if (!item.isObject) return;
@@ -161,11 +185,31 @@ window.AdminPage = {
           section[index] = JSON.parse(JSON.stringify(this.editedTranslations.en[this.currentSection][index]));
         }
         section[index][prop.key] = value;
+        
+        // If we're editing English, we need to update both the display value and the stored value
+        if (this.currentLanguage === 'en') {
+          // The prop.enValue is already updated via v-model, but we need to make sure
+          // the actual translations object is updated too
+          const enSection = this.editedTranslations.en[this.currentSection];
+          if (enSection && Array.isArray(enSection) && enSection[index]) {
+            enSection[index][prop.key] = value;
+          }
+        }
       } else {
         if (!section[item.key]) {
           section[item.key] = {};
         }
         section[item.key][prop.key] = value;
+        
+        // If we're editing English, we need to update both the display value and the stored value
+        if (this.currentLanguage === 'en') {
+          // The prop.enValue is already updated via v-model, but we need to make sure
+          // the actual translations object is updated too
+          const enSection = this.editedTranslations.en[this.currentSection];
+          if (enSection && enSection[item.key]) {
+            enSection[item.key][prop.key] = value;
+          }
+        }
       }
     },
     toggleExpand(key) {
@@ -183,36 +227,20 @@ window.AdminPage = {
       this.saveError = false;
       
       try {
-        const content = `// Translations for AI Storyteller
-const translations = ${JSON.stringify(this.editedTranslations, null, 2)};
-
-// Export the translations
-export default translations;`;
+        // Create JSON content
+        const jsonContent = JSON.stringify(this.editedTranslations, null, 2);
         
-        // Save to both locations for compatibility
-        // 1. Save to the original location
-        await sdk.fs.writeFile('i18n/translations.js', content);
+        // Save to the AI Storyteller directory as JSON
+        const translatorPath = "~/AI Storyteller/translations.json";
+        await sdk.fs.write(translatorPath, jsonContent);
+        console.log("Saved translations to ~/AI Storyteller/translations.json");
         
-        // Set file permissions to allow read and write (0644 in octal)
-        try {
-          await sdk.fs.chmod('i18n/translations.js', 0o644);
-          console.log("Set read-write permissions for i18n/translations.js");
-        } catch (permError) {
-          console.warn("Could not set file permissions for i18n/translations.js:", permError);
-          // Continue even if setting permissions fails
-        }
+        // Update the global translations
+        window.i18n.translations = JSON.parse(JSON.stringify(this.editedTranslations));
         
-        // 2. Save to the new location in AI Storyteller directory
-        const translatorPath = "~/AI Storyteller/translations.js";
-        await sdk.fs.write(translatorPath, content);
-        
-        // Set file permissions for the new location
-        try {
-          await sdk.fs.chmod(translatorPath, 0o644);
-          console.log("Set read-write permissions for ~/AI Storyteller/translations.js");
-        } catch (permError) {
-          console.warn("Could not set file permissions for ~/AI Storyteller/translations.js:", permError);
-          // Continue even if setting permissions fails
+        // Notify components that translations have been updated
+        if (window.eventBus) {
+          window.eventBus.emit('translations-updated');
         }
         
         this.saveMessage = 'Translations saved successfully!';
@@ -294,16 +322,120 @@ export default translations;`;
           this.editedTranslations[this.currentLanguage].examples.push(exampleCopy);
         }
       }
+      
+      // If we're adding to English, we need to make sure all other languages have this example too
+      if (this.currentLanguage === 'en') {
+        // For each language other than English
+        Object.keys(this.editedTranslations).forEach(langCode => {
+          if (langCode !== 'en') {
+            // Make sure the examples array exists
+            if (!this.editedTranslations[langCode].examples) {
+              this.editedTranslations[langCode].examples = [];
+            }
+            
+            // Add a copy of the new example to this language
+            const exampleCopy = { ...newExample };
+            this.editedTranslations[langCode].examples.push(exampleCopy);
+          }
+        });
+      }
     },
     removeExample(index) {
       if (confirm('Are you sure you want to remove this example?')) {
         this.editedTranslations[this.currentLanguage].examples.splice(index, 1);
+        
+        // If we're removing from English, we should remove from all languages to maintain consistency
+        if (this.currentLanguage === 'en') {
+          Object.keys(this.editedTranslations).forEach(langCode => {
+            if (langCode !== 'en' && 
+                this.editedTranslations[langCode].examples && 
+                this.editedTranslations[langCode].examples.length > index) {
+              this.editedTranslations[langCode].examples.splice(index, 1);
+            }
+          });
+        }
+      }
+    },
+    updateEnglishTranslation(item, value) {
+      if (item.isObject) return;
+      
+      // Handle nested paths
+      const keys = item.key.split('.');
+      let target = this.editedTranslations[this.currentLanguage][this.currentSection];
+      
+      for (let i = 0; i < keys.length - 1; i++) {
+        if (!target[keys[i]]) {
+          target[keys[i]] = {};
+        }
+        target = target[keys[i]];
+      }
+      
+      target[keys[keys.length - 1]] = value;
+      
+      // If we're editing English, we need to update both the display value and the stored value
+      if (this.currentLanguage === 'en') {
+        // The item.enValue is already updated via v-model, but we need to make sure
+        // the actual translations object is updated too
+        let enTarget = this.editedTranslations.en[this.currentSection];
+        for (let i = 0; i < keys.length - 1; i++) {
+          if (!enTarget[keys[i]]) {
+            enTarget[keys[i]] = {};
+          }
+          enTarget = enTarget[keys[i]];
+        }
+        enTarget[keys[keys.length - 1]] = value;
+      }
+    },
+    updateEnglishObjectTranslation(item, prop, value) {
+      if (!item.isObject) return;
+      
+      const index = parseInt(item.key);
+      const section = this.editedTranslations[this.currentLanguage][this.currentSection];
+      
+      if (Array.isArray(section)) {
+        if (!section[index]) {
+          // Clone the structure from English
+          section[index] = JSON.parse(JSON.stringify(this.editedTranslations.en[this.currentSection][index]));
+        }
+        section[index][prop.key] = value;
+        
+        // If we're editing English, we need to update both the display value and the stored value
+        if (this.currentLanguage === 'en') {
+          // The prop.enValue is already updated via v-model, but we need to make sure
+          // the actual translations object is updated too
+          const enSection = this.editedTranslations.en[this.currentSection];
+          if (enSection && Array.isArray(enSection) && enSection[index]) {
+            enSection[index][prop.key] = value;
+          }
+        }
+      } else {
+        if (!section[item.key]) {
+          section[item.key] = {};
+        }
+        section[item.key][prop.key] = value;
+        
+        // If we're editing English, we need to update both the display value and the stored value
+        if (this.currentLanguage === 'en') {
+          // The prop.enValue is already updated via v-model, but we need to make sure
+          // the actual translations object is updated too
+          const enSection = this.editedTranslations.en[this.currentSection];
+          if (enSection && enSection[item.key]) {
+            enSection[item.key][prop.key] = value;
+          }
+        }
       }
     }
   },
   mounted() {
     // Try to load custom translations
     this.loadCustomTranslations();
+    
+    // Listen for translations-updated events
+    if (window.eventBus) {
+      window.eventBus.on('translations-updated', () => {
+        this.loadCustomTranslations();
+      });
+    }
   },
   template: `
     <div class="min-h-screen bg-[#FFF9F6]">
@@ -346,6 +478,18 @@ export default translations;`;
               + Add Language
             </button>
           </div>
+        </div>
+        
+        <!-- Toggle for editing English -->
+        <div class="mb-6">
+          <label class="flex items-center">
+            <input 
+              type="checkbox" 
+              v-model="allowEditingEnglish" 
+              class="mr-2"
+            />
+            <span class="text-sm font-medium">Allow editing English translations</span>
+          </label>
         </div>
         
         <!-- Section selector -->
@@ -513,10 +657,11 @@ export default translations;`;
                   <div>
                     <label class="block text-sm text-gray-600 mb-1">English:</label>
                     <textarea 
-                      :value="item.enValue" 
-                      readonly
+                      :value="item.enValue"
+                      :readonly="currentLanguage !== 'en' && !allowEditingEnglish"
+                      @input="currentLanguage === 'en' || allowEditingEnglish ? updateEnglishTranslation(item, $event.target.value) : null"
                       rows="2"
-                      class="w-full px-3 py-2 border rounded bg-gray-50"
+                      :class="'w-full px-3 py-2 border rounded ' + (currentLanguage !== 'en' && !allowEditingEnglish ? 'bg-gray-50' : '')"
                     ></textarea>
                   </div>
                   <div>
@@ -547,10 +692,11 @@ export default translations;`;
                       <div>
                         <label class="block text-sm text-gray-600 mb-1">English:</label>
                         <textarea 
-                          :value="prop.enValue" 
-                          readonly
+                          :value="prop.enValue"
+                          :readonly="currentLanguage !== 'en' && !allowEditingEnglish"
+                          @input="currentLanguage === 'en' || allowEditingEnglish ? updateEnglishObjectTranslation(item, prop, $event.target.value) : null"
                           rows="2"
-                          class="w-full px-3 py-2 border rounded bg-gray-50"
+                          :class="'w-full px-3 py-2 border rounded ' + (currentLanguage !== 'en' && !allowEditingEnglish ? 'bg-gray-50' : '')"
                         ></textarea>
                       </div>
                       <div>

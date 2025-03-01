@@ -10,66 +10,62 @@ The AI Storyteller application implements a custom Content Management System (CM
 
 The translation system relies on two key files:
 
-1. **Default translations**: `./i18n/translations.js` - This file is bundled with the application and contains all the default translations, examples, and prompts. This is what most users will see.
+1. **Default translations**: `./i18n/translations.json` - This file is bundled with the application and contains all the default translations, examples, and prompts. This is what most users will see.
 
-2. **Custom translations**: `~/AI Storyteller/translations.js` - This is an optional file that can be created in the user's Webdraw filesystem to override the default translations.
+2. **Custom translations**: `~/AI Storyteller/translations.json` - This is an optional file that can be created in the user's Webdraw filesystem to override the default translations.
 
 ### Default Translations
 
-The default translations are loaded from the application's codebase:
+The default translations are loaded from the application's codebase using fetch:
 
 ```javascript
 // In app.js
-import translations from './i18n/translations.js';
+async function loadDefaultTranslations() {
+  const response = await fetch('./i18n/translations.json');
+  const translations = await response.json();
+  window.i18n.translations = translations;
+}
 ```
 
 This file contains all the text strings, prompts, voice options, theme suggestions, and example stories for all supported languages. The application initializes with these translations, and they serve as the fallback when custom translations are not available.
 
 ### Admin Access Detection
 
-The application determines if a user has admin privileges by checking if they can read and write to the `~/AI Storyteller/translations.js` file using Webdraw's filesystem API (`sdk.fs`). This check happens in the `checkTranslatorAccess()` method:
+The application determines if a user has admin privileges by checking if they can read and write to the `~/AI Storyteller/translations.json` file using Webdraw's filesystem API (`sdk.fs`). This check happens in the `checkTranslatorAccess()` method:
 
 ```javascript
 async checkTranslatorAccess() {
     try {
-        // Check if we can read and write to the ~/AI Storyteller/translations.js file
+        // Check if we can read and write to the ~/AI Storyteller/translations.json file
         if (sdk && typeof sdk.fs?.read === 'function' && typeof sdk.fs?.write === 'function') {
-            const translatorPath = "~/AI Storyteller/translations.js";
+            const translatorPath = "~/AI Storyteller/translations.json";
             let content;
             
             try {
                 // Try to read the file
                 content = await sdk.fs.read(translatorPath);
                 console.log("Translator file exists and can be read");
-            } catch (readError) {
-                // File doesn't exist, create it
-                console.log("Translator file doesn't exist, creating it");
-                content = "// Translator configuration file\nconst translatorConfig = {\n  enabled: true,\n  version: '1.0.0'\n};\n\nexport default translatorConfig;";
                 
-                try {
-                    await sdk.fs.write(translatorPath, content);
-                    console.log("Created translator file successfully");
-                } catch (writeError) {
-                    console.error("Failed to create translator file:", writeError);
-                    throw writeError;
-                }
+                // Try to write the file (write the same content back)
+                await sdk.fs.write(translatorPath, content);
+                
+                // If we get here, we have read and write access
+                this.isAdmin = true;
+                console.log("Admin access granted - ~/AI Storyteller/translations.json can be read and written");
+            } catch (readError) {
+                // File doesn't exist or can't be read
+                console.log("Translator file doesn't exist or can't be read:", readError.message);
+                this.isAdmin = false;
             }
-            
-            // Try to write the file (write the same content back)
-            await sdk.fs.write(translatorPath, content);
-            
-            // If we get here, we have read and write access
-            this.isAdmin = true;
-            console.log("Admin access granted - ~/AI Storyteller/translations.js can be read and written");
         }
     } catch (error) {
-        console.log("Not showing admin menu - ~/AI Storyteller/translations.js cannot be accessed:", error);
+        console.log("Not showing admin menu - ~/AI Storyteller/translations.json cannot be accessed:", error);
         this.isAdmin = false;
     }
 }
 ```
 
-> **Important Note**: The current implementation attempts to create the file if it doesn't exist. However, this behavior should be changed. The application should NOT try to create this file automatically. The file should only be manually placed in the user's Webdraw filesystem by administrators.
+> **Important Note**: The application should NOT try to create this file automatically. The file should only be manually placed in the user's Webdraw filesystem by administrators.
 
 ### Admin UI Access
 
@@ -92,8 +88,8 @@ When a user has admin privileges (can read/write the translations file), they wi
 
 ## Translation Loading Process
 
-1. The application initializes with the default set of translations from `./i18n/translations.js`.
-2. On startup, it attempts to load the custom `~/AI Storyteller/translations.js` file from the user's Webdraw filesystem.
+1. The application initializes and loads the default translations from `./i18n/translations.json` using fetch.
+2. After loading the default translations, it attempts to load the custom `~/AI Storyteller/translations.json` file from the user's Webdraw filesystem.
 3. If the custom file exists and can be read, its contents override the default translations.
 4. The application uses the `window.i18n` object to manage translations.
 5. Examples for the homepage are loaded from the translations based on the current language:
@@ -120,7 +116,8 @@ The admin interface (accessible at `/_admin`) provides:
 
 1. When an admin makes changes in the admin interface, the application:
    - Updates the in-memory translations
-   - Writes the updated content to `~/AI Storyteller/translations.js` using `sdk.fs.write()`
+   - Writes the updated content to `~/AI Storyteller/translations.json` using `sdk.fs.write()`
+   - Emits a 'translations-updated' event to notify components of the changes
    
 2. These changes are immediately available to all users of the application
 
@@ -136,6 +133,6 @@ The admin interface (accessible at `/_admin`) provides:
 ## Fallback Mechanism
 
 If the custom translations file cannot be accessed or doesn't exist:
-1. The application falls back to default translations from the bundled `./i18n/translations.js` file
+1. The application falls back to default translations from the bundled `./i18n/translations.json` file
 2. Admin features are disabled
 3. The application continues to function normally for end users 

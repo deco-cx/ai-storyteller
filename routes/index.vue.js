@@ -84,7 +84,7 @@ window.IndexPage = {
                                         <img :src="example.voiceAvatar" class="w-8 h-8 rounded-full" />
                                         <span>{{ example.voice }}</span>
                                         <button class="ml-auto bg-blue-600 text-white p-1 rounded-full w-8 h-8 flex items-center justify-center">
-                                            <i class="fa-solid fa-play text-sm"></i>
+                                            <i :class="example.isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -146,7 +146,8 @@ window.IndexPage = {
             user: null,
             examples: [],
             isPreviewEnvironment: false,
-            isAdmin: false
+            isAdmin: false,
+            refreshKey: 0 // Add a refresh key to force component re-render
         }
     },
     async mounted() {
@@ -157,11 +158,11 @@ window.IndexPage = {
             this.user = null;
         }
         
-        // Log the contents of translations.js on startup
+        // Log the contents of translations.json on startup
         try {
             if (sdk && typeof sdk.fs?.read === 'function') {
                 console.log("Current working directory:", await sdk.fs.cwd());
-                const translatorPath = "~/AI Storyteller/translations.js";
+                const translatorPath = "~/AI Storyteller/translations.json";
                 try {
                     const translationsContent = await sdk.fs.read(translatorPath);
                     console.log("Translator file content on startup:", translationsContent ? "Content loaded successfully" : "No content");
@@ -197,8 +198,19 @@ window.IndexPage = {
         // Check if we're in the preview environment
         this.isPreviewEnvironment = window.location.origin.includes('preview.webdraw.app');
         
-        // Check if we can access the translator.js file
+        // Check if we can access the translator.json file
         await this.checkTranslatorAccess();
+        
+        // Listen for translations loaded event
+        if (window.eventBus) {
+            window.eventBus.on('translations-loaded', this.handleTranslationsLoaded);
+            window.eventBus.on('translations-updated', this.handleTranslationsLoaded);
+        }
+        
+        // Force refresh if translations are already loaded
+        if (window.translationsLoaded) {
+            this.handleTranslationsLoaded();
+        }
     },
     methods: {
         handleLogin() {
@@ -207,9 +219,9 @@ window.IndexPage = {
         
         async checkTranslatorAccess() {
             try {
-                // Check if we can read and write to the ~/AI Storyteller/translations.js file
+                // Check if we can read and write to the ~/AI Storyteller/translations.json file
                 if (sdk && typeof sdk.fs?.read === 'function' && typeof sdk.fs?.write === 'function') {
-                    const translatorPath = "~/AI Storyteller/translations.js";
+                    const translatorPath = "~/AI Storyteller/translations.json";
                     let content;
                     
                     try {
@@ -222,7 +234,7 @@ window.IndexPage = {
                         
                         // If we get here, we have read and write access
                         this.isAdmin = true;
-                        console.log("Admin access granted - ~/AI Storyteller/translations.js can be read and written");
+                        console.log("Admin access granted - ~/AI Storyteller/translations.json can be read and written");
                     } catch (readError) {
                         // File doesn't exist or can't be read
                         console.log("Translator file doesn't exist or can't be read:", readError.message);
@@ -230,8 +242,49 @@ window.IndexPage = {
                     }
                 }
             } catch (error) {
-                console.log("Not showing admin menu - ~/AI Storyteller/translations.js cannot be accessed:", error);
+                console.log("Not showing admin menu - ~/AI Storyteller/translations.json cannot be accessed:", error);
                 this.isAdmin = false;
+            }
+        },
+        
+        // Handle translations loaded event
+        handleTranslationsLoaded() {
+            console.log("Translations loaded/updated, refreshing IndexPage component");
+            
+            // Update examples if needed
+            try {
+                const currentLang = window.i18n.getLanguage();
+                
+                if (window.i18n.translations && window.i18n.translations[currentLang] && window.i18n.translations[currentLang].examples) {
+                    this.examples = window.i18n.translations[currentLang].examples;
+                } else if (window.i18n.translations && window.i18n.translations.en && window.i18n.translations.en.examples) {
+                    // Fallback to English if current language doesn't have examples
+                    this.examples = window.i18n.translations.en.examples;
+                }
+            } catch (error) {
+                console.error("Error updating examples after translations loaded:", error);
+            }
+            
+            // Force component re-render by incrementing the refresh key
+            this.refreshKey++;
+            this.$forceUpdate();
+        }
+    },
+    beforeUnmount() {
+        // Clean up event listeners
+        if (window.eventBus && window.eventBus.events) {
+            if (window.eventBus.events['translations-loaded']) {
+                const index = window.eventBus.events['translations-loaded'].indexOf(this.handleTranslationsLoaded);
+                if (index !== -1) {
+                    window.eventBus.events['translations-loaded'].splice(index, 1);
+                }
+            }
+            
+            if (window.eventBus.events['translations-updated']) {
+                const index = window.eventBus.events['translations-updated'].indexOf(this.handleTranslationsLoaded);
+                if (index !== -1) {
+                    window.eventBus.events['translations-updated'].splice(index, 1);
+                }
             }
         }
     }

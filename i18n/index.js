@@ -1,5 +1,3 @@
-import translations from './translations.js';
-
 // Default language
 let currentLanguage = 'en';
 
@@ -9,16 +7,21 @@ const getBrowserLanguage = () => {
   const shortLang = browserLang.split('-')[0];
   
   // Check if we support this language
-  return translations[shortLang] ? shortLang : 'en';
+  // We'll check against window.i18n.translations once it's loaded
+  return shortLang;
 };
 
 // Initialize language from localStorage or browser settings
 const initLanguage = () => {
   const savedLang = localStorage.getItem('appLanguage');
-  if (savedLang && translations[savedLang]) {
+  if (savedLang) {
     currentLanguage = savedLang;
   } else {
     currentLanguage = getBrowserLanguage();
+    // Default to 'en' if we can't determine the language yet
+    if (!currentLanguage || currentLanguage === '') {
+      currentLanguage = 'en';
+    }
     localStorage.setItem('appLanguage', currentLanguage);
   }
   return currentLanguage;
@@ -29,7 +32,8 @@ const getLanguage = () => currentLanguage;
 
 // Set language
 const setLanguage = (lang) => {
-  if (translations[lang]) {
+  // Check if the language is supported in our translations
+  if (window.i18n && window.i18n.translations && window.i18n.translations[lang]) {
     currentLanguage = lang;
     localStorage.setItem('appLanguage', lang);
     
@@ -45,7 +49,11 @@ const setLanguage = (lang) => {
 
 // Get available languages
 const getAvailableLanguages = () => {
-  return Object.keys(translations).map(code => ({
+  if (!window.i18n || !window.i18n.translations) {
+    return [{ code: 'en', name: 'English' }];
+  }
+  
+  return Object.keys(window.i18n.translations).map(code => ({
     code,
     name: code === 'en' ? 'English' : code === 'pt' ? 'Português' : code
   }));
@@ -53,15 +61,21 @@ const getAvailableLanguages = () => {
 
 // Get translation for a key
 const t = (key) => {
+  if (!window.i18n || !window.i18n.translations) {
+    return key; // Return the key itself if translations aren't loaded yet
+  }
+  
   const keys = key.split('.');
-  let result = translations[currentLanguage];
+  let result = window.i18n.translations[currentLanguage];
   
   for (const k of keys) {
     if (result && result[k] !== undefined) {
       result = result[k];
     } else {
       // Fallback to English if key not found in current language
-      let fallback = translations['en'];
+      let fallback = window.i18n.translations['en'];
+      if (!fallback) return key; // Return the key if English translations aren't available
+      
       for (const fk of keys) {
         if (fallback && fallback[fk] !== undefined) {
           fallback = fallback[fk];

@@ -1,4 +1,5 @@
 import { sdk } from "../sdk.js";
+import i18n from "../i18n/index.js";
 
 window.StoryPage = {
     template: `
@@ -89,6 +90,22 @@ window.StoryPage = {
                             <i class="fa-solid fa-plus"></i>
                             {{ $t('ui.createNewStory') }}
                         </router-link>
+                        <!-- Add as Example Button (Admin Only) -->
+                        <button 
+                            v-if="isAdmin" 
+                            @click="addAsExample" 
+                            class="border border-[#00B7EA] text-[#00B7EA] px-6 py-3 rounded-full hover:bg-[#F0F9FF] font-medium flex items-center justify-center gap-2"
+                            :disabled="addingAsExample"
+                        >
+                            <i class="fa-solid fa-bookmark"></i>
+                            <span v-if="!addingAsExample">Add as Example</span>
+                            <span v-else>Adding...</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Example Added Message -->
+                    <div v-if="exampleAddedMessage" class="mb-8 p-4 rounded-lg text-center" :class="exampleAddedMessage.startsWith('Error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'">
+                        {{ exampleAddedMessage }}
                     </div>
                     
                     <!-- Story Settings (Collapsible) -->
@@ -135,7 +152,11 @@ window.StoryPage = {
             fileUrl: null,
             storyIndex: null,
             BASE_FS_URL: "https://fs.webdraw.com",
-            isPreviewEnvironment: false
+            isPreviewEnvironment: false,
+            isAdmin: false,
+            addingAsExample: false,
+            exampleAddedMessage: '',
+            adminCheckInterval: null
         }
     },
     watch: {
@@ -161,9 +182,45 @@ window.StoryPage = {
         // Check if we're in the preview environment
         this.isPreviewEnvironment = window.location.origin.includes('preview.webdraw.app');
         
+        // Check if the user is an admin (can access admin page)
+        this.isAdmin = this.isPreviewEnvironment || await this.checkIfAdmin();
+        
+        // Periodically check admin status
+        this.adminCheckInterval = setInterval(async () => {
+            this.isAdmin = this.isPreviewEnvironment || await this.checkIfAdmin();
+        }, 30000); // Check every 30 seconds
+        
         await this.loadStory();
     },
+    beforeDestroy() {
+        // Clear the interval when the component is destroyed
+        if (this.adminCheckInterval) {
+            clearInterval(this.adminCheckInterval);
+        }
+    },
     methods: {
+        // Check if the user is an admin
+        async checkIfAdmin() {
+            // First check if AdminPage is defined
+            if (typeof window.AdminPage !== 'undefined') {
+                return true;
+            }
+            
+            // Then check if the user has file system access
+            if (sdk && typeof sdk.fs?.read === 'function') {
+                try {
+                    // Try to read the translations file - only admins should have access to this
+                    const translatorPath = "~/AI Storyteller/translations.json";
+                    const content = await sdk.fs.read(translatorPath);
+                    return !!content; // Return true if we can read the file
+                } catch (error) {
+                    console.warn("User doesn't have admin access:", error);
+                    return false;
+                }
+            }
+            
+            return false;
+        },
         async loadStory() {
             this.loading = true;
             this.error = null;
@@ -435,6 +492,96 @@ window.StoryPage = {
             
             // Remove any HTML tags if present
             return title.replace(/<[^>]*>/g, '');
+        },
+        
+        // Add current story as an example in translations.json
+        async addAsExample() {
+            if (!this.isAdmin || !this.story) {
+                return;
+            }
+            
+            this.addingAsExample = true;
+            this.exampleAddedMessage = '';
+            
+            try {
+                // Create example object from current story
+                const newExample = {
+                    title: this.story.title || "Untitled Story",
+                    childName: this.story.childName || "",
+                    themes: this.story.themes || this.story.interests || "",
+                    voice: typeof this.story.voice === 'object' ? this.story.voice.name : (this.story.voice || ""),
+                    voiceAvatar: typeof this.story.voice === 'object' ? (this.story.voice.avatar || "") : "",
+                    image: this.story.coverUrl || "",
+                    isPlaying: false,
+                    progress: "0%"
+                };
+                
+                // Load translations.json
+                const translatorPath = "~/AI Storyteller/translations.json";
+                let translations;
+                
+                try {
+                    const content = await sdk.fs.read(translatorPath);
+                    if (content) {
+                        translations = JSON.parse(content);
+                    } else {
+                        throw new Error("Empty translations file");
+                    }
+                } catch (error) {
+                    console.error("Error reading translations file:", error);
+                    throw new Error("Failed to read translations file");
+                }
+                
+                // Get current language
+                const currentLanguage = i18n.getLanguage();
+                
+                // Add example to current language
+                if (!translations[currentLanguage].examples) {
+                    translations[currentLanguage].examples = [];
+                }
+                
+                translations[currentLanguage].examples.push(newExample);
+                
+                // If adding to English, add to all other languages too
+                if (currentLanguage === 'en') {
+                    Object.keys(translations).forEach(langCode => {
+                        if (langCode !== 'en') {
+                            if (!translations[langCode].examples) {
+                                translations[langCode].examples = [];
+                            }
+                            
+                            // Add a copy of the new example to this language
+                            const exampleCopy = { ...newExample };
+                            translations[langCode].examples.push(exampleCopy);
+                        }
+                    });
+                }
+                
+                // Save updated translations
+                const jsonContent = JSON.stringify(translations, null, 2);
+                await sdk.fs.write(translatorPath, jsonContent);
+                
+                // Update global translations
+                window.i18n.translations = JSON.parse(JSON.stringify(translations));
+                
+                // Notify components that translations have been updated
+                if (window.eventBus) {
+                    window.eventBus.emit('translations-updated');
+                }
+                
+                this.exampleAddedMessage = 'Story added as example successfully!';
+                
+                // Clear message after 3 seconds
+                setTimeout(() => {
+                    this.exampleAddedMessage = '';
+                }, 3000);
+                
+            } catch (error) {
+                console.error("Error adding story as example:", error);
+                this.exampleAddedMessage = `Error: ${error.message}`;
+            } finally {
+                this.addingAsExample = false;
+            }
         }
     }
 }; 
