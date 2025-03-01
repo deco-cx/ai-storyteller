@@ -110,34 +110,52 @@
     },
     "examples": [
       {
-        "title": "Pablo the Knight and the Desert Oasis",
-        "childName": "Pablo",
-        "themes": "Knights, Desert and Telling the Truth",
-        "voice": "Granny Mabel",
-        "voiceAvatar": "https://github.com/user-attachments/assets/754281d3-a02b-41de-a9ef-ead820c40729",
-        "image": "https://fs.webdraw.com/users/117259cb-462f-4558-9b28-7aa8f21715a9/Pictures/piratas_disney_pixar_illustration_2.webp",
-        "isPlaying": true,
-        "progress": "100%"
+        "title": "Luco and Tico's Journey",
+        "childName": "Luco",
+        "themes": "Sibling bonds, family love, empathy and belonging",
+        "voice": "Grandpa Solomon",
+        "voiceId": "NOpBlnGInO9m6vDvFkFC",
+        "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Luis&accessories[]&clothingColor=9ddadb&face=cheeky,smile,calm&facialHair=full3&facialHairProbability=100&head=noHair2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=ffdfbf",
+        "image": "/image/ex2.png",
+        "audio": "/audio/sample/audio-grandpa2.mp3",
+        "isPlaying": false,
+        "progress": "0%"
       },
       {
-        "title": "The Magic Garden Adventure",
-        "childName": "Sarah",
-        "themes": "Nature, Magic and Friendship",
-        "voice": "Fairy Godmother",
-        "voiceAvatar": "https://github.com/user-attachments/assets/754281d3-a02b-41de-a9ef-ead820c40729",
-        "image": "https://fs.webdraw.com/users/117259cb-462f-4558-9b28-7aa8f21715a9/Pictures/piratas_disney_pixar_illustration_2.webp",
+        "title": "Stella and the Sky Lights",
+        "childName": "Stella",
+        "themes": "Curiosity, discovery, stars and constellations",
+        "voice": "Grandma Beatriz",
+        "voiceId": "S9EY1qVDizdxKWghP5FL",
+        "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Kimberly&accessories=glasses&clothingColor=e78276&face=cheeky,smile,smileBig,calm&facialHair[]&head=grayBun&headContrastColor=e8e1e1&skinColor=ae5d29&backgroundColor=ffd5dc,ffdfbf",
+        "image": "/image/ex1.webp",
+        "audio": "/audio/sample/audio-grandma.mp3",
         "isPlaying": false,
-        "progress": "33%"
+        "progress": "0%"
       },
       {
-        "title": "The Space Explorer's Journey",
-        "childName": "Alex",
-        "themes": "Space, Discovery and Courage",
-        "voice": "Space Captain",
-        "voiceAvatar": "https://github.com/user-attachments/assets/754281d3-a02b-41de-a9ef-ead820c40729",
-        "image": "https://fs.webdraw.com/users/117259cb-462f-4558-9b28-7aa8f21715a9/Pictures/piratas_disney_pixar_illustration_2.webp",
+        "title": "Fin and the Magic World",
+        "childName": "Fin",
+        "themes": "Adventure, creativity, imagination",
+        "voice": "Aunt Dora",
+        "voiceId": "ZqvIIuD5aI9JFejebHiH",
+        "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Chase&accessories[]&clothingColor=e279c7&face=cheeky,smile,calm&facialHair[]&facialHairProbability=0&head=long,bun2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=d1d4f9",
+        "image": "/image/ex3.webp",
+        "audio": "/audio/sample/audio-aunt.mp3",
         "isPlaying": false,
-        "progress": "66%"
+        "progress": "0%"
+      },
+      {
+        "title": "Miguel and the Lost Treasure",
+        "childName": "Miguel",
+        "themes": "Courage, friendship, overcoming fear",
+        "voice": "Uncle Joe",
+        "voiceId": "IKne3meq5aSn9XLyUdCD",
+        "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Eden&accessories=glasses&clothingColor=78e185,ffcf77&face=cheeky,smile,smileBig,calm&facialHair=full&facialHairProbability=100&head=grayShort&headContrastColor=2c1b18&skinColor=ae5d29&backgroundColor=b6e3f4",
+        "image": "/image/ex4.webp",
+        "audio": "/audio/sample/audio-grandpa.mp3",
+        "isPlaying": false,
+        "progress": "0%"
       }
     ],
     "voices": [
@@ -295,34 +313,52 @@
     },
     "examples": [
       {
-        "title": "Pablo o Cavaleiro e o Oásis do Deserto",
-        "childName": "Pablo",
-        "themes": "Cavaleiros, Deserto e Dizer a Verdade",
-        "voice": "Vovó Mabel",
-        "voiceAvatar": "https://github.com/user-attachments/assets/754281d3-a02b-41de-a9ef-ead820c40729",
-        "image": "https://fs.webdraw.com/users/117259cb-462f-4558-9b28-7aa8f21715a9/Pictures/piratas_disney_pixar_illustration_2.webp",
-        "isPlaying": true,
-        "progress": "100%"
+        "title": "A jornada de Luco e Tico",
+        "childName": "Luco",
+        "themes": "Laços entre irmãos, amor familiar, empatia e pertencimento",
+        "voice": "Vô Pedro",
+        "voiceId": "NOpBlnGInO9m6vDvFkFC",
+        "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Luis&accessories[]&clothingColor=9ddadb&face=cheeky,smile,calm&facialHair=full3&facialHairProbability=100&head=noHair2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=ffdfbf",
+        "image": "/image/ex2.png",
+        "audio": "/audio/sample/audio-grandpa-pt2.mp3",
+        "isPlaying": false,
+        "progress": "0%"
       },
       {
-        "title": "A Aventura do Jardim Mágico",
-        "childName": "Sara",
-        "themes": "Natureza, Magia e Amizade",
-        "voice": "Fada Madrinha",
-        "voiceAvatar": "https://github.com/user-attachments/assets/754281d3-a02b-41de-a9ef-ead820c40729",
-        "image": "https://fs.webdraw.com/users/117259cb-462f-4558-9b28-7aa8f21715a9/Pictures/piratas_disney_pixar_illustration_2.webp",
+        "title": "Stella e as Luzes do Céu",
+        "childName": "Stella",
+        "themes": "Curiosidade, descoberta, estrelas e constelações",
+        "voice": "Vó Eunice",
+        "voiceId": "S9EY1qVDizdxKWghP5FL",
+        "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Kimberly&accessories=glasses&clothingColor=e78276&face=cheeky,smile,smileBig,calm&facialHair[]&head=grayBun&headContrastColor=e8e1e1&skinColor=ae5d29&backgroundColor=ffd5dc,ffdfbf",
+        "image": "/image/ex1.webp",
+        "audio": "/audio/sample/audio-grandma-pt.mp3",
         "isPlaying": false,
-        "progress": "33%"
+        "progress": "0%"
       },
       {
-        "title": "A Jornada do Explorador Espacial",
-        "childName": "Alex",
-        "themes": "Espaço, Descoberta e Coragem",
-        "voice": "Capitão Espacial",
-        "voiceAvatar": "https://github.com/user-attachments/assets/754281d3-a02b-41de-a9ef-ead820c40729",
-        "image": "https://fs.webdraw.com/users/117259cb-462f-4558-9b28-7aa8f21715a9/Pictures/piratas_disney_pixar_illustration_2.webp",
+        "title": "Fin e o Mundo Mágico",
+        "childName": "Fin",
+        "themes": "Aventura, criatividade, imaginação",
+        "voice": "Tia Dora",
+        "voiceId": "ZqvIIuD5aI9JFejebHiH",
+        "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Chase&accessories[]&clothingColor=e279c7&face=cheeky,smile,calm&facialHair[]&facialHairProbability=0&head=long,bun2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=d1d4f9",
+        "image": "/image/ex3.webp",
+        "audio": "/audio/sample/audio-aunt-pt.mp3",
         "isPlaying": false,
-        "progress": "66%"
+        "progress": "0%"
+      },
+      {
+        "title": "Miguel e o Tesouro Perdido",
+        "childName": "Miguel",
+        "themes": "Coragem, amizade, superação do medo",
+        "voice": "Tio José",
+        "voiceId": "IKne3meq5aSn9XLyUdCD",
+        "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Eden&accessories=glasses&clothingColor=78e185,ffcf77&face=cheeky,smile,smileBig,calm&facialHair=full&facialHairProbability=100&head=grayShort&headContrastColor=2c1b18&skinColor=ae5d29&backgroundColor=b6e3f4",
+        "image": "/image/ex4.webp",
+        "audio": "/audio/sample/audio-grandpa-pt.mp3",
+        "isPlaying": false,
+        "progress": "0%"
       }
     ],
     "voices": [

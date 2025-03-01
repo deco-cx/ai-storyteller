@@ -101,11 +101,14 @@ window.IndexPage = {
                             <div class="bg-[#F0F9FF] border border-[#BAE6FD] rounded-xl p-4">
                                 <img :src="getOptimizedImageUrl(example.image, 400, 200)" 
                                      :alt="example.title" 
-                                     class="w-full h-48 object-cover rounded-lg mb-4" />
+                                     class="w-full h-48 object-cover rounded-lg mb-4"
+                                     :data-original-src="example.image"
+                                     @load="logImageLoaded(example.title, example.image)"
+                                     @error="logImageError(example.title, example.image)" />
                                 
                                 <!-- Audio Player -->
                                 <div class="flex items-center gap-4">
-                                    <button class="bg-[#0EA5E9] text-white p-2 rounded-full w-8 h-8 flex items-center justify-center">
+                                    <button @click="toggleAudio(example)" class="bg-[#0EA5E9] text-white p-2 rounded-full w-8 h-8 flex items-center justify-center">
                                         <i :class="example.isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'"></i>
                                     </button>
                                     <div class="flex-1 h-8 bg-[#E0F2FE] rounded-full relative">
@@ -114,6 +117,14 @@ window.IndexPage = {
                                         </div>
                                     </div>
                                 </div>
+                                <audio 
+                                    :id="'audio-' + index" 
+                                    :src="getOptimizedAudioUrl(example.audio)" 
+                                    @timeupdate="updateProgress($event, example)" 
+                                    @ended="audioEnded(example)" 
+                                    @canplaythrough="logAudioLoaded(example.title, example.audio)"
+                                    @error="logAudioError(example.title, example.audio, $event.error)"
+                                    style="display: none;"></audio>
                             </div>
                         </div>
                     </div>
@@ -217,6 +228,46 @@ window.IndexPage = {
             sdk.redirectToLogin({ appReturnUrl: '?goToCreate=true' });
         },
         
+        logImageLoaded(title, originalSrc) {
+            // Process the URL to ensure it has the correct format
+            let processedSrc = originalSrc;
+            if (!originalSrc.startsWith('http') && !originalSrc.startsWith('/')) {
+                processedSrc = '/' + originalSrc;
+            }
+            
+            console.log(`DEBUG IMAGE - Successfully loaded image for "${title}"`, {
+                originalSrc: originalSrc,
+                processedSrc: processedSrc
+            });
+        },
+        
+        logImageError(title, originalSrc) {
+            // Process the URL to ensure it has the correct format
+            let processedSrc = originalSrc;
+            if (!originalSrc.startsWith('http') && !originalSrc.startsWith('/')) {
+                processedSrc = '/' + originalSrc;
+            }
+            
+            console.error(`DEBUG IMAGE - Failed to load image for "${title}"`, {
+                originalSrc: originalSrc,
+                processedSrc: processedSrc,
+                fullPath: window.location.origin + processedSrc,
+                // Add more debug info
+                hostname: window.location.hostname,
+                protocol: window.location.protocol,
+                pathname: window.location.pathname
+            });
+            
+            // Try to fetch the image directly to see if it exists
+            fetch(processedSrc)
+                .then(response => {
+                    console.log(`DEBUG IMAGE - Fetch test for "${title}": Status ${response.status}`);
+                })
+                .catch(error => {
+                    console.error(`DEBUG IMAGE - Fetch test for "${title}" failed:`, error);
+                });
+        },
+        
         async checkTranslatorAccess() {
             try {
                 // Check if we can read and write to the ~/AI Storyteller/translations.json file
@@ -272,8 +323,162 @@ window.IndexPage = {
         getOptimizedImageUrl(url, width, height) {
             if (!url || url.startsWith('data:')) return url;
             
-            // Use the webdraw.com image optimization service
-            return `https://webdraw.com/image-optimize?src=${encodeURIComponent(url)}&width=${width}&height=${height}&fit=cover`;
+            console.log('DEBUG IMAGE - Original URL:', url);
+            
+            // Ensure the URL has the correct format
+            let processedUrl = url;
+            
+            // If the URL is not absolute and doesn't start with a slash, add a slash
+            if (!url.startsWith('http') && !url.startsWith('/')) {
+                processedUrl = '/' + url;
+                console.log('DEBUG IMAGE - Added leading slash:', processedUrl);
+            }
+            
+            // For local development, use the image directly
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                console.log('DEBUG IMAGE - Using direct image path for local development:', processedUrl);
+                return processedUrl;
+            }
+            
+            // Use the webdraw.com image optimization service for production
+            const finalUrl = `https://webdraw.com/image-optimize?src=${encodeURIComponent(processedUrl)}&width=${width}&height=${height}&fit=cover`;
+            console.log('DEBUG IMAGE - Final optimized URL:', finalUrl);
+            return finalUrl;
+        },
+        getOptimizedAudioUrl(url) {
+            if (!url || url.startsWith('data:')) return url;
+            
+            console.log('DEBUG AUDIO - Original URL:', url);
+            
+            // Ensure the URL has the correct format
+            let processedUrl = url;
+            
+            // If the URL is not absolute and doesn't start with a slash, add a slash
+            if (!url.startsWith('http') && !url.startsWith('/')) {
+                processedUrl = '/' + url;
+                console.log('DEBUG AUDIO - Added leading slash:', processedUrl);
+            }
+            
+            // For local development, use the audio directly
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                console.log('DEBUG AUDIO - Using direct audio path for local development:', processedUrl);
+                return processedUrl;
+            }
+            
+            // For production, use the full URL
+            if (!processedUrl.startsWith('http')) {
+                processedUrl = `https://fs.webdraw.com${processedUrl.startsWith('/') ? '' : '/'}${processedUrl}`;
+                console.log('DEBUG AUDIO - Using full URL for production:', processedUrl);
+            }
+            
+            return processedUrl;
+        },
+        toggleAudio(example) {
+            // Find the audio element
+            const audioId = 'audio-' + this.examples.indexOf(example);
+            const audioElement = document.getElementById(audioId);
+            
+            if (!audioElement) {
+                console.error('Audio element not found:', audioId);
+                return;
+            }
+            
+            // If this example is already playing, pause it
+            if (example.isPlaying) {
+                audioElement.pause();
+                example.isPlaying = false;
+                return;
+            }
+            
+            // Pause any other playing audio
+            this.examples.forEach(ex => {
+                if (ex !== example && ex.isPlaying) {
+                    const otherAudioId = 'audio-' + this.examples.indexOf(ex);
+                    const otherAudioElement = document.getElementById(otherAudioId);
+                    if (otherAudioElement) {
+                        otherAudioElement.pause();
+                        ex.isPlaying = false;
+                    }
+                }
+            });
+            
+            // Play this audio
+            try {
+                // Make sure the audio source is set correctly
+                const optimizedUrl = this.getOptimizedAudioUrl(example.audio);
+                if (audioElement.src !== optimizedUrl) {
+                    audioElement.src = optimizedUrl;
+                }
+                
+                // Try to play the audio
+                audioElement.play()
+                    .then(() => {
+                        example.isPlaying = true;
+                        console.log(`Playing audio for "${example.title}"`);
+                    })
+                    .catch(error => {
+                        console.error(`Error playing audio for "${example.title}":`, error);
+                        
+                        // Try with a direct path if it fails
+                        const directPath = example.audio.startsWith('/') ? example.audio : '/' + example.audio;
+                        console.log(`Trying direct path: ${directPath}`);
+                        audioElement.src = directPath;
+                        
+                        audioElement.play()
+                            .then(() => {
+                                example.isPlaying = true;
+                                console.log(`Successfully playing audio with direct path for "${example.title}"`);
+                            })
+                            .catch(directError => {
+                                console.error(`Error playing audio with direct path for "${example.title}":`, directError);
+                                
+                                // Try one more approach - use the full path
+                                const fullPath = window.location.origin + directPath;
+                                console.log(`Trying full path: ${fullPath}`);
+                                audioElement.src = fullPath;
+                                
+                                audioElement.play()
+                                    .then(() => {
+                                        example.isPlaying = true;
+                                        console.log(`Successfully playing audio with full path for "${example.title}"`);
+                                    })
+                                    .catch(fullPathError => {
+                                        console.error(`Error playing audio with full path for "${example.title}":`, fullPathError);
+                                        alert(`Could not play audio for "${example.title}". The audio file may be missing or inaccessible.`);
+                                    });
+                            });
+                    });
+            } catch (error) {
+                console.error(`Error playing audio for "${example.title}":`, error);
+            }
+        },
+        
+        updateProgress(event, example) {
+            const audioElement = event.target;
+            if (audioElement && !isNaN(audioElement.duration)) {
+                const percentage = (audioElement.currentTime / audioElement.duration) * 100;
+                example.progress = percentage + '%';
+            }
+        },
+        
+        audioEnded(example) {
+            example.isPlaying = false;
+            example.progress = '0%';
+        },
+        logAudioLoaded(title, originalSrc) {
+            console.log(`DEBUG AUDIO - Successfully loaded audio for "${title}"`, {
+                originalSrc: originalSrc,
+                processedSrc: this.getOptimizedAudioUrl(originalSrc)
+            });
+        },
+        
+        logAudioError(title, originalSrc, error) {
+            console.error(`DEBUG AUDIO - Failed to load audio for "${title}"`, {
+                originalSrc: originalSrc,
+                processedSrc: this.getOptimizedAudioUrl(originalSrc),
+                error: error ? error.message : 'Unknown error',
+                fullPath: window.location.origin + (originalSrc.startsWith('/') ? originalSrc : '/' + originalSrc)
+            });
         }
     },
     beforeUnmount() {
