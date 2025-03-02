@@ -41,13 +41,15 @@ The route makes extensive use of the SDK APIs to generate content and manage fil
 
 2. **`sdk.ai.generateImage`**
    - Creates an illustration for the story based on the title and plot
-   - Uses the "stability:core" model
+   - Uses the "openai:dall-e-3" model
    - Example:
    ```javascript
    const imagePromise = sdk.ai.generateImage({
-     model: "stability:core",
-     prompt: imagePrompt
-   });
+     model: "openai:dall-e-3",
+     prompt: imagePrompt,
+     n: 1,
+     size: "1024x1024"
+  });
    ```
 
 3. **`sdk.ai.streamText`**
