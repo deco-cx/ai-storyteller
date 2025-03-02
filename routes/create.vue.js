@@ -464,11 +464,57 @@ window.CreatePage = {
           }
         }
         
-        this.taskStatus.audio = "done";
-        
-        this.screen = "result";
-        
-        await this.saveStory();
+        if (fullAudioUrl) {
+          console.log("Waiting for audio file to be fully accessible before showing result screen...");
+          let audioReady = false;
+          let attempts = 0;
+          const maxAttempts = 30;
+          
+          while (!audioReady && attempts < maxAttempts) {
+            attempts++;
+            console.log(`Audio availability check attempt ${attempts}/${maxAttempts}`);
+            
+            try {
+              const response = await fetch(fullAudioUrl, { 
+                method: 'GET',
+                headers: {
+                  'Range': 'bytes=0-1'
+                }
+              });
+              
+              if (response.ok || response.status === 206) {
+                console.log(`Audio file is accessible! Status: ${response.status}`);
+                audioReady = true;
+                this.taskStatus.audio = "done";
+              } else {
+                console.log(`Audio file not accessible yet (status: ${response.status}), waiting...`);
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second between attempts
+              }
+            } catch (error) {
+              console.warn(`Error checking audio file: ${error.message}`);
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          }
+          
+          if (!audioReady) {
+            console.warn("Could not confirm audio file is ready after maximum attempts. Proceeding anyway.");
+            this.taskStatus.audio = "error";
+          } else {
+            console.log("Audio file confirmed accessible! Proceeding to result screen.");
+            this.audioLoading = false;
+          }
+          
+          // Only switch to the result screen and save the story after confirming that the audio is ready
+          this.screen = "result";
+          
+          // Save story only after audio is available
+          await this.saveStory();
+        } else {
+          console.warn("No audio URL available, proceeding to result screen anyway");
+          this.taskStatus.audio = "error";
+          this.screen = "result";
+          await this.saveStory();
+        }
         
       } catch (error) {
         console.error("Error generating story:", error);
@@ -549,18 +595,100 @@ window.CreatePage = {
         if (this.isPlaying) {
           audioPlayer.pause();
           this.isPlaying = false;
+          console.log("Audio playback paused");
         } else {
-          audioPlayer.play().catch(error => {
-            console.error("Error playing audio:", error);
-            // If we get an error playing, it might be that the file isn't ready yet
-            if (error.name === 'NotSupportedError' || error.name === 'NotAllowedError') {
-              console.log("Audio playback failed, checking if file is ready...");
-              this.audioLoading = true;
-              this.startBackgroundAudioCheck(this.audioSource);
-            }
-          });
-          this.isPlaying = true;
+          if (audioPlayer.readyState >= 2) { // HAVE_CURRENT_DATA ou superior
+            console.log(`Playing audio: ${this.audioSource}`);
+            console.log(`Audio duration: ${audioPlayer.duration.toFixed(2)} seconds`);
+            
+            fetch(this.audioSource, { method: 'HEAD' })
+              .then(response => {
+                const contentLength = response.headers.get('content-length');
+                if (contentLength) {
+                  const fileSizeInMB = (parseInt(contentLength) / (1024 * 1024)).toFixed(2);
+                  console.log(`Audio file size: ${fileSizeInMB} MB`);
+                } else {
+                  console.log("Could not determine audio file size");
+                }
+              })
+              .catch(error => {
+                console.warn("Error fetching audio file size:", error);
+              });
+            
+            audioPlayer.play()
+              .then(() => {
+                this.isPlaying = true;
+                console.log("Audio playback started successfully");
+              })
+              .catch(error => {
+                console.error("Error playing audio:", error);
+                this.reloadAndPlayAudio();
+              });
+          } else {
+            console.log("Audio not fully loaded yet, reloading...");
+            this.reloadAndPlayAudio();
+          }
         }
+      }
+    },
+    
+    reloadAndPlayAudio() {
+      this.audioLoading = true;
+      console.log("Reloading audio from source:", this.audioSource);
+      
+      const audioPlayer = this.$refs.audioPlayer;
+      if (audioPlayer) {
+        const currentSource = audioPlayer.querySelector('source');
+        if (currentSource) {
+          currentSource.remove();
+        }
+        
+        const newSource = document.createElement('source');
+        newSource.src = this.audioSource;
+        newSource.type = "audio/mpeg";
+        audioPlayer.appendChild(newSource);
+        
+        audioPlayer.load();
+        
+        // Add an event listener to play when ready
+        const canPlayHandler = () => {
+          console.log("Audio reloaded and ready to play");
+          console.log(`Audio duration after reload: ${audioPlayer.duration.toFixed(2)} seconds`);
+          
+          this.audioLoading = false;
+          audioPlayer.play()
+            .then(() => {
+              this.isPlaying = true;
+              console.log("Audio playback started after reload");
+            })
+            .catch(playError => {
+              console.error("Error playing audio after reload:", playError);
+              this.isPlaying = false;
+              this.audioLoading = false;
+            });
+          
+          audioPlayer.removeEventListener('canplaythrough', canPlayHandler);
+        };
+        
+        audioPlayer.addEventListener('canplaythrough', canPlayHandler);
+        
+        // Add a timeout to avoid getting stuck loading
+        setTimeout(() => {
+          if (this.audioLoading) {
+            console.warn("Audio loading timeout reached, attempting to play anyway");
+            this.audioLoading = false;
+            audioPlayer.removeEventListener('canplaythrough', canPlayHandler);
+            audioPlayer.play()
+              .then(() => {
+                this.isPlaying = true;
+                console.log("Audio playback started after timeout");
+              })
+              .catch(playError => {
+                console.error("Error playing audio after timeout:", playError);
+                this.isPlaying = false;
+              });
+          }
+        }, 5000); // 5 segundos de timeout
       }
     },
     updateAudioProgress() {
@@ -829,27 +957,64 @@ window.CreatePage = {
     handleAudioError(event) {
       console.warn("Audio error occurred:", event);
       
-      // Try to set file permissions if it's a permission issue
-      try {
-        if (this.audioSource) {
-          this.setFilePermissions(this.audioSource);
-          // Reload audio element
-          const audioElement = this.$refs.audioPlayer;
-          if (audioElement) {
-            audioElement.load();
-          }
-        }
-      } catch (error) {
-        console.warn("Error processing audio path for permissions:", error);
-      }
+      // Retry with exponential backoff
+      let retryCount = 0;
+      const maxRetries = 5;
+      const baseDelay = 1000;
       
-      // Start background check
+      const retryWithBackoff = () => {
+        if (retryCount >= maxRetries) {
+          console.warn(`Failed to load audio after ${maxRetries} retries`);
+          this.audioLoading = false;
+          return;
+        }
+        
+        const delay = baseDelay * Math.pow(2, retryCount);
+        console.log(`Retrying audio load in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})`);
+        
+        setTimeout(() => {
+          retryCount++;
+          
+          // Tentar definir permissões novamente
+          if (this.audioSource) {
+            this.setFilePermissions(this.audioSource)
+              .then(() => {
+                console.log(`Permissions reset, reloading audio (attempt ${retryCount})`);
+                const audioElement = this.$refs.audioPlayer;
+                if (audioElement) {
+                  audioElement.load();
+                }
+              })
+              .catch(error => {
+                console.warn(`Error setting permissions on retry ${retryCount}:`, error);
+                retryWithBackoff();
+              });
+          }
+        }, delay);
+      };
+      
       this.audioLoading = true;
+      retryWithBackoff();
+      
       this.startBackgroundAudioCheck(this.audioSource);
     },
     handleAudioReady(event) {
       console.log('Audio canplaythrough event:', event);
       this.audioLoading = false;
+      
+      const audioPlayer = this.$refs.audioPlayer;
+      if (audioPlayer) {
+        console.log(`Audio ready - Source: ${this.audioSource}`);
+        console.log(`Audio ready - Duration: ${audioPlayer.duration.toFixed(2)} seconds`);
+        console.log(`Audio ready - Ready State: ${audioPlayer.readyState}`);
+        
+        // Check if the audio has enough data for playback
+        if (audioPlayer.readyState >= 3) { // HAVE_FUTURE_DATA ou HAVE_ENOUGH_DATA
+          console.log("Audio has enough data for smooth playback");
+        } else {
+          console.log("Audio may not have enough data for smooth playback yet");
+        }
+      }
     },
     getOptimizedImageUrl(url, width, height) {
       if (!url || url.startsWith('data:')) return url;
@@ -1118,6 +1283,8 @@ window.CreatePage = {
         ref="audioPlayer" 
         @error="handleAudioError" 
         @canplaythrough="handleAudioReady"
+        preload="auto"
+        crossorigin="anonymous"
       >
         <source v-if="audioSource" :src="audioSource" type="audio/mpeg" />
         {{ $t('ui.audioNotSupported') }}
