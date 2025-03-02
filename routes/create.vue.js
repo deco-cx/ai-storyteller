@@ -279,7 +279,9 @@ window.CreatePage = {
         });
         console.log("Using image prompt:", imagePrompt);
         const imagePromise = sdk.ai.generateImage({
-          model: "stability:core",
+          model: "openai:dall-e-3",
+                n: 1,
+                size: "1024x1024",
           prompt: imagePrompt
         });
         
