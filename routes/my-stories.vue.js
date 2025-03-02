@@ -100,7 +100,7 @@ window.MyStoriesPage = {
                         <div class="flex justify-between items-center mt-auto">
                             <span class="text-sm text-gray-500">{{ formatDate(story.createdAt) }}</span>
                             <div class="text-[#0284C7] hover:text-[#0EA5E9] flex items-center gap-1">
-                                <span>Listen</span>
+                                <span>{{ $t('myStories.listen') }}</span>
                                 <i class="fa-solid fa-arrow-right text-sm"></i>
                             </div>
                         </div>
@@ -170,12 +170,65 @@ window.MyStoriesPage = {
     },
     async mounted() {
         console.log("MyStoriesPage mounted");
+        
+        // Ensure all necessary translation keys exist
+        this.ensureTranslationKeys();
+        
         await this.loadGenerations();
         
         // Fix permissions for existing story files
         await this.fixStoryPermissions();
     },
     methods: {
+        // Ensure all necessary translation keys exist
+        ensureTranslationKeys() {
+            // Define default translations for new UI elements
+            const requiredTranslations = {
+                'myStories.listen': 'Listen',
+                'myStories.today': 'Today at',
+                'myStories.yesterday': 'Yesterday at'
+            };
+            
+            // Portuguese translations for the new keys
+            const ptTranslations = {
+                'myStories.listen': 'Ouvir',
+                'myStories.today': 'Hoje às',
+                'myStories.yesterday': 'Ontem às'
+            };
+            
+            // Add translations if they don't exist
+            if (window.i18n && window.i18n.translations) {
+                // For each language
+                Object.keys(window.i18n.translations).forEach(lang => {
+                    // For each required translation
+                    Object.entries(requiredTranslations).forEach(([key, defaultValue]) => {
+                        // Get the key parts (e.g., ['myStories', 'listen'])
+                        const keyParts = key.split('.');
+                        
+                        // Navigate to the parent object
+                        let target = window.i18n.translations[lang];
+                        for (let i = 0; i < keyParts.length - 1; i++) {
+                            if (!target[keyParts[i]]) {
+                                target[keyParts[i]] = {};
+                            }
+                            target = target[keyParts[i]];
+                        }
+                        
+                        // Set the value if it doesn't exist
+                        const lastKey = keyParts[keyParts.length - 1];
+                        if (!target[lastKey]) {
+                            // Use Portuguese translations for PT language
+                            if (lang === 'pt' && ptTranslations[key]) {
+                                target[lastKey] = ptTranslations[key];
+                            } else {
+                                target[lastKey] = defaultValue;
+                            }
+                            console.log(`Added missing translation for ${lang}.${key}`);
+                        }
+                    });
+                });
+            }
+        },
         // Fix permissions for existing story files
         async fixStoryPermissions() {
             try {
@@ -661,8 +714,8 @@ window.MyStoriesPage = {
                 hour12: true,
             });
 
-            if (isToday) return `Today at ${timeStr}`;
-            if (isYesterday) return `Yesterday at ${timeStr}`;
+            if (isToday) return `${this.$t('myStories.today')} ${timeStr}`;
+            if (isYesterday) return `${this.$t('myStories.yesterday')} ${timeStr}`;
             return date.toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",

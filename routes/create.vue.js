@@ -182,8 +182,12 @@ window.CreatePage = {
     },
     addInterest(suggestion) {
       const interestText = suggestion;
+      // Get the conjunction based on the current language
+      const conjunction = this.currentLanguage === 'pt' ? ' e ' : ' and ';
+      
+      // Also update the regex to split by both "and" and "e"
       let currentInterests = this.interests
-        .split(/,\s*|\s+and\s+/gi)
+        .split(/,\s*|\s+and\s+|\s+e\s+/gi)
         .map(i => i.trim())
         .filter(i => i);
       const index = currentInterests.indexOf(interestText);
@@ -197,11 +201,11 @@ window.CreatePage = {
       } else if (currentInterests.length === 1) {
         this.interests = currentInterests[0];
       } else if (currentInterests.length === 2) {
-        this.interests = currentInterests.join(" and ");
+        this.interests = currentInterests.join(conjunction);
       } else {
         const allButLast = currentInterests.slice(0, -1).join(", ");
         const last = currentInterests[currentInterests.length - 1];
-        this.interests = `${allButLast} and ${last}`;
+        this.interests = `${allButLast}${conjunction}${last}`;
       }
     },
     randomTheme() {
@@ -597,7 +601,7 @@ window.CreatePage = {
           this.isPlaying = false;
           console.log("Audio playback paused");
         } else {
-          if (audioPlayer.readyState >= 2) { // HAVE_CURRENT_DATA ou superior
+          if (audioPlayer.readyState >= 2) { // HAVE_CURRENT_DATA or higher
             console.log(`Playing audio: ${this.audioSource}`);
             console.log(`Audio duration: ${audioPlayer.duration.toFixed(2)} seconds`);
             
@@ -1009,7 +1013,7 @@ window.CreatePage = {
         console.log(`Audio ready - Ready State: ${audioPlayer.readyState}`);
         
         // Check if the audio has enough data for playback
-        if (audioPlayer.readyState >= 3) { // HAVE_FUTURE_DATA ou HAVE_ENOUGH_DATA
+        if (audioPlayer.readyState >= 3) { // HAVE_FUTURE_DATA or HAVE_ENOUGH_DATA
           console.log("Audio has enough data for smooth playback");
         } else {
           console.log("Audio may not have enough data for smooth playback yet");

@@ -272,7 +272,7 @@ window.IndexPage = {
                                     <h3 class="text-xl font-semibold text-[#6A0572]">{{ $t('home.step1') }}</h3>
                                 </div>
                                 <div class="pl-20">
-                                    <p class="text-gray-600">Enter your child's name and select themes they love for a personalized story experience.</p>
+                                    <p class="text-gray-600">{{ $t('home.step1Description') }}</p>
                                 </div>
                             </div>
                             
@@ -286,7 +286,7 @@ window.IndexPage = {
                                     <h3 class="text-xl font-semibold text-[#FF6B6B]">{{ $t('home.step2') }}</h3>
                                 </div>
                                 <div class="pl-20">
-                                    <p class="text-gray-600">Select from our charming narrators to bring the story to life with their unique voices.</p>
+                                    <p class="text-gray-600">{{ $t('home.narratorDescription') }}</p>
                                 </div>
                             </div>
                             
@@ -300,7 +300,7 @@ window.IndexPage = {
                                     <h3 class="text-xl font-semibold text-[#4ECDC4]">{{ $t('home.step3') }}</h3>
                                 </div>
                                 <div class="pl-20">
-                                    <p class="text-gray-600">Our AI crafts a magical story featuring your child and their interests in moments.</p>
+                                    <p class="text-gray-600">{{ $t('home.step3Description') }}</p>
                                 </div>
                             </div>
                             
@@ -314,7 +314,7 @@ window.IndexPage = {
                                     <h3 class="text-xl font-semibold text-[#FFD166]">{{ $t('home.step4') }}</h3>
                                 </div>
                                 <div class="pl-20">
-                                    <p class="text-gray-600">Enjoy the story together, save it to your collection, and share it with family and friends.</p>
+                                    <p class="text-gray-600">{{ $t('home.step4Description') }}</p>
                                 </div>
                             </div>
                         </div>
@@ -452,7 +452,17 @@ window.IndexPage = {
                 'home.pauseStory': 'Pause Story',
                 'home.noExamples': 'No example stories yet',
                 'home.checkBackSoon': 'Check back soon for example stories!',
-                'home.createFromThis': 'Create from this'
+                'home.createFromThis': 'Create from this',
+                'home.step1Description': 'Enter your child\'s name and select themes they love for a personalized story experience.',
+                'home.step3Description': 'Our AI crafts a magical story featuring your child and their interests in moments.',
+                'home.step4Description': 'Enjoy the story together, save it to your collection, and share it with family and friends.'
+            };
+            
+            // Portuguese translations for the new keys
+            const ptTranslations = {
+                'home.step1Description': 'Digite o nome do seu filho e selecione temas que ele ama para uma experiência de história personalizada.',
+                'home.step3Description': 'Nossa IA cria uma história mágica com seu filho e seus interesses em poucos momentos.',
+                'home.step4Description': 'Aproveite a história juntos, salve-a em sua coleção e compartilhe com familiares e amigos.'
             };
             
             // Add translations if they don't exist
@@ -478,7 +488,12 @@ window.IndexPage = {
                         // Set the value if it doesn't exist
                         const lastKey = keyParts[keyParts.length - 1];
                         if (!target[lastKey]) {
-                            target[lastKey] = defaultValue;
+                            // Use Portuguese translations for PT language
+                            if (lang === 'pt' && ptTranslations[key]) {
+                                target[lastKey] = ptTranslations[key];
+                            } else {
+                                target[lastKey] = defaultValue;
+                            }
                             console.log(`Added missing translation for ${lang}.${key}`);
                         }
                     });
