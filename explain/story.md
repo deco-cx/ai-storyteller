@@ -186,4 +186,95 @@ To reconstruct this component in another language/framework:
 
 8. **Internationalization**: Ensure all text is translatable using an i18n system
 
-The most critical aspects to maintain are the file loading logic, SDK integration for file system access, and the audio playback functionality. 
+The most critical aspects to maintain are the file loading logic, SDK integration for file system access, and the audio playback functionality.
+
+# AI Storyteller Design Updates
+
+## Home Page Redesign
+
+The home page has been completely redesigned to create a more harmonious, child-friendly experience that aligns with the app's purpose of creating bedtime stories for children. The new design incorporates:
+
+### Overall Design Changes
+- **Playful Color Scheme**: A cohesive color palette using soft gradients and vibrant accent colors (#FF6B6B, #4ECDC4, #FFD166, #6A0572) that appeal to children and parents
+- **Rounded Elements**: Increased border radius on cards, buttons, and containers for a softer, more child-friendly appearance
+- **Consistent Visual Hierarchy**: Clear section headings with decorative underlines and improved spacing
+- **Decorative Elements**: Added playful shapes, gradients, and subtle background elements to enhance the whimsical feel
+- **Improved Typography**: More readable text with better contrast and hierarchy
+
+### Specific Section Improvements
+
+#### Navigation Bar
+- Redesigned with rounded bottom corners and better spacing
+- Added logo and app name with gradient text
+- Improved visual distinction between navigation items
+
+#### Hero Section
+- Created a welcoming hero section with a decorative border and background elements
+- Added an illustration to visually represent storytelling
+- Improved button design with gradient backgrounds and hover effects
+- Better responsive layout for mobile and desktop views
+
+#### Example Stories Section
+- Enhanced story cards with:
+  - Hover animations and shadow effects
+  - Improved image display with subtle zoom effect on hover
+  - Decorative icon in the top corner
+  - Better organized story details with clear visual hierarchy
+  - Improved audio player with larger progress bar
+  - More visually appealing buttons with shadow effects
+- Added a decorative section heading with gradient text and underline
+
+#### Features Section
+- Completely redesigned feature cards with:
+  - Consistent border colors matching the color scheme
+  - Centered icons in circular backgrounds
+  - Hover animations for interactive feel
+  - Better spacing and typography
+
+#### How It Works Section (New)
+- Added a new section explaining the story creation process
+- Created a visually engaging step-by-step guide with:
+  - Numbered steps with decorative elements
+  - Connecting line between steps for visual flow
+  - Consistent iconography and color coding
+  - Clear explanations of each step in the process
+
+### Technical Improvements
+- Added CSS for new button classes with hover effects
+- Improved responsive design for better mobile experience
+- Maintained compatibility with existing code structure
+- Enhanced accessibility with better contrast and focus states
+
+These design changes create a more cohesive, playful, and engaging experience that better reflects the app's purpose of creating magical stories for children.
+
+## Example Stories Card Design
+
+The Example Stories section has been enhanced with a card-based design that showcases each story in an engaging, child-friendly way:
+
+- **Card Structure**: Each card has a consistent structure with:
+  - Cover image at the top
+  - Story title overlay with gradient background
+  - Narrator information with avatar
+  - Story details (child's name and theme) in pill-shaped tags
+  - Description in a light background container
+  - Audio player with play/pause functionality
+  - Action buttons for listening and creating new stories
+
+- **Visual Styling**:
+  - Border colors rotate between four theme colors (#FF6B6B, #4ECDC4, #FFD166, #6A0572)
+  - Matching color accents throughout each card (progress bar, buttons, etc.)
+  - Consistent spacing and typography
+  - Shadow effects and hover animations for interactive feel
+
+- **Accessibility Improvements**:
+  - Better contrast for text elements
+  - Clear visual hierarchy
+  - Descriptive icons paired with text
+  - Improved focus states for keyboard navigation
+
+- **Empty State Design**:
+  - Friendly empty state message with icon
+  - Consistent styling with the rest of the interface
+  - Clear call to action
+
+These design changes create a more engaging and cohesive user experience that better showcases the example stories and encourages users to create their own. 

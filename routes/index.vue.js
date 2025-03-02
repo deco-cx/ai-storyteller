@@ -2,65 +2,78 @@ import { sdk } from "../sdk.js";
 
 window.IndexPage = {
     template: `
-        <div class="min-h-screen bg-[#FFF9F6]">
+        <div class="min-h-screen bg-gradient-to-b from-[#F0F9FF] to-[#E0F7FA] pb-16">
             <!-- Navigation -->
-            <nav class="bg-white shadow-md py-4 px-4 sm:px-6 flex items-center justify-between">
-                <div class="flex items-center space-x-1 sm:space-x-4 overflow-x-auto whitespace-nowrap">
-                    <router-link to="/" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg bg-[#E0F2FE] text-[#0284C7] font-medium text-sm sm:text-base">
-                        {{ $t('ui.home') }}
-                    </router-link>
-                    <router-link to="/create" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base">
-                        {{ $t('ui.new') }}
-                    </router-link>
-                    <router-link to="/my-stories" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base">
-                        {{ $t('ui.myStories') }}
-                    </router-link>
-                    <router-link v-if="isAdmin" to="/_admin" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base">
-                        <i class="fa-solid fa-gear mr-1"></i>
-                        {{ $t('ui.admin') }}
-                    </router-link>
-                </div>
-                <div class="flex items-center gap-2">
-                    <router-link v-if="isPreviewEnvironment" to="/_admin" class="text-[#00B7EA] hover:text-[#0284C7] text-sm sm:text-base px-2 py-1">
-                        <i class="fa-solid fa-gear"></i>
-                    </router-link>
-                    <language-switcher></language-switcher>
+            <nav class="bg-white shadow-md rounded-b-3xl px-4 sm:px-6 py-3">
+                <div class="max-w-7xl mx-auto flex justify-between items-center">
+                    <div></div>
+                    
+                    <div class="flex space-x-1 sm:space-x-4">
+                        <router-link to="/" class="px-3 py-2 rounded-full text-[#4ECDC4] hover:bg-[#E0F7FA] font-medium transition-colors duration-200">
+                            {{ $t('ui.home') }}
+                        </router-link>
+                        <router-link to="/create" class="px-3 py-2 rounded-full text-[#FF6B6B] hover:bg-[#FFF0F0] font-medium transition-colors duration-200">
+                            {{ $t('ui.create') }}
+                        </router-link>
+                        <router-link to="/my-stories" class="px-3 py-2 rounded-full text-[#FFD166] hover:bg-[#FFFBF0] font-medium transition-colors duration-200">
+                            {{ $t('ui.myStories') }}
+                        </router-link>
+                        <router-link v-if="isAdmin" to="/admin" class="px-3 py-2 rounded-full text-[#6A0572] hover:bg-[#F9F0FA] font-medium transition-colors duration-200">
+                            {{ $t('ui.admin') }}
+                        </router-link>
+                    </div>
                 </div>
             </nav>
-
-            <!-- Hero Section -->
-            <main class="max-w-4xl mx-auto px-6 py-12 text-center">
-                <h2 class="text-5xl font-semibold mb-4 text-[#00B7EA]">{{ $t('home.welcome') }}</h2>
-                <p class="text-xl text-gray-600 mb-8">{{ $t('home.tagline') }}</p>
-                
-                <div class="flex flex-col gap-2 items-center mb-16">
-                    <template v-if="user">
-                        <router-link to="/create" class="text-lg bg-gradient-to-b from-[#38BDF8] to-[#0284C7] text-white px-6 py-3 rounded-full hover:from-[#0284C7] hover:to-[#0284C7] border border-[#0369A1] font-medium flex items-center gap-2 w-full max-w-sm justify-center">
-                            <i class="fa-solid fa-book-open"></i>
-                            {{ $t('home.createButton') }}
-                        </router-link>
-                        <router-link to="/my-stories" class="text-lg border border-[#00B7EA] text-[#00B7EA] px-6 py-3 rounded-full hover:bg-[#F0F9FF] font-medium flex items-center gap-2 w-full max-w-sm justify-center">
-                            <i class="fa-solid fa-book"></i>
-                            {{ $t('home.myStoriesButton') }}
-                        </router-link>
-                    </template>
-                    <template v-else>
-                        <button @click="handleLogin" class="text-lg bg-gradient-to-b from-[#38BDF8] to-[#0284C7] text-white px-6 py-3 rounded-full hover:from-[#0284C7] hover:to-[#0284C7] border border-[#0369A1] font-medium flex items-center gap-2 w-full max-w-sm justify-center">
-                            <i class="fa-solid fa-book-open"></i>
-                            {{ $t('home.signInToCreate') }}
-                        </button>
-                        <p class="text-lg text-[#00B7EA] font-medium mt-2">{{ $t('home.freeStories') }}</p>
-                    </template>
-                </div>
-
-                <!-- Example Stories -->
-                <div class="space-y-8">
-                    <h2 class="text-2xl font-bold text-white bg-gradient-to-r from-[#FF6B6B] via-[#FF9E7D] to-[#FFCA85] py-3 rounded-full shadow-lg">{{ $t('home.examples') }}</h2>
+            
+            <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-8">
+                <!-- Hero Section -->
+                <div class="relative bg-white rounded-3xl shadow-lg overflow-hidden mb-12 border-4 border-[#FFD166]">
+                    <!-- Decorative Elements -->
+                    <div class="absolute top-0 left-0 w-24 h-24 bg-[#FF6B6B] opacity-10 rounded-full -translate-x-12 -translate-y-12"></div>
+                    <div class="absolute bottom-0 right-0 w-32 h-32 bg-[#4ECDC4] opacity-10 rounded-full translate-x-16 translate-y-16"></div>
+                    <div class="absolute top-1/2 right-24 w-16 h-16 bg-[#FFD166] opacity-10 rounded-full"></div>
                     
-                    <!-- Story Cards -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                    <div class="relative z-10 flex flex-col md:flex-row items-center p-6 md:p-10">
+                        <div class="md:w-full mb-8 md:mb-0 md:pr-8">
+                            <h1 class="text-3xl md:text-4xl font-bold mb-4 text-gray-800 leading-tight">
+                                <span class="bg-clip-text text-transparent bg-gradient-to-r from-[#FF6B6B] to-[#6A0572]">
+                                    {{ $t('home.welcome') }}
+                                </span>
+                            </h1>
+                            <p class="text-gray-600 mb-6 text-lg">{{ $t('home.tagline') }}</p>
+                            
+                            <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+                                <router-link to="/create" class="btn-primary flex items-center justify-center">
+                                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>
+                                    {{ $t('home.createButton') }}
+                                </router-link>
+                                
+                                <button v-if="!user" @click="handleLogin" class="btn-secondary flex items-center justify-center">
+                                    <i class="fa-solid fa-user mr-2"></i>
+                                    {{ $t('home.signInToCreate') }}
+                                </button>
+                                
+                                <router-link v-else to="/my-stories" class="btn-secondary flex items-center justify-center">
+                                    <i class="fa-solid fa-book-open mr-2"></i>
+                                    {{ $t('home.myStoriesButton') }}
+                                </router-link>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Example Stories Section -->
+                <div class="mb-16">
+                    <h2 class="text-2xl font-bold mb-8 text-center relative">
+                        <span class="inline-block bg-clip-text text-transparent bg-gradient-to-r from-[#FF6B6B] via-[#FFD166] to-[#4ECDC4] mb-3">
+                            {{ $t('home.examples') }}
+                        </span>
+                        <div class="absolute left-0 right-0 bottom-0 h-1 bg-gradient-to-r from-[#FF6B6B] via-[#FFD166] to-[#4ECDC4] rounded-full"></div>
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
                         <div v-for="(example, index) in examples" :key="index" 
-                             class="bg-white rounded-2xl overflow-hidden shadow-lg border-4 hover:shadow-xl transition-all duration-300"
+                             class="bg-white rounded-3xl shadow-lg overflow-hidden transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-4"
                              :class="[
                                 index % 4 === 0 ? 'border-[#FF6B6B]' : '',
                                 index % 4 === 1 ? 'border-[#4ECDC4]' : '',
@@ -70,33 +83,30 @@ window.IndexPage = {
                             
                             <!-- Story Cover Image -->
                             <div class="relative h-48 overflow-hidden">
-                                <img v-if="example.coverImage" 
-                                     :src="getOptimizedImageUrl(example.coverImage, 600, 300)" 
-                                     :alt="example.title"
-                                     @load="logImageLoaded(example.title, example.coverImage)"
-                                     @error="logImageError(example.title, example.coverImage)"
-                                     class="w-full h-full object-cover" />
-                                <div v-else 
+                                <img :src="getOptimizedImageUrl(example.coverImage || example.image, 600, 300)" 
+                                     :alt="example.title" 
+                                     @load="logImageLoaded(example.title, example.coverImage || example.image)"
+                                     @error="logImageError(example.title, example.coverImage || example.image)"
+                                     class="w-full h-full object-cover transition-transform duration-500 hover:scale-110" />
+                                
+                                <!-- Decorative Elements -->
+                                <div class="absolute top-2 left-2 w-12 h-12 rounded-full bg-white bg-opacity-70 flex items-center justify-center"
                                      :class="[
-                                        index % 4 === 0 ? 'bg-gradient-to-r from-[#FF6B6B] to-[#FF9E7D]' : '',
-                                        index % 4 === 1 ? 'bg-gradient-to-r from-[#4ECDC4] to-[#A5ECD7]' : '',
-                                        index % 4 === 2 ? 'bg-gradient-to-r from-[#FFD166] to-[#FFECA8]' : '',
-                                        index % 4 === 3 ? 'bg-gradient-to-r from-[#6A0572] to-[#AB83A1]' : ''
-                                     ]"
-                                     class="w-full h-full flex items-center justify-center">
-                                    <i class="fa-solid fa-book-open text-white text-5xl"></i>
+                                        index % 4 === 0 ? 'text-[#FF6B6B]' : '',
+                                        index % 4 === 1 ? 'text-[#4ECDC4]' : '',
+                                        index % 4 === 2 ? 'text-[#FFD166]' : '',
+                                        index % 4 === 3 ? 'text-[#6A0572]' : ''
+                                     ]">
+                                    <i class="fa-solid fa-book-open text-xl"></i>
                                 </div>
                                 
-                                <!-- Story Title Overlay -->
-                                <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 p-3">
-                                    <h3 class="text-white font-bold text-lg truncate">{{ example.title }}</h3>
-                                </div>
+                                <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent h-24 opacity-70"></div>
+                                <h3 class="absolute bottom-4 left-4 right-4 text-white font-bold text-xl line-clamp-2">{{ example.title }}</h3>
                             </div>
                             
-                            <div class="p-4">
-                                <!-- Narrator Section -->
-                                <div class="flex items-center mb-4">
-                                    <!-- Voice Avatar -->
+                            <div class="p-5">
+                                <!-- Narrator Info -->
+                                <div class="flex items-center mb-5">
                                     <div class="w-12 h-12 rounded-full overflow-hidden border-2 mr-3"
                                          :class="[
                                             index % 4 === 0 ? 'border-[#FF6B6B]' : '',
@@ -117,7 +127,7 @@ window.IndexPage = {
                                 </div>
                                 
                                 <!-- Story Details -->
-                                <div class="mb-4 bg-gray-50 rounded-lg p-3">
+                                <div class="mb-4 bg-gray-50 rounded-2xl p-4 border border-gray-100">
                                     <div class="flex flex-wrap gap-2 mb-2">
                                         <div v-if="example.childName" class="bg-gray-200 rounded-full px-3 py-1 text-sm flex items-center">
                                             <i class="fa-solid fa-child text-gray-600 mr-1"></i>
@@ -140,11 +150,11 @@ window.IndexPage = {
                                                 index % 4 === 2 ? 'bg-[#FFD166] hover:bg-[#FFE08A]' : '',
                                                 index % 4 === 3 ? 'bg-[#6A0572] hover:bg-[#8A2793]' : ''
                                             ]"
-                                            class="text-white p-3 rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0 transition-colors duration-200">
+                                            class="text-white p-3 rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0 transition-colors duration-200 shadow-md">
                                         <i :class="example.isPlaying ? 'fa-solid fa-pause text-lg' : 'fa-solid fa-play text-lg'"></i>
                                     </button>
-                                    <div class="flex-1 h-3 bg-gray-200 rounded-full relative">
-                                        <div class="absolute inset-0 h-3 rounded-full" 
+                                    <div class="flex-1 h-4 bg-gray-200 rounded-full relative">
+                                        <div class="absolute inset-0 h-4 rounded-full" 
                                              :style="{ width: example.progress }"
                                              :class="[
                                                 index % 4 === 0 ? 'bg-[#FF6B6B]' : '',
@@ -164,7 +174,7 @@ window.IndexPage = {
                                                 index % 4 === 2 ? 'bg-[#FFD166] hover:bg-[#FFE08A] border-[#FFC233]' : '',
                                                 index % 4 === 3 ? 'bg-[#6A0572] hover:bg-[#8A2793] border-[#590462]' : ''
                                             ]"
-                                            class="text-white rounded-full py-3 px-4 flex items-center justify-center font-medium border-2 transition-colors duration-200">
+                                            class="text-white rounded-full py-3 px-4 flex items-center justify-center font-medium border-2 transition-colors duration-200 shadow-md">
                                         <i class="fa-solid fa-headphones mr-2"></i>
                                         {{ example.isPlaying ? $t('home.pauseStory') : $t('home.listenStory') }}
                                     </button>
@@ -176,7 +186,7 @@ window.IndexPage = {
                                                 index % 4 === 2 ? 'bg-white text-[#FFD166] hover:bg-[#FFFBF0] border-[#FFD166]' : '',
                                                 index % 4 === 3 ? 'bg-white text-[#6A0572] hover:bg-[#F9F0FA] border-[#6A0572]' : ''
                                             ]"
-                                            class="rounded-full py-3 px-4 flex items-center justify-center font-medium border-2 transition-colors duration-200">
+                                            class="rounded-full py-3 px-4 flex items-center justify-center font-medium border-2 transition-colors duration-200 shadow-md">
                                         <i class="fa-solid fa-magic mr-2"></i>
                                         {{ $t('home.createFromThis') }}
                                     </router-link>
@@ -195,8 +205,10 @@ window.IndexPage = {
                     </div>
                     
                     <!-- Empty State -->
-                    <div v-if="examples.length === 0" class="bg-white rounded-2xl p-8 text-center shadow-lg border-4 border-dashed border-[#FF9E7D]">
-                        <i class="fa-solid fa-book text-[#FF9E7D] text-5xl mb-4"></i>
+                    <div v-if="examples.length === 0" class="bg-white rounded-3xl p-8 text-center shadow-lg border-4 border-dashed border-[#FF9E7D]">
+                        <div class="w-24 h-24 mx-auto mb-4 bg-[#FFF5F0] rounded-full flex items-center justify-center">
+                            <i class="fa-solid fa-book text-[#FF9E7D] text-4xl"></i>
+                        </div>
                         <h3 class="text-xl font-bold text-gray-700 mb-2">{{ $t('home.noExamples') }}</h3>
                         <p class="text-gray-600">{{ $t('home.checkBackSoon') }}</p>
                     </div>
@@ -204,20 +216,107 @@ window.IndexPage = {
                 
                 <!-- Features Section -->
                 <div class="mt-16 space-y-8">
-                    <h2 class="text-2xl font-bold text-white bg-gradient-to-r from-[#38BDF8] via-[#0EA5E9] to-[#0284C7] py-3 rounded-full shadow-lg shadow-blue-100">{{ $t('home.featuresTitle') }}</h2>
+                    <h2 class="text-2xl font-bold mb-8 text-center relative">
+                        <span class="inline-block bg-clip-text text-transparent bg-gradient-to-r from-[#4ECDC4] via-[#6A0572] to-[#FF6B6B] mb-3">
+                            {{ $t('home.featuresTitle') }}
+                        </span>
+                        <div class="absolute left-0 right-0 bottom-0 h-1 bg-gradient-to-r from-[#4ECDC4] via-[#6A0572] to-[#FF6B6B] rounded-full"></div>
+                    </h2>
                     
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-[#E0F2FE] border border-[#BAE6FD] rounded-xl p-6">
-                            <h3 class="text-xl font-semibold text-[#00B7EA] mb-3">{{ $t('home.feature1Title') }}</h3>
-                            <p class="text-gray-600">{{ $t('home.feature1Text') }}</p>
+                        <div class="bg-white border-4 border-[#FF6B6B] rounded-3xl p-6 shadow-lg transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                            <div class="w-16 h-16 mx-auto mb-4 bg-[#FFF5F0] rounded-full flex items-center justify-center">
+                                <i class="fa-solid fa-child text-[#FF6B6B] text-2xl"></i>
+                            </div>
+                            <h3 class="text-xl font-semibold text-[#FF6B6B] mb-3 text-center">{{ $t('home.feature1Title') }}</h3>
+                            <p class="text-gray-600 text-center">{{ $t('home.feature1Text') }}</p>
                         </div>
-                        <div class="bg-[#E0F2FE] border border-[#BAE6FD] rounded-xl p-6">
-                            <h3 class="text-xl font-semibold text-[#00B7EA] mb-3">{{ $t('home.feature2Title') }}</h3>
-                            <p class="text-gray-600">{{ $t('home.feature2Text') }}</p>
+                        <div class="bg-white border-4 border-[#4ECDC4] rounded-3xl p-6 shadow-lg transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                            <div class="w-16 h-16 mx-auto mb-4 bg-[#F0FDFB] rounded-full flex items-center justify-center">
+                                <i class="fa-solid fa-headphones text-[#4ECDC4] text-2xl"></i>
+                            </div>
+                            <h3 class="text-xl font-semibold text-[#4ECDC4] mb-3 text-center">{{ $t('home.feature2Title') }}</h3>
+                            <p class="text-gray-600 text-center">{{ $t('home.feature2Text') }}</p>
                         </div>
-                        <div class="bg-[#E0F2FE] border border-[#BAE6FD] rounded-xl p-6">
-                            <h3 class="text-xl font-semibold text-[#00B7EA] mb-3">{{ $t('home.feature3Title') }}</h3>
-                            <p class="text-gray-600">{{ $t('home.feature3Text') }}</p>
+                        <div class="bg-white border-4 border-[#FFD166] rounded-3xl p-6 shadow-lg transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                            <div class="w-16 h-16 mx-auto mb-4 bg-[#FFFBF0] rounded-full flex items-center justify-center">
+                                <i class="fa-solid fa-image text-[#FFD166] text-2xl"></i>
+                            </div>
+                            <h3 class="text-xl font-semibold text-[#FFD166] mb-3 text-center">{{ $t('home.feature3Title') }}</h3>
+                            <p class="text-gray-600 text-center">{{ $t('home.feature3Text') }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- How It Works Section -->
+                <div class="mt-16 space-y-8">
+                    <h2 class="text-2xl font-bold mb-8 text-center relative">
+                        <span class="inline-block bg-clip-text text-transparent bg-gradient-to-r from-[#6A0572] via-[#FF6B6B] to-[#FFD166] mb-3">
+                            {{ $t('home.howItWorksTitle') }}
+                        </span>
+                        <div class="absolute left-0 right-0 bottom-0 h-1 bg-gradient-to-r from-[#6A0572] via-[#FF6B6B] to-[#FFD166] rounded-full"></div>
+                    </h2>
+                    
+                    <div class="relative">
+                        <!-- Connecting Line -->
+                        <div class="absolute top-24 left-1/2 w-2 bg-gradient-to-b from-[#6A0572] via-[#FF6B6B] to-[#FFD166] h-3/4 -translate-x-1/2 hidden md:block"></div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <!-- Step 1 -->
+                            <div class="bg-white rounded-3xl p-6 shadow-lg border-4 border-[#6A0572] relative z-10">
+                                <div class="absolute -top-5 -left-5 w-10 h-10 bg-[#6A0572] text-white rounded-full flex items-center justify-center font-bold text-xl">1</div>
+                                <div class="flex items-center mb-4">
+                                    <div class="w-16 h-16 bg-[#F9F0FA] rounded-full flex items-center justify-center mr-4">
+                                        <i class="fa-solid fa-user-pen text-[#6A0572] text-2xl"></i>
+                                    </div>
+                                    <h3 class="text-xl font-semibold text-[#6A0572]">{{ $t('home.step1') }}</h3>
+                                </div>
+                                <div class="pl-20">
+                                    <p class="text-gray-600">Enter your child's name and select themes they love for a personalized story experience.</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Step 2 -->
+                            <div class="bg-white rounded-3xl p-6 shadow-lg border-4 border-[#FF6B6B] relative z-10 md:mt-16">
+                                <div class="absolute -top-5 -left-5 w-10 h-10 bg-[#FF6B6B] text-white rounded-full flex items-center justify-center font-bold text-xl">2</div>
+                                <div class="flex items-center mb-4">
+                                    <div class="w-16 h-16 bg-[#FFF5F5] rounded-full flex items-center justify-center mr-4">
+                                        <i class="fa-solid fa-microphone text-[#FF6B6B] text-2xl"></i>
+                                    </div>
+                                    <h3 class="text-xl font-semibold text-[#FF6B6B]">{{ $t('home.step2') }}</h3>
+                                </div>
+                                <div class="pl-20">
+                                    <p class="text-gray-600">Select from our charming narrators to bring the story to life with their unique voices.</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Step 3 -->
+                            <div class="bg-white rounded-3xl p-6 shadow-lg border-4 border-[#4ECDC4] relative z-10">
+                                <div class="absolute -top-5 -left-5 w-10 h-10 bg-[#4ECDC4] text-white rounded-full flex items-center justify-center font-bold text-xl">3</div>
+                                <div class="flex items-center mb-4">
+                                    <div class="w-16 h-16 bg-[#F0FDFB] rounded-full flex items-center justify-center mr-4">
+                                        <i class="fa-solid fa-wand-magic-sparkles text-[#4ECDC4] text-2xl"></i>
+                                    </div>
+                                    <h3 class="text-xl font-semibold text-[#4ECDC4]">{{ $t('home.step3') }}</h3>
+                                </div>
+                                <div class="pl-20">
+                                    <p class="text-gray-600">Our AI crafts a magical story featuring your child and their interests in moments.</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Step 4 -->
+                            <div class="bg-white rounded-3xl p-6 shadow-lg border-4 border-[#FFD166] relative z-10 md:mt-16">
+                                <div class="absolute -top-5 -left-5 w-10 h-10 bg-[#FFD166] text-white rounded-full flex items-center justify-center font-bold text-xl">4</div>
+                                <div class="flex items-center mb-4">
+                                    <div class="w-16 h-16 bg-[#FFFBF0] rounded-full flex items-center justify-center mr-4">
+                                        <i class="fa-solid fa-share-nodes text-[#FFD166] text-2xl"></i>
+                                    </div>
+                                    <h3 class="text-xl font-semibold text-[#FFD166]">{{ $t('home.step4') }}</h3>
+                                </div>
+                                <div class="pl-20">
+                                    <p class="text-gray-600">Enjoy the story together, save it to your collection, and share it with family and friends.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -655,5 +754,50 @@ window.IndexPage = {
                 }
             }
         });
+    },
+    computed: {
+        // Add any computed properties if needed
+    },
+    created() {
+        // Add button styles to the document
+        const styleEl = document.createElement('style');
+        styleEl.textContent = `
+            .btn-primary {
+                background-image: linear-gradient(to right, #FF6B6B, #FF9E7D);
+                color: white;
+                padding: 0.75rem 1.5rem;
+                border-radius: 9999px;
+                font-weight: 500;
+                transition: all 0.3s ease;
+                border: 2px solid #FF5252;
+                box-shadow: 0 4px 6px rgba(255, 107, 107, 0.2);
+            }
+            
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 8px rgba(255, 107, 107, 0.3);
+            }
+            
+            .btn-secondary {
+                background-color: white;
+                color: #4ECDC4;
+                padding: 0.75rem 1.5rem;
+                border-radius: 9999px;
+                font-weight: 500;
+                transition: all 0.3s ease;
+                border: 2px solid #4ECDC4;
+                box-shadow: 0 4px 6px rgba(78, 205, 196, 0.1);
+            }
+            
+            .btn-secondary:hover {
+                background-color: #F0FDFB;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 8px rgba(78, 205, 196, 0.2);
+            }
+        `;
+        document.head.appendChild(styleEl);
     }
 }; 
+
+// Export for module systems while maintaining window compatibility
+export default window.IndexPage; 
