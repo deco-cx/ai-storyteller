@@ -26,7 +26,8 @@ window.CreatePage = {
       isPreviewPlaying: null,
       previewAudioElement: null,
       BASE_FS_URL: "https://fs.webdraw.com",
-      currentLanguage: window.i18n.getLanguage()
+      currentLanguage: window.i18n.getLanguage(),
+      interestSuggestions: []
     };
   },
   watch: {
@@ -45,6 +46,7 @@ window.CreatePage = {
     // Check if translations are loaded first
     if (window.i18n && window.i18n.translations) {
       this.updateVoicesForLanguage();
+      this.updateInterestSuggestions();
     } else {
       console.log('Translations not loaded yet, will wait for them');
       // Set up a listener for translations loaded event
@@ -52,6 +54,7 @@ window.CreatePage = {
         window.eventBus.on('translations-loaded', () => {
           console.log('Translations loaded, now updating voices');
           this.updateVoicesForLanguage();
+          this.updateInterestSuggestions();
         });
       }
     }
@@ -153,6 +156,9 @@ window.CreatePage = {
       // Update voices for the new language
       this.updateVoicesForLanguage();
       
+      // Update interest suggestions for the new language
+      this.updateInterestSuggestions();
+      
       // Debug translations
       this.debugTranslations();
       
@@ -199,17 +205,12 @@ window.CreatePage = {
       }
     },
     randomTheme() {
-      const randomThemes = [
-        "Fairy Tales",
-        "Robots in the City",
-        "Underwater Adventure",
-        "Magical Forest",
-        "Ninjas and Samurai",
-        "Galactic Warriors",
-        "Candy Kingdom",
-      ];
-      const randomPick = randomThemes[Math.floor(Math.random() * randomThemes.length)];
-      this.addInterest(randomPick);
+      if (!this.interestSuggestions || this.interestSuggestions.length === 0) {
+        console.warn("No interest suggestions available");
+        return;
+      }
+      const randomPick = this.interestSuggestions[Math.floor(Math.random() * this.interestSuggestions.length)];
+      this.addInterest(randomPick.text);
     },
     playVoicePreview(voice) {
       // Remove the automatic voice selection when playing preview
@@ -855,6 +856,42 @@ window.CreatePage = {
       
       // Use the webdraw.com image optimization service
       return `https://webdraw.com/image-optimize?src=${encodeURIComponent(url)}&width=${width}&height=${height}&fit=cover`;
+    },
+    // Get interest suggestions for the current language
+    updateInterestSuggestions() {
+      const lang = this.currentLanguage;
+      console.log(`Updating interest suggestions for language: ${lang}`);
+      
+      // Check if window.i18n and translations exist
+      if (!window.i18n || !window.i18n.translations) {
+        console.warn('Translations not loaded yet, will retry later');
+        // Set a timeout to try again in a moment
+        setTimeout(() => this.updateInterestSuggestions(), 500);
+        return;
+      }
+      
+      // Check if the current language exists in translations
+      if (lang && window.i18n.translations[lang] && window.i18n.translations[lang].interestSuggestions) {
+        this.interestSuggestions = window.i18n.translations[lang].interestSuggestions;
+        console.log(`Loaded ${this.interestSuggestions.length} interest suggestions for ${lang}:`, this.interestSuggestions);
+      } else {
+        console.warn(`No interest suggestions found for language: ${lang}`);
+        // Check if English translations exist before defaulting to them
+        if (window.i18n.translations.en && window.i18n.translations.en.interestSuggestions) {
+          this.interestSuggestions = window.i18n.translations.en.interestSuggestions || [];
+        } else {
+          console.error('No fallback interest suggestions available');
+          // Provide default suggestions if nothing is available
+          this.interestSuggestions = [
+            { text: "Rockets", color: "#22C55E" },
+            { text: "Pirates", color: "#00B7EA" },
+            { text: "Space", color: "#F59E0B" },
+            { text: "Dinosaurs", color: "#EF4444" },
+            { text: "Helping Others", color: "#F59E0B" },
+            { text: "Respecting your Elders", color: "#22C55E" }
+          ];
+        }
+      }
     }
   },
   template: `
@@ -946,12 +983,15 @@ window.CreatePage = {
                 </div>
 
                 <div class="flex flex-wrap gap-3 mt-4">
-                  <span class="bg-[#22C55E] text-white px-3 py-1 rounded-full text-xs cursor-pointer" @click="addInterest('Rockets')">Rockets</span>
-                  <span class="bg-[#00B7EA] text-white px-3 py-1 rounded-full text-xs cursor-pointer" @click="addInterest('Pirates')">Pirates</span>
-                  <span class="bg-[#F59E0B] text-white px-3 py-1 rounded-full text-xs cursor-pointer" @click="addInterest('Space')">Space</span>
-                  <span class="bg-[#EF4444] text-white px-3 py-1 rounded-full text-xs cursor-pointer" @click="addInterest('Dinosaurs')">Dinosaurs</span>
-                  <span class="bg-[#F59E0B] text-white px-3 py-1 rounded-full text-xs cursor-pointer" @click="addInterest('Helping Others')">Helping Others</span>
-                  <span class="bg-[#22C55E] text-white px-3 py-1 rounded-full text-xs cursor-pointer" @click="addInterest('Respecting your Elders')">Respecting your Elders</span>
+                  <span 
+                    v-for="suggestion in interestSuggestions" 
+                    :key="suggestion.text"
+                    :style="{ backgroundColor: suggestion.color }"
+                    class="text-white px-3 py-1 rounded-full text-xs cursor-pointer" 
+                    @click="addInterest(suggestion.text)"
+                  >
+                    {{ suggestion.text }}
+                  </span>
                 </div>
               </div>
 

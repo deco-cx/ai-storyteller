@@ -615,10 +615,11 @@ window.StoryPage = {
                 const newExample = {
                     title: this.story.title || "Untitled Story",
                     childName: this.story.childName || "",
-                    themes: this.story.themes || this.story.interests || "",
+                    theme: this.story.theme || this.story.themes || this.story.interests || "",
+                    description: this.story.excerpt || (this.story.story ? this.story.story.substring(0, 150) + '...' : ''),
                     voice: typeof this.story.voice === 'object' ? this.story.voice.name : (this.story.voice || ""),
                     voiceAvatar: typeof this.story.voice === 'object' ? (this.story.voice.avatar || "") : "",
-                    image: this.story.coverUrl || "",
+                    coverImage: this.story.coverUrl || "",
                     audio: this.story.audioUrl || "",
                     isPlaying: false,
                     progress: "0%"

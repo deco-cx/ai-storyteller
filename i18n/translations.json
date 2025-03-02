@@ -208,6 +208,14 @@
       "Space Exploration",
       "Superhero Academy"
     ],
+    "interestSuggestions": [
+      { "text": "Rockets", "color": "#22C55E" },
+      { "text": "Pirates", "color": "#00B7EA" },
+      { "text": "Space", "color": "#F59E0B" },
+      { "text": "Dinosaurs", "color": "#EF4444" },
+      { "text": "Helping Others", "color": "#F59E0B" },
+      { "text": "Respecting your Elders", "color": "#22C55E" }
+    ],
     "prompts": {
       "generatePlot": "Create a children's story title and plot for a {childName} who is interested in {interests}. The story should be educational, engaging, and appropriate for children. Keep the plot brief (2-3 sentences).",
       "generateStory": "Create an engaging children's story about {interests} with {childName} as the main character.\n\nThe story should be divided into 3-5 natural sections (like scenes or parts of the journey), each with 1-2 paragraphs.\n\nIMPORTANT: \n- The complete story should be at least 2,000 characters long\n- DO NOT start with \"Once upon a time\" - use a more creative and varied opening\n- Try one of these alternative story beginnings instead:\n  * Start with dialogue\n  * Start with action or excitement\n  * Start with a question\n  * Start with a description of the setting\n  * Start by introducing the main character directly\n\nInclude:\n- A beginning that introduces the characters and setting (with a creative opening)\n- A middle with challenges or adventures\n- A satisfying conclusion with a gentle lesson\n- Descriptive language and some dialogue\n\nMake the story flow naturally between sections without explicitly labeling them as chapters.\n\nTitle: {title}\nPlot: {plot}",
@@ -422,6 +430,14 @@
       "Ilha dos Dinossauros",
       "Exploração Espacial",
       "Academia de Super-heróis"
+    ],
+    "interestSuggestions": [
+      { "text": "Foguetes", "color": "#22C55E" },
+      { "text": "Piratas", "color": "#00B7EA" },
+      { "text": "Espaço", "color": "#F59E0B" },
+      { "text": "Dinossauros", "color": "#EF4444" },
+      { "text": "Ajudar os Outros", "color": "#F59E0B" },
+      { "text": "Respeitar os Mais Velhos", "color": "#22C55E" }
     ],
     "prompts": {
       "generatePlot": "Crie um título e enredo de história infantil para {childName} que se interessa por {interests}. A história deve ser educativa, envolvente e apropriada para crianças. Mantenha o enredo breve (2-3 frases).",

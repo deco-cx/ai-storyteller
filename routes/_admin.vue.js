@@ -14,6 +14,7 @@ window.AdminPage = {
         { id: 'story', label: 'Story Page' },
         { id: 'examples', label: 'Example Stories' },
         { id: 'voices', label: 'Voice Options' },
+        { id: 'interestSuggestions', label: 'Interest Suggestions' },
         { id: 'themeSuggestions', label: 'Theme Suggestions' },
         { id: 'prompts', label: 'AI Prompts' }
       ],
@@ -424,6 +425,68 @@ window.AdminPage = {
           }
         }
       }
+    },
+    addNewInterestSuggestion() {
+      // Create a new interest suggestion with default values
+      const newInterest = {
+        text: "New Interest",
+        color: "#22C55E"
+      };
+      
+      // Add to the current language interest suggestions
+      if (!this.editedTranslations[this.currentLanguage].interestSuggestions) {
+        this.editedTranslations[this.currentLanguage].interestSuggestions = [];
+      }
+      
+      this.editedTranslations[this.currentLanguage].interestSuggestions.push(newInterest);
+      
+      // If this is a new language without interest suggestions, make sure to copy the structure from English
+      if (this.currentLanguage !== 'en' && this.editedTranslations[this.currentLanguage].interestSuggestions.length === 1) {
+        // Copy all interest suggestions from English but keep the new one we just added
+        const englishInterests = this.editedTranslations.en.interestSuggestions || [];
+        for (let i = 0; i < englishInterests.length; i++) {
+          if (i === 0) {
+            // Skip the first one as we already added our new interest
+            continue;
+          }
+          // Create a copy with the same structure but empty values
+          const interestCopy = { ...englishInterests[i] };
+          this.editedTranslations[this.currentLanguage].interestSuggestions.push(interestCopy);
+        }
+      }
+      
+      // If we're adding to English, we need to make sure all other languages have this interest too
+      if (this.currentLanguage === 'en') {
+        // For each language other than English
+        Object.keys(this.editedTranslations).forEach(langCode => {
+          if (langCode !== 'en') {
+            // Make sure the interestSuggestions array exists
+            if (!this.editedTranslations[langCode].interestSuggestions) {
+              this.editedTranslations[langCode].interestSuggestions = [];
+            }
+            
+            // Add a copy of the new interest to this language
+            const interestCopy = { ...newInterest };
+            this.editedTranslations[langCode].interestSuggestions.push(interestCopy);
+          }
+        });
+      }
+    },
+    removeInterestSuggestion(index) {
+      if (confirm('Are you sure you want to remove this interest suggestion?')) {
+        this.editedTranslations[this.currentLanguage].interestSuggestions.splice(index, 1);
+        
+        // If we're removing from English, we should remove from all languages to maintain consistency
+        if (this.currentLanguage === 'en') {
+          Object.keys(this.editedTranslations).forEach(langCode => {
+            if (langCode !== 'en' && 
+                this.editedTranslations[langCode].interestSuggestions && 
+                this.editedTranslations[langCode].interestSuggestions.length > index) {
+              this.editedTranslations[langCode].interestSuggestions.splice(index, 1);
+            }
+          });
+        }
+      }
     }
   },
   mounted() {
@@ -636,6 +699,65 @@ window.AdminPage = {
                     />
                     Is Playing
                   </label>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Special UI for Interest Suggestions section -->
+          <div v-else-if="currentSection === 'interestSuggestions'" class="space-y-6">
+            <div class="flex justify-between mb-4">
+              <h3 class="text-lg font-medium">Interest Suggestions</h3>
+              <button 
+                @click="addNewInterestSuggestion" 
+                class="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+              >
+                + Add Interest
+              </button>
+            </div>
+            
+            <div 
+              v-for="(interest, index) in editedTranslations[currentLanguage].interestSuggestions || []" 
+              :key="index"
+              class="border rounded-lg p-4 bg-white shadow-sm mb-4"
+            >
+              <div class="flex justify-between items-center mb-4">
+                <h4 class="font-medium text-lg">Interest #{{ index + 1 }}</h4>
+                <button 
+                  @click="removeInterestSuggestion(index)" 
+                  class="text-red-500 hover:text-red-700"
+                  title="Remove this interest"
+                >
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Text -->
+                <div class="space-y-1">
+                  <label class="block text-sm font-medium">Text:</label>
+                  <input 
+                    v-model="interest.text" 
+                    type="text" 
+                    class="w-full px-3 py-2 border rounded"
+                  />
+                </div>
+                
+                <!-- Color -->
+                <div class="space-y-1">
+                  <label class="block text-sm font-medium">Color (HEX):</label>
+                  <div class="flex items-center gap-2">
+                    <input 
+                      v-model="interest.color" 
+                      type="text" 
+                      class="flex-1 px-3 py-2 border rounded"
+                      placeholder="#RRGGBB"
+                    />
+                    <div 
+                      class="w-8 h-8 border rounded" 
+                      :style="{ backgroundColor: interest.color || '#CCCCCC' }"
+                    ></div>
+                  </div>
                 </div>
               </div>
             </div>

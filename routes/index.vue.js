@@ -55,38 +55,131 @@ window.IndexPage = {
 
                 <!-- Example Stories -->
                 <div class="space-y-8">
-                    <h2 class="text-2xl font-bold text-white bg-gradient-to-r from-[#38BDF8] via-[#0EA5E9] to-[#0284C7] py-3 rounded-full shadow-lg shadow-blue-100">{{ $t('home.examples') }}</h2>
+                    <h2 class="text-2xl font-bold text-white bg-gradient-to-r from-[#FF6B6B] via-[#FF9E7D] to-[#FFCA85] py-3 rounded-full shadow-lg">{{ $t('home.examples') }}</h2>
                     
                     <!-- Story Cards -->
-                    <div v-for="(example, index) in examples" :key="index" class="space-y-6">
-                        <div class="relative flex items-start">
-                            <!-- Avatar Circle -->
-                            <div class="absolute left-0 top-6 w-16 h-16 rounded-full border-2 border-[#0F766E] overflow-hidden z-10">
-                                <img :src="getOptimizedImageUrl(example.voiceAvatar, 64, 64)" 
-                                     :alt="example.voice" 
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                        <div v-for="(example, index) in examples" :key="index" 
+                             class="bg-white rounded-2xl overflow-hidden shadow-lg border-4 hover:shadow-xl transition-all duration-300"
+                             :class="[
+                                index % 4 === 0 ? 'border-[#FF6B6B]' : '',
+                                index % 4 === 1 ? 'border-[#4ECDC4]' : '',
+                                index % 4 === 2 ? 'border-[#FFD166]' : '',
+                                index % 4 === 3 ? 'border-[#6A0572]' : ''
+                             ]">
+                            
+                            <!-- Story Cover Image -->
+                            <div class="relative h-48 overflow-hidden">
+                                <img v-if="example.coverImage" 
+                                     :src="getOptimizedImageUrl(example.coverImage, 600, 300)" 
+                                     :alt="example.title"
+                                     @load="logImageLoaded(example.title, example.coverImage)"
+                                     @error="logImageError(example.title, example.coverImage)"
                                      class="w-full h-full object-cover" />
+                                <div v-else 
+                                     :class="[
+                                        index % 4 === 0 ? 'bg-gradient-to-r from-[#FF6B6B] to-[#FF9E7D]' : '',
+                                        index % 4 === 1 ? 'bg-gradient-to-r from-[#4ECDC4] to-[#A5ECD7]' : '',
+                                        index % 4 === 2 ? 'bg-gradient-to-r from-[#FFD166] to-[#FFECA8]' : '',
+                                        index % 4 === 3 ? 'bg-gradient-to-r from-[#6A0572] to-[#AB83A1]' : ''
+                                     ]"
+                                     class="w-full h-full flex items-center justify-center">
+                                    <i class="fa-solid fa-book-open text-white text-5xl"></i>
+                                </div>
+                                
+                                <!-- Story Title Overlay -->
+                                <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 p-3">
+                                    <h3 class="text-white font-bold text-lg truncate">{{ example.title }}</h3>
+                                </div>
                             </div>
                             
-                            <!-- Card Content -->
-                            <div class="ml-8 flex-1 bg-gradient-to-b from-[#99F6E4] to-[#2DD4BF] border border-[#0D9488] rounded-xl p-6 pl-10 shadow-md">
-                                <h3 class="text-[#0F766E] font-normal text-sm mb-4">{{ example.title }}</h3>
-                                
-                                <!-- Audio Player -->
-                                <div class="flex items-center gap-2 w-full">
-                                    <button @click="toggleAudio(example)" class="bg-[#0F766E] text-white p-2 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
-                                        <i :class="example.isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'"></i>
-                                    </button>
-                                    <div class="flex-1 h-2 bg-[#F1F5F9] rounded-full relative">
-                                        <div class="absolute inset-0 h-2 bg-[#0F766E] rounded-full" :style="{ width: example.progress }"></div>
+                            <div class="p-4">
+                                <!-- Narrator Section -->
+                                <div class="flex items-center mb-4">
+                                    <!-- Voice Avatar -->
+                                    <div class="w-12 h-12 rounded-full overflow-hidden border-2 mr-3"
+                                         :class="[
+                                            index % 4 === 0 ? 'border-[#FF6B6B]' : '',
+                                            index % 4 === 1 ? 'border-[#4ECDC4]' : '',
+                                            index % 4 === 2 ? 'border-[#FFD166]' : '',
+                                            index % 4 === 3 ? 'border-[#6A0572]' : ''
+                                         ]">
+                                        <img :src="getOptimizedImageUrl(example.voiceAvatar, 64, 64)" 
+                                             :alt="example.voice" 
+                                             @load="logImageLoaded(example.voice, example.voiceAvatar)"
+                                             @error="logImageError(example.voice, example.voiceAvatar)"
+                                             class="w-full h-full object-cover" />
+                                    </div>
+                                    <div>
+                                        <p class="text-gray-600 text-sm">{{ $t('home.narratedBy') }}</p>
+                                        <p class="font-medium">{{ example.voice }}</p>
                                     </div>
                                 </div>
                                 
-                                <!-- Action Button -->
-                                <div class="mt-4">
-                                    <button @click="toggleAudio(example)" class="w-full bg-[#5AE7D1] bg-opacity-20 border border-[#0D9488] text-[#0F766E] rounded-full py-2 px-4 flex items-center justify-center">
-                                        <i class="fa-solid fa-play mr-2"></i>
-                                        {{ $t('home.listenAgain') }}
+                                <!-- Story Details -->
+                                <div class="mb-4 bg-gray-50 rounded-lg p-3">
+                                    <div class="flex flex-wrap gap-2 mb-2">
+                                        <div v-if="example.childName" class="bg-gray-200 rounded-full px-3 py-1 text-sm flex items-center">
+                                            <i class="fa-solid fa-child text-gray-600 mr-1"></i>
+                                            <span>{{ example.childName }}</span>
+                                        </div>
+                                        <div v-if="example.theme" class="bg-gray-200 rounded-full px-3 py-1 text-sm flex items-center">
+                                            <i class="fa-solid fa-palette text-gray-600 mr-1"></i>
+                                            <span>{{ example.theme }}</span>
+                                        </div>
+                                    </div>
+                                    <p v-if="example.description" class="text-sm text-gray-600 line-clamp-2">{{ example.description }}</p>
+                                </div>
+                                
+                                <!-- Audio Player -->
+                                <div class="flex items-center gap-3 w-full mb-4">
+                                    <button @click="toggleAudio(example)" 
+                                            :class="[
+                                                index % 4 === 0 ? 'bg-[#FF6B6B] hover:bg-[#FF8080]' : '',
+                                                index % 4 === 1 ? 'bg-[#4ECDC4] hover:bg-[#6FDED6]' : '',
+                                                index % 4 === 2 ? 'bg-[#FFD166] hover:bg-[#FFE08A]' : '',
+                                                index % 4 === 3 ? 'bg-[#6A0572] hover:bg-[#8A2793]' : ''
+                                            ]"
+                                            class="text-white p-3 rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0 transition-colors duration-200">
+                                        <i :class="example.isPlaying ? 'fa-solid fa-pause text-lg' : 'fa-solid fa-play text-lg'"></i>
                                     </button>
+                                    <div class="flex-1 h-3 bg-gray-200 rounded-full relative">
+                                        <div class="absolute inset-0 h-3 rounded-full" 
+                                             :style="{ width: example.progress }"
+                                             :class="[
+                                                index % 4 === 0 ? 'bg-[#FF6B6B]' : '',
+                                                index % 4 === 1 ? 'bg-[#4ECDC4]' : '',
+                                                index % 4 === 2 ? 'bg-[#FFD166]' : '',
+                                                index % 4 === 3 ? 'bg-[#6A0572]' : ''
+                                             ]"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Action Buttons -->
+                                <div class="grid grid-cols-2 gap-3 mt-4">
+                                    <button @click="toggleAudio(example)" 
+                                            :class="[
+                                                index % 4 === 0 ? 'bg-[#FF6B6B] hover:bg-[#FF8080] border-[#FF5252]' : '',
+                                                index % 4 === 1 ? 'bg-[#4ECDC4] hover:bg-[#6FDED6] border-[#3DBCB4]' : '',
+                                                index % 4 === 2 ? 'bg-[#FFD166] hover:bg-[#FFE08A] border-[#FFC233]' : '',
+                                                index % 4 === 3 ? 'bg-[#6A0572] hover:bg-[#8A2793] border-[#590462]' : ''
+                                            ]"
+                                            class="text-white rounded-full py-3 px-4 flex items-center justify-center font-medium border-2 transition-colors duration-200">
+                                        <i class="fa-solid fa-headphones mr-2"></i>
+                                        {{ example.isPlaying ? $t('home.pauseStory') : $t('home.listenStory') }}
+                                    </button>
+                                    
+                                    <router-link to="/create" 
+                                            :class="[
+                                                index % 4 === 0 ? 'bg-white text-[#FF6B6B] hover:bg-[#FFF5F5] border-[#FF6B6B]' : '',
+                                                index % 4 === 1 ? 'bg-white text-[#4ECDC4] hover:bg-[#F0FDFB] border-[#4ECDC4]' : '',
+                                                index % 4 === 2 ? 'bg-white text-[#FFD166] hover:bg-[#FFFBF0] border-[#FFD166]' : '',
+                                                index % 4 === 3 ? 'bg-white text-[#6A0572] hover:bg-[#F9F0FA] border-[#6A0572]' : ''
+                                            ]"
+                                            class="rounded-full py-3 px-4 flex items-center justify-center font-medium border-2 transition-colors duration-200">
+                                        <i class="fa-solid fa-magic mr-2"></i>
+                                        {{ $t('home.createFromThis') }}
+                                    </router-link>
                                 </div>
                                 
                                 <audio 
@@ -99,6 +192,13 @@ window.IndexPage = {
                                     style="display: none;"></audio>
                             </div>
                         </div>
+                    </div>
+                    
+                    <!-- Empty State -->
+                    <div v-if="examples.length === 0" class="bg-white rounded-2xl p-8 text-center shadow-lg border-4 border-dashed border-[#FF9E7D]">
+                        <i class="fa-solid fa-book text-[#FF9E7D] text-5xl mb-4"></i>
+                        <h3 class="text-xl font-bold text-gray-700 mb-2">{{ $t('home.noExamples') }}</h3>
+                        <p class="text-gray-600">{{ $t('home.checkBackSoon') }}</p>
                     </div>
                 </div>
                 
@@ -142,6 +242,9 @@ window.IndexPage = {
             console.error("Error getting user:", error);
             this.user = null;
         }
+        
+        // Ensure we have all the necessary translation keys
+        this.ensureTranslationKeys();
         
         // Log the contents of translations.json on startup
         try {
@@ -241,6 +344,49 @@ window.IndexPage = {
             sdk.redirectToLogin({ appReturnUrl: '?goToCreate=true' });
         },
         
+        // Ensure all necessary translation keys exist
+        ensureTranslationKeys() {
+            // Define default translations for new UI elements
+            const requiredTranslations = {
+                'home.narratedBy': 'Narrated by',
+                'home.listenStory': 'Listen to Story',
+                'home.pauseStory': 'Pause Story',
+                'home.noExamples': 'No example stories yet',
+                'home.checkBackSoon': 'Check back soon for example stories!',
+                'home.createFromThis': 'Create from this'
+            };
+            
+            // Add translations if they don't exist
+            if (window.i18n && window.i18n.translations) {
+                const currentLang = window.i18n.getLanguage();
+                
+                // For each language
+                Object.keys(window.i18n.translations).forEach(lang => {
+                    // For each required translation
+                    Object.entries(requiredTranslations).forEach(([key, defaultValue]) => {
+                        // Get the key parts (e.g., ['home', 'narratedBy'])
+                        const keyParts = key.split('.');
+                        
+                        // Navigate to the parent object
+                        let target = window.i18n.translations[lang];
+                        for (let i = 0; i < keyParts.length - 1; i++) {
+                            if (!target[keyParts[i]]) {
+                                target[keyParts[i]] = {};
+                            }
+                            target = target[keyParts[i]];
+                        }
+                        
+                        // Set the value if it doesn't exist
+                        const lastKey = keyParts[keyParts.length - 1];
+                        if (!target[lastKey]) {
+                            target[lastKey] = defaultValue;
+                            console.log(`Added missing translation for ${lang}.${key}`);
+                        }
+                    });
+                });
+            }
+        },
+        
         logImageLoaded(title, originalSrc) {
             if (!this._loggedImages[originalSrc]) {
                 console.log(`Image loaded successfully: "${title}"`);
@@ -285,6 +431,9 @@ window.IndexPage = {
         // Handle translations loaded event
         handleTranslationsLoaded() {
             console.log("Translations loaded/updated, refreshing IndexPage component");
+            
+            // Ensure all necessary translation keys exist
+            this.ensureTranslationKeys();
             
             // Update examples if needed
             try {

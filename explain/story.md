@@ -4,6 +4,78 @@
 
 The Story Page (`story.vue.js`) is a Vue.js component that displays a single story with its content, audio playback functionality, and various interactive features. This page allows users to view, listen to, share, and manage stories created with the AI Storyteller application.
 
+## Example Stories Design
+
+The Example Stories section features a playful, child-friendly design that appeals to parents while maintaining accessibility:
+
+### Design Elements
+
+1. **Colorful Card System**
+   - Each story card uses a rotating color scheme (red, teal, yellow, purple) for visual interest
+   - Border colors and interactive elements match the card's theme color
+   - Consistent visual hierarchy with cover image, title, narrator info, and audio controls
+
+2. **Cover Image Display**
+   - Large cover image area (16:9 ratio) at the top of each card
+   - Fallback gradient backgrounds with book icon when no cover image is available
+   - Title overlay with semi-transparent background for readability
+
+3. **Narrator Information**
+   - Voice avatar displayed in a circular frame with matching border color
+   - Clear attribution of the narrator/voice
+   - Visual connection between the storyteller and the story
+
+4. **Story Generation Details**
+   - Child's name tag with child icon
+   - Theme tag with palette icon
+   - Optional short description of the story
+   - Makes it clear that stories are personalized with a child's name and theme
+
+5. **Audio Controls**
+   - Large, accessible play/pause button with color matching the card theme
+   - Progress bar with visual feedback during playback
+   - Dynamic text (Listen/Pause) based on playback state
+   - Hover effects for interactive elements
+
+6. **Action Buttons**
+   - Two-button layout for primary actions
+   - "Listen to Story" button with headphones icon
+   - "Create from this" button with magic wand icon to inspire new story creation
+   - Color-coded to match the card's theme
+
+7. **Responsive Layout**
+   - Single column on mobile, two columns on larger screens
+   - Cards maintain readability and usability at all screen sizes
+   - Consistent spacing and proportions
+
+8. **Empty State**
+   - Friendly message when no examples are available
+   - Consistent with the playful design language
+   - Clear visual indication that content will be coming soon
+
+### Accessibility Features
+
+- High contrast text for readability
+- Clear visual hierarchy and consistent layout
+- Large touch targets for interactive elements
+- Visual feedback for interactive states
+- Alternative text for images
+- Semantic HTML structure
+
+### Data Structure
+
+The example cards utilize the following data from each story:
+- `title`: The story title
+- `coverImage`: URL to the story's cover image (optional)
+- `voiceAvatar`: URL to the narrator's avatar image
+- `voice`: Name of the narrator/voice
+- `audio`: URL to the audio file
+- `childName`: The name of the child the story was generated for
+- `theme`: The theme used to generate the story
+- `description`: A short description of the story (optional)
+- `isPlaying`: Boolean tracking playback state
+- `progress`: String representing playback progress percentage
+
 ## SDK Integration
 
 The page imports the SDK from "../sdk.js" using:
