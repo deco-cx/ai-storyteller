@@ -3,7 +3,7 @@ import i18n from "../i18n/index.js";
 
 window.StoryPage = {
     template: `
-        <div class="min-h-screen bg-[#FFF9F6]">
+        <div v-if="sdkAvailable" class="min-h-screen bg-[#FFF9F6]">
             <!-- Navigation -->
             <nav class="bg-white shadow-md py-4 px-4 sm:px-6 flex items-center justify-between">
                 <div class="flex items-center space-x-1 sm:space-x-4 overflow-x-auto whitespace-nowrap">
@@ -18,9 +18,6 @@ window.StoryPage = {
                     </router-link>
                 </div>
                 <div class="flex items-center gap-2">
-                    <router-link v-if="isPreviewEnvironment" to="/_admin" class="text-[#00B7EA] hover:text-[#0284C7] text-sm sm:text-base px-2 py-1">
-                        <i class="fa-solid fa-gear"></i>
-                    </router-link>
                     <language-switcher></language-switcher>
                 </div>
             </nav>
@@ -92,14 +89,14 @@ window.StoryPage = {
                         </router-link>
                         <!-- Add as Example Button (Admin Only) -->
                         <button 
-                            v-if="isAdmin" 
+                            v-if="isAdmin && translationsFileExists" 
                             @click="addAsExample" 
                             class="border border-[#00B7EA] text-[#00B7EA] px-6 py-3 rounded-full hover:bg-[#F0F9FF] font-medium flex items-center justify-center gap-2"
                             :disabled="addingAsExample"
                         >
                             <i class="fa-solid fa-bookmark"></i>
-                            <span v-if="!addingAsExample">Add as Example</span>
-                            <span v-else>Adding...</span>
+                            <span v-if="!addingAsExample">{{ $t('ui.addAsExample') }}</span>
+                            <span v-else>{{ $t('ui.adding') }}</span>
                         </button>
                     </div>
                     
@@ -141,6 +138,15 @@ window.StoryPage = {
                 </div>
             </main>
         </div>
+        <div v-else class="min-h-screen bg-[#FFF9F6] flex items-center justify-center">
+            <div class="bg-red-100 border border-red-300 text-red-700 px-8 py-6 rounded-xl max-w-md mx-auto text-center">
+                <h3 class="text-xl font-medium mb-4">Webdraw SDK Required</h3>
+                <p class="mb-4">This app requires the Webdraw SDK to function properly. Please open it in the Webdraw browser environment.</p>
+                <a href="https://webdraw.com/apps/browser" class="bg-[#0EA5E9] text-white px-6 py-3 rounded-full hover:bg-[#0284C7] font-medium inline-block">
+                    Go to Webdraw Apps
+                </a>
+            </div>
+        </div>
     `,
     data() {
         return {
@@ -152,11 +158,12 @@ window.StoryPage = {
             fileUrl: null,
             storyIndex: null,
             BASE_FS_URL: "https://fs.webdraw.com",
-            isPreviewEnvironment: false,
             isAdmin: false,
             addingAsExample: false,
             exampleAddedMessage: '',
-            adminCheckInterval: null
+            adminCheckInterval: null,
+            sdkAvailable: false,
+            translationsFileExists: false
         }
     },
     watch: {
@@ -174,20 +181,34 @@ window.StoryPage = {
         }
     },
     async mounted() {
+        // Check if the Webdraw SDK is available
+        this.sdkAvailable = this.checkSdkAvailability();
+        
+        if (!this.sdkAvailable) {
+            alert("This app requires the Webdraw SDK. Please test it at https://webdraw.com/apps/browser");
+            return;
+        }
+        
         // Get query parameters
         const urlParams = new URLSearchParams(window.location.search);
         this.fileUrl = urlParams.get('file');
         this.storyIndex = urlParams.get('index');
         
-        // Check if we're in the preview environment
-        this.isPreviewEnvironment = window.location.origin.includes('preview.webdraw.app');
+        // Check if the translations file exists
+        await this.checkTranslationsFile();
         
         // Check if the user is an admin (can access admin page)
-        this.isAdmin = this.isPreviewEnvironment || await this.checkIfAdmin();
+        const adminCheckResult = await this.checkIfAdmin();
+        console.log("Admin check result:", adminCheckResult);
+        this.isAdmin = adminCheckResult;
+        console.log("Final admin status:", this.isAdmin);
         
         // Periodically check admin status
         this.adminCheckInterval = setInterval(async () => {
-            this.isAdmin = this.isPreviewEnvironment || await this.checkIfAdmin();
+            await this.checkTranslationsFile();
+            const periodicAdminCheck = await this.checkIfAdmin();
+            console.log("Periodic admin check result:", periodicAdminCheck);
+            this.isAdmin = periodicAdminCheck;
         }, 30000); // Check every 30 seconds
         
         await this.loadStory();
@@ -199,24 +220,102 @@ window.StoryPage = {
         }
     },
     methods: {
+        // Check if the Webdraw SDK is available
+        checkSdkAvailability() {
+            if (!sdk || typeof sdk !== 'object') {
+                console.error("Webdraw SDK is not available");
+                return false;
+            }
+            
+            if (!sdk.fs || typeof sdk.fs.read !== 'function') {
+                console.error("Webdraw SDK filesystem module is not available");
+                return false;
+            }
+            
+            return true;
+        },
+        
+        // Check if the translations file exists
+        async checkTranslationsFile() {
+            if (!this.sdkAvailable) {
+                this.translationsFileExists = false;
+                return;
+            }
+            
+            try {
+                const translatorPath = "~/AI Storyteller/translations.json";
+                
+                if (typeof sdk.fs.exists === 'function') {
+                    const exists = await sdk.fs.exists(translatorPath);
+                    this.translationsFileExists = exists;
+                    console.log("Translations file exists:", exists);
+                } else {
+                    // If exists method is not available, try to read the file
+                    try {
+                        await sdk.fs.read(translatorPath);
+                        this.translationsFileExists = true;
+                    } catch (error) {
+                        this.translationsFileExists = false;
+                    }
+                }
+            } catch (error) {
+                console.warn("Error checking translations file:", error);
+                this.translationsFileExists = false;
+            }
+        },
+        
         // Check if the user is an admin
         async checkIfAdmin() {
+            console.log("Checking admin status...");
+            
             // First check if AdminPage is defined
             if (typeof window.AdminPage !== 'undefined') {
+                console.log("Admin check: AdminPage is defined");
                 return true;
             }
             
-            // Then check if the user has file system access
-            if (sdk && typeof sdk.fs?.read === 'function') {
+            // Check if SDK is properly initialized
+            if (!this.sdkAvailable) {
+                console.warn("Admin check: SDK is not available");
+                return false;
+            }
+            
+            // Check if translations file exists
+            if (!this.translationsFileExists) {
+                console.warn("Admin check: translations.json does not exist");
+                return false;
+            }
+            
+            // Then check if the user has file system access to the specific translations file
+            try {
+                // The exact path to the translations file that only admins should have access to
+                const translatorPath = "~/AI Storyteller/translations.json";
+                
+                // Try to read the file
                 try {
-                    // Try to read the translations file - only admins should have access to this
-                    const translatorPath = "~/AI Storyteller/translations.json";
                     const content = await sdk.fs.read(translatorPath);
-                    return !!content; // Return true if we can read the file
-                } catch (error) {
-                    console.warn("User doesn't have admin access:", error);
+                    
+                    // Ensure the content is valid JSON and not empty
+                    if (!content) {
+                        console.warn("Admin check: translations.json is empty");
+                        return false;
+                    }
+                    
+                    try {
+                        JSON.parse(content);
+                        console.log("Admin check: Successfully read and parsed translations.json");
+                        return true; // Return true if we can read and parse the file
+                    } catch (parseError) {
+                        console.warn("Admin check: translations.json contains invalid JSON:", parseError);
+                        return false;
+                    }
+                } catch (readError) {
+                    console.warn("Error reading translations.json:", readError);
                     return false;
                 }
+            } catch (error) {
+                console.warn("User doesn't have admin access:", error);
+                return false;
             }
             
             return false;
@@ -493,7 +592,18 @@ window.StoryPage = {
         
         // Add current story as an example in translations.json
         async addAsExample() {
-            if (!this.isAdmin || !this.story) {
+            console.log("Adding story as example...");
+            
+            // Double-check admin status before proceeding
+            if (!await this.checkIfAdmin()) {
+                console.warn("Attempted to add example without admin privileges");
+                this.exampleAddedMessage = "Error: Admin privileges required";
+                return;
+            }
+            
+            if (!this.story) {
+                console.warn("No story to add as example");
+                this.exampleAddedMessage = "Error: No story to add";
                 return;
             }
             
@@ -509,28 +619,47 @@ window.StoryPage = {
                     voice: typeof this.story.voice === 'object' ? this.story.voice.name : (this.story.voice || ""),
                     voiceAvatar: typeof this.story.voice === 'object' ? (this.story.voice.avatar || "") : "",
                     image: this.story.coverUrl || "",
+                    audio: this.story.audioUrl || "",
                     isPlaying: false,
                     progress: "0%"
                 };
                 
                 // Load translations.json
                 const translatorPath = "~/AI Storyteller/translations.json";
+                
+                // First check if the file exists
+                if (typeof sdk.fs.exists === 'function') {
+                    const exists = await sdk.fs.exists(translatorPath);
+                    if (!exists) {
+                        throw new Error(`Translations file not found at path: ${translatorPath}`);
+                    }
+                }
+                
                 let translations;
                 
                 try {
                     const content = await sdk.fs.read(translatorPath);
-                    if (content) {
-                        translations = JSON.parse(content);
-                    } else {
+                    if (!content) {
                         throw new Error("Empty translations file");
+                    }
+                    
+                    try {
+                        translations = JSON.parse(content);
+                    } catch (parseError) {
+                        throw new Error(`Invalid JSON in translations file: ${parseError.message}`);
                     }
                 } catch (error) {
                     console.error("Error reading translations file:", error);
-                    throw new Error("Failed to read translations file");
+                    throw new Error(`Failed to read translations file: ${error.message}`);
                 }
                 
                 // Get current language
                 const currentLanguage = i18n.getLanguage();
+                
+                // Verify the translations object has the expected structure
+                if (!translations[currentLanguage]) {
+                    throw new Error(`Current language "${currentLanguage}" not found in translations`);
+                }
                 
                 // Add example to current language
                 if (!translations[currentLanguage].examples) {
@@ -559,14 +688,17 @@ window.StoryPage = {
                 await sdk.fs.write(translatorPath, jsonContent);
                 
                 // Update global translations
-                window.i18n.translations = JSON.parse(JSON.stringify(translations));
-                
-                // Notify components that translations have been updated
-                if (window.eventBus) {
-                    window.eventBus.emit('translations-updated');
+                if (window.i18n && window.i18n.translations) {
+                    window.i18n.translations = JSON.parse(JSON.stringify(translations));
+                    
+                    // Notify components that translations have been updated
+                    if (window.eventBus) {
+                        window.eventBus.emit('translations-updated');
+                    }
                 }
                 
-                this.exampleAddedMessage = 'Story added as example successfully!';
+                console.log("Successfully added story as example");
+                this.exampleAddedMessage = this.$t('ui.exampleAddedSuccess');
                 
                 // Clear message after 3 seconds
                 setTimeout(() => {
@@ -575,7 +707,8 @@ window.StoryPage = {
                 
             } catch (error) {
                 console.error("Error adding story as example:", error);
-                this.exampleAddedMessage = `Error: ${error.message}`;
+                // Use the i18n.tf function for variable substitution
+                this.exampleAddedMessage = i18n.tf('ui.exampleAddedError', { errorMessage: error.message });
             } finally {
                 this.addingAsExample = false;
             }

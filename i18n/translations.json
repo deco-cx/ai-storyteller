@@ -30,7 +30,13 @@
       "home": "Home",
       "new": "New",
       "myStories": "My Stories",
-      "admin": "Admin"
+      "admin": "Admin",
+      "addAsExample": "Add as Example",
+      "adding": "Adding...",
+      "exampleAddedSuccess": "Story added as example successfully!",
+      "exampleAddedError": "Error: {errorMessage}",
+      "listenAgain": "Listen Again",
+      "voiceRequired": "Please select a voice to continue"
     },
     "login": {
       "title": "Login",
@@ -51,6 +57,7 @@
       "freeStories": "3 stories for free",
       "examples": "Examples",
       "result": "Result",
+      "listenAgain": "Listen Again",
       "featuresTitle": "Features",
       "feature1Title": "Personalized Stories",
       "feature1Text": "Create stories featuring your child as the main character",
@@ -73,6 +80,11 @@
       "interestsHelp": "What is your child interested in? Add up to 6 themes.",
       "randomTheme": "Random Theme",
       "voiceLabel": "Choose a Voice",
+      "clickToSelect": "Click to select this voice",
+      "playPreview": "Play voice preview",
+      "pausePreview": "Pause voice preview",
+      "voiceSelected": "Voice selected: {name}",
+      "voiceRequired": "Please select a voice to continue",
       "createButton": "Create new story!",
       "generatingTitle": "Creating Your Story",
       "generatingPlot": "Creating Plot",
@@ -198,7 +210,7 @@
     ],
     "prompts": {
       "generatePlot": "Create a children's story title and plot for a {childName} who is interested in {interests}. The story should be educational, engaging, and appropriate for children. Keep the plot brief (2-3 sentences).",
-      "generateStory": "Write a children's story based on the following title and plot. Make it engaging, educational, and appropriate for children. Include the child's name ({childName}) as the main character. The story should be about {interests}.\n\nTitle: {title}\nPlot: {plot}\n\nWrite a complete story with a beginning, middle, and end. The story should be 3-4 paragraphs long.",
+      "generateStory": "Create an engaging children's story about {interests} with {childName} as the main character.\n\nThe story should be divided into 3-5 natural sections (like scenes or parts of the journey), each with 1-2 paragraphs.\n\nIMPORTANT: \n- The complete story should be at least 2,000 characters long\n- DO NOT start with \"Once upon a time\" - use a more creative and varied opening\n- Try one of these alternative story beginnings instead:\n  * Start with dialogue\n  * Start with action or excitement\n  * Start with a question\n  * Start with a description of the setting\n  * Start by introducing the main character directly\n\nInclude:\n- A beginning that introduces the characters and setting (with a creative opening)\n- A middle with challenges or adventures\n- A satisfying conclusion with a gentle lesson\n- Descriptive language and some dialogue\n\nMake the story flow naturally between sections without explicitly labeling them as chapters.\n\nTitle: {title}\nPlot: {plot}",
       "generateImage": "Create a colorful, child-friendly illustration for a children's story titled \"{title}\" with the following plot: {plot}. The image should be vibrant, engaging, and suitable for children."
     }
   },
@@ -233,7 +245,13 @@
       "home": "Início",
       "new": "Nova",
       "myStories": "Minhas Histórias",
-      "admin": "Admin"
+      "admin": "Admin",
+      "addAsExample": "Adicionar como Exemplo",
+      "adding": "Adicionando...",
+      "exampleAddedSuccess": "História adicionada como exemplo com sucesso!",
+      "exampleAddedError": "Erro: {errorMessage}",
+      "listenAgain": "Ouvir Novamente",
+      "voiceRequired": "Por favor, selecione uma voz para continuar"
     },
     "login": {
       "title": "Entrar",
@@ -254,6 +272,7 @@
       "freeStories": "3 histórias grátis",
       "examples": "Exemplos",
       "result": "Resultado",
+      "listenAgain": "Ouvir Novamente",
       "featuresTitle": "Recursos",
       "feature1Title": "Histórias Personalizadas",
       "feature1Text": "Crie histórias com seu filho como personagem principal",
@@ -276,6 +295,11 @@
       "interestsHelp": "O que seu filho gosta? Adicione até 6 temas.",
       "randomTheme": "Tema Aleatório",
       "voiceLabel": "Escolha uma Voz",
+      "clickToSelect": "Clique para selecionar esta voz",
+      "playPreview": "Ouvir prévia da voz",
+      "pausePreview": "Pausar prévia da voz",
+      "voiceSelected": "Voz selecionada: {name}",
+      "voiceRequired": "Por favor, selecione uma voz para continuar",
       "createButton": "Criar nova história!",
       "generatingTitle": "Criando Sua História",
       "generatingPlot": "Criando Enredo",
@@ -401,7 +425,7 @@
     ],
     "prompts": {
       "generatePlot": "Crie um título e enredo de história infantil para {childName} que se interessa por {interests}. A história deve ser educativa, envolvente e apropriada para crianças. Mantenha o enredo breve (2-3 frases).",
-      "generateStory": "Escreva uma história infantil baseada no seguinte título e enredo. Torne-a envolvente, educativa e apropriada para crianças. Inclua o nome da criança ({childName}) como personagem principal. A história deve ser sobre {interests}.\n\nTítulo: {title}\nEnredo: {plot}\n\nEscreva uma história completa com começo, meio e fim. A história deve ter 3-4 parágrafos.",
+      "generateStory": "Crie uma história infantil envolvente sobre {interests} com {childName} como personagem principal.\n\nA história deve ser dividida em 3-5 seções naturais (como cenas ou partes da jornada), cada uma com 1-2 parágrafos.\n\nIMPORTANTE: \n- A história completa deve ter pelo menos 2.000 caracteres\n- NÃO comece com \"Era uma vez\" - use uma abertura mais criativa e variada\n- Experimente uma destas alternativas para começar a história:\n  * Comece com um diálogo\n  * Comece com ação ou emoção\n  * Comece com uma pergunta\n  * Comece com uma descrição do cenário\n  * Comece apresentando diretamente o personagem principal\n\nInclua:\n- Um começo que apresente os personagens e o cenário (com uma abertura criativa)\n- Um meio com desafios ou aventuras\n- Uma conclusão satisfatória com uma lição suave\n- Linguagem descritiva e alguns diálogos\n\nFaça a história fluir naturalmente entre as seções sem rotulá-las explicitamente como capítulos.\n\nTítulo: {title}\nEnredo: {plot}",
       "generateImage": "Crie uma ilustração colorida e amigável para crianças para uma história infantil intitulada \"{title}\" com o seguinte enredo: {plot}. A imagem deve ser vibrante, envolvente e adequada para crianças."
     }
   }

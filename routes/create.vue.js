@@ -42,7 +42,19 @@ window.CreatePage = {
     this.debugTranslations();
     
     // Initialize voices based on current language
-    this.updateVoicesForLanguage();
+    // Check if translations are loaded first
+    if (window.i18n && window.i18n.translations) {
+      this.updateVoicesForLanguage();
+    } else {
+      console.log('Translations not loaded yet, will wait for them');
+      // Set up a listener for translations loaded event
+      if (window.eventBus) {
+        window.eventBus.on('translations-loaded', () => {
+          console.log('Translations loaded, now updating voices');
+          this.updateVoicesForLanguage();
+        });
+      }
+    }
     
     this.previewAudioElement = new Audio();
     this.previewAudioElement.addEventListener('ended', () => {
@@ -78,6 +90,13 @@ window.CreatePage = {
       window.eventBus.events['language-changed'] = window.eventBus.events['language-changed']?.filter(
         callback => callback !== this.handleLanguageChange
       );
+      
+      // Clean up translations-loaded event listener
+      if (window.eventBus.events['translations-loaded']) {
+        window.eventBus.events['translations-loaded'] = window.eventBus.events['translations-loaded'].filter(
+          callback => typeof callback === 'function' && callback.toString().includes('updateVoicesForLanguage')
+        );
+      }
     }
     
     // Clean up audio check interval
@@ -92,6 +111,15 @@ window.CreatePage = {
       const lang = this.currentLanguage;
       console.log(`Updating voices for language: ${lang}`);
       
+      // Check if window.i18n and translations exist
+      if (!window.i18n || !window.i18n.translations) {
+        console.warn('Translations not loaded yet, will retry later');
+        // Set a timeout to try again in a moment
+        setTimeout(() => this.updateVoicesForLanguage(), 500);
+        return;
+      }
+      
+      // Check if the current language exists in translations
       if (lang && window.i18n.translations[lang] && window.i18n.translations[lang].voices) {
         this.voices = window.i18n.translations[lang].voices;
         console.log(`Loaded ${this.voices.length} voices for ${lang}:`, this.voices);
@@ -107,8 +135,13 @@ window.CreatePage = {
         }
       } else {
         console.warn(`No voices found for language: ${lang}`);
-        // Default to English voices if translations are not available
-        this.voices = window.i18n.translations.en.voices || [];
+        // Check if English translations exist before defaulting to them
+        if (window.i18n.translations.en && window.i18n.translations.en.voices) {
+          this.voices = window.i18n.translations.en.voices || [];
+        } else {
+          console.error('No fallback voices available');
+          this.voices = [];
+        }
       }
     },
     
@@ -138,6 +171,8 @@ window.CreatePage = {
     
     selectVoice(voice) {
       this.selectedVoice = voice;
+      // Add a visual feedback when a voice is selected
+      console.log(`Voice selected: ${voice.name}`);
     },
     addInterest(suggestion) {
       const interestText = suggestion;
@@ -177,7 +212,8 @@ window.CreatePage = {
       this.addInterest(randomPick);
     },
     playVoicePreview(voice) {
-      this.selectVoice(voice);
+      // Remove the automatic voice selection when playing preview
+      // this.selectVoice(voice);
       
       if (this.isPreviewPlaying === voice.id) {
         // User clicked the same voice that's currently playing - pause it
@@ -258,7 +294,10 @@ window.CreatePage = {
           messages: [
             {
               role: "user",
-              content: `Create a children's story title and plot for a ${this.childName} who is interested in ${this.interests}. The story should be educational, engaging, and appropriate for children. Keep the plot brief (2-3 sentences).`
+              content: this.$tf('prompts.generatePlot', {
+                childName: this.childName,
+                interests: this.interests
+              })
             }
           ]
         });
@@ -291,12 +330,12 @@ window.CreatePage = {
           messages: [
             {
               role: "user",
-              content: `Write a children's story based on the following title and plot. Make it engaging, educational, and appropriate for children. Include the child's name (${this.childName}) as the main character. The story should be about ${this.interests}.
-              
-              Title: ${object.title}
-              Plot: ${object.plot}
-              
-              Write a complete story with a beginning, middle, and end. The story should be 3-4 paragraphs long.`
+              content: this.$tf('prompts.generateStory', {
+                childName: this.childName,
+                interests: this.interests,
+                title: object.title,
+                plot: object.plot
+              })
             }
           ]
         });
@@ -349,7 +388,7 @@ window.CreatePage = {
         
         this.taskStatus.audio = "loading";
         console.log("Starting audio generation...");
-        const audioText = `${this.storyData.title}. ${this.storyData.story}`;
+        const audioText = this.storyData.story;
         
         const chosenVoice = this.selectedVoice || this.voices[0];
         
@@ -917,34 +956,64 @@ window.CreatePage = {
               </div>
 
               <div class="space-y-3">
-                <label class="block text-lg font-medium text-gray-700">{{ $t('create.voiceLabel') }}</label>
+                <label class="block text-lg font-medium text-gray-700">
+                  {{ $t('create.voiceLabel') }}
+                  <span class="text-red-500">*</span>
+                </label>
                 <div class="border border-gray-200 rounded-xl overflow-hidden">
                   <div 
                     v-for="voice in voices" 
                     :key="voice.id"
-                    class="p-3 border-b border-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-50"
-                    :class="{ 'bg-[#DAF3FD]': selectedVoice && selectedVoice.id === voice.id }"
-                    @click="selectVoice(voice)"
+                    class="p-3 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors duration-200"
+                    :class="{ 'bg-[#DAF3FD] border-l-4 border-l-[#0284C7]': selectedVoice && selectedVoice.id === voice.id }"
                   >
-                    <div class="flex items-center gap-4">
-                      <img :src="voice.avatar" :alt="voice.name" class="w-10 h-10 rounded-full" />
-                      <span class="text-lg">{{ voice.name }}</span>
+                    <div 
+                      class="flex items-center gap-4 flex-1 cursor-pointer"
+                      @click="selectVoice(voice)"
+                    >
+                      <div class="flex-shrink-0 relative">
+                        <img :src="voice.avatar" :alt="voice.name" class="w-10 h-10 rounded-full" />
+                        <div 
+                          v-if="selectedVoice && selectedVoice.id === voice.id" 
+                          class="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center border-2 border-white"
+                        >
+                          <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div>
+                        <span class="text-lg font-medium">{{ voice.name }}</span>
+                        <div class="text-xs text-gray-500">{{ $t('create.clickToSelect') }}</div>
+                      </div>
                     </div>
                     <button 
                       @click.stop="playVoicePreview(voice)"
-                      class="w-8 h-8 bg-[#0284C7] hover:bg-[#0369A1] rounded-full flex items-center justify-center text-white transition-colors duration-200"
-                      :title="isPreviewPlaying === voice.id ? 'Pause preview' : 'Play preview'"
+                      class="w-10 h-10 bg-[#0284C7] hover:bg-[#0369A1] rounded-full flex items-center justify-center text-white transition-colors duration-200 flex-shrink-0 ml-2"
+                      :title="isPreviewPlaying === voice.id ? $t('create.pausePreview') : $t('create.playPreview')"
                     >
-                      <svg v-if="!voice.isLoading" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <svg v-if="!voice.isLoading" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                         <path v-if="isPreviewPlaying !== voice.id" fill-rule="evenodd" clip-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
                         <path v-else fill-rule="evenodd" clip-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" />
                       </svg>
-                      <svg v-else class="animate-spin w-4 h-4" viewBox="0 0 24 24">
+                      <svg v-else class="animate-spin w-5 h-5" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                       </svg>
                     </button>
                   </div>
+                </div>
+                <div v-if="!selectedVoice" class="mt-2 p-2 bg-red-50 rounded-lg text-sm text-red-500 flex items-center gap-2">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  {{ $t('create.voiceRequired') }}
+                </div>
+                <div v-else class="mt-2 p-2 bg-[#E0F2FE] rounded-lg text-sm text-[#0284C7] flex items-center gap-2">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {{ $tf('create.voiceSelected', { name: selectedVoice.name }) }}
                 </div>
               </div>
 

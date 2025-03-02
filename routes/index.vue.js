@@ -59,64 +59,36 @@ window.IndexPage = {
                     
                     <!-- Story Cards -->
                     <div v-for="(example, index) in examples" :key="index" class="space-y-6">
-                        <div class="bg-[#E0F2FE] border border-[#BAE6FD] rounded-xl p-8">
-                            <h3 class="text-2xl font-semibold text-[#00B7EA] mb-6">{{ example.title }}</h3>
+                        <div class="relative flex items-start">
+                            <!-- Avatar Circle -->
+                            <div class="absolute left-0 top-6 w-16 h-16 rounded-full border-2 border-[#0F766E] overflow-hidden z-10">
+                                <img :src="getOptimizedImageUrl(example.voiceAvatar, 64, 64)" 
+                                     :alt="example.voice" 
+                                     class="w-full h-full object-cover" />
+                            </div>
                             
-                            <!-- Story Settings -->
-                            <div class="space-y-6 mb-12">
-                                <div class="space-y-2">
-                                    <label class="block text-sm font-medium text-[#005B79]">{{ $t('create.nameLabel') }}:</label>
-                                    <div class="bg-white border border-gray-200 rounded-full px-4 py-2 text-lg text-gray-600">
-                                        {{ example.childName }}
-                                    </div>
-                                </div>
-                                
-                                <div class="space-y-2">
-                                    <label class="block text-sm font-medium text-[#005B79]">{{ $t('create.interestsLabel') }}:</label>
-                                    <div class="bg-white border border-gray-200 rounded-full px-4 py-2 text-lg text-gray-600">
-                                        {{ example.themes }}
-                                    </div>
-                                </div>
-
-                                <div class="space-y-2">
-                                    <label class="block text-sm font-medium text-[#005B79]">{{ $t('create.voiceLabel') }}:</label>
-                                    <div class="bg-white border border-gray-200 rounded-full p-2 text-lg text-gray-600 flex items-center gap-2">
-                                        <img :src="example.voiceAvatar" class="w-8 h-8 rounded-full" />
-                                        <span>{{ example.voice }}</span>
-                                        <button class="ml-auto bg-blue-600 text-white p-1 rounded-full w-8 h-8 flex items-center justify-center">
-                                            <i :class="example.isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Separator -->
-                            <div class="flex items-center gap-4 mb-12">
-                                <div class="h-px bg-[#BAE6FD] flex-1"></div>
-                                <span class="text-lg font-semibold text-[#0284C7]">{{ $t('home.result') }}</span>
-                                <div class="h-px bg-[#BAE6FD] flex-1"></div>
-                            </div>
-
-                            <!-- Generated Content -->
-                            <div class="bg-[#F0F9FF] border border-[#BAE6FD] rounded-xl p-4">
-                                <img :src="getOptimizedImageUrl(example.image, 400, 200)" 
-                                     :alt="example.title" 
-                                     class="w-full h-48 object-cover rounded-lg mb-4"
-                                     :data-original-src="example.image"
-                                     @load="logImageLoaded(example.title, example.image)"
-                                     @error="logImageError(example.title, example.image)" />
+                            <!-- Card Content -->
+                            <div class="ml-8 flex-1 bg-gradient-to-b from-[#99F6E4] to-[#2DD4BF] border border-[#0D9488] rounded-xl p-6 pl-10 shadow-md">
+                                <h3 class="text-[#0F766E] font-normal text-sm mb-4">{{ example.title }}</h3>
                                 
                                 <!-- Audio Player -->
-                                <div class="flex items-center gap-4">
-                                    <button @click="toggleAudio(example)" class="bg-[#0EA5E9] text-white p-2 rounded-full w-8 h-8 flex items-center justify-center">
+                                <div class="flex items-center gap-2 w-full">
+                                    <button @click="toggleAudio(example)" class="bg-[#0F766E] text-white p-2 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
                                         <i :class="example.isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'"></i>
                                     </button>
-                                    <div class="flex-1 h-8 bg-[#E0F2FE] rounded-full relative">
-                                        <div class="absolute inset-0 flex items-center px-2">
-                                            <div class="h-2 bg-[#0EA5E9] rounded-full" :style="{ width: example.progress }"></div>
-                                        </div>
+                                    <div class="flex-1 h-2 bg-[#F1F5F9] rounded-full relative">
+                                        <div class="absolute inset-0 h-2 bg-[#0F766E] rounded-full" :style="{ width: example.progress }"></div>
                                     </div>
                                 </div>
+                                
+                                <!-- Action Button -->
+                                <div class="mt-4">
+                                    <button @click="toggleAudio(example)" class="w-full bg-[#5AE7D1] bg-opacity-20 border border-[#0D9488] text-[#0F766E] rounded-full py-2 px-4 flex items-center justify-center">
+                                        <i class="fa-solid fa-play mr-2"></i>
+                                        {{ $t('home.listenAgain') }}
+                                    </button>
+                                </div>
+                                
                                 <audio 
                                     :id="'audio-' + index" 
                                     :src="getOptimizedAudioUrl(example.audio)" 
@@ -194,15 +166,54 @@ window.IndexPage = {
         try {
             const currentLang = window.i18n.getLanguage();
             
+            // Check if translations are loaded
+            if (!window.i18n || !window.i18n.translations) {
+                console.log("Translations not loaded yet, will wait for them");
+                // Set up a listener for translations loaded event
+                if (window.eventBus) {
+                    window.eventBus.on('translations-loaded', this.handleTranslationsLoaded);
+                }
+                return;
+            }
+            
             if (window.i18n.translations && window.i18n.translations[currentLang] && window.i18n.translations[currentLang].examples) {
                 this.examples = window.i18n.translations[currentLang].examples;
+                
+                // Debug: Log examples to check for missing audio properties
+                console.log("Examples loaded:", this.examples.length);
+                this.examples.forEach((example, index) => {
+                    console.log({example});
+                    console.log(`Example ${index}: "${example.title}" - Audio: ${example.audio || 'MISSING'}`);
+                });
+                
             } else if (window.i18n.translations && window.i18n.translations.en && window.i18n.translations.en.examples) {
                 // Fallback to English if current language doesn't have examples
                 this.examples = window.i18n.translations.en.examples;
+                
+                // Debug: Log examples to check for missing audio properties
+                console.log("Examples loaded (fallback to English):", this.examples.length);
+                this.examples.forEach((example, index) => {
+                    console.log(`Example ${index}: "${example.title}" - Audio: ${example.audio || 'MISSING'}`);
+                });
+                
             } else {
                 console.error("No examples found in translations");
                 this.examples = [];
             }
+            
+            // Ensure all examples have the required properties
+            this.examples = this.examples.map(example => {
+                return {
+                    ...example,
+                    isPlaying: false,
+                    progress: '0%',
+                    // Ensure audio property exists
+                    audio: example.audio || null
+                };
+            });
+            
+            this._loggedImages = {};
+            this._loggedAudios = {};
         } catch (error) {
             console.error("Error setting up examples:", error);
             this.examples = [];
@@ -281,10 +292,35 @@ window.IndexPage = {
                 
                 if (window.i18n.translations && window.i18n.translations[currentLang] && window.i18n.translations[currentLang].examples) {
                     this.examples = window.i18n.translations[currentLang].examples;
+                    
+                    // Debug: Log examples to check for missing audio properties
+                    console.log("Examples updated:", this.examples.length);
+                    this.examples.forEach((example, index) => {
+                        console.log(`Example ${index}: "${example.title}" - Audio: ${example.audio || 'MISSING'}`);
+                    });
+                    
                 } else if (window.i18n.translations && window.i18n.translations.en && window.i18n.translations.en.examples) {
                     // Fallback to English if current language doesn't have examples
                     this.examples = window.i18n.translations.en.examples;
+                    
+                    // Debug: Log examples to check for missing audio properties
+                    console.log("Examples updated (fallback to English):", this.examples.length);
+                    this.examples.forEach((example, index) => {
+                        console.log(`Example ${index}: "${example.title}" - Audio: ${example.audio || 'MISSING'}`);
+                    });
                 }
+                
+                // Ensure all examples have the required properties
+                this.examples = this.examples.map(example => {
+                    return {
+                        ...example,
+                        isPlaying: false,
+                        progress: '0%',
+                        // Ensure audio property exists
+                        audio: example.audio || null
+                    };
+                });
+                
                 this._loggedImages = {};
                 this._loggedAudios = {};
             } catch (error) {
@@ -458,5 +494,17 @@ window.IndexPage = {
                 }
             }
         }
+        
+        // Stop any playing audio
+        this.examples.forEach(example => {
+            if (example.isPlaying) {
+                const audioId = 'audio-' + this.examples.indexOf(example);
+                const audioElement = document.getElementById(audioId);
+                if (audioElement) {
+                    audioElement.pause();
+                    example.isPlaying = false;
+                }
+            }
+        });
     }
 }; 

@@ -75,7 +75,9 @@ window.MyStoriesPage = {
 
                 <!-- Stories Grid -->
                 <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div v-for="(story, index) in filteredGenerations" :key="index" class="bg-[#E0F2FE] border border-[#BAE6FD] rounded-xl p-6 flex flex-col hover:shadow-lg transition-shadow">
+                    <div v-for="(story, index) in filteredGenerations" :key="index" 
+                         class="bg-[#E0F2FE] border border-[#BAE6FD] rounded-xl p-6 flex flex-col hover:shadow-lg transition-shadow cursor-pointer"
+                         @click="viewStory(story)">
                         <!-- Story Card Content -->
                         <div class="flex justify-between items-start mb-3">
                             <h3 class="text-xl font-semibold text-[#00B7EA] line-clamp-1">{{ story.title }}</h3>
@@ -85,22 +87,22 @@ window.MyStoriesPage = {
                         </div>
                         
                         <!-- Cover Image (if available) -->
-                        <div v-if="story.coverUrl" class="mb-4 h-40 overflow-hidden rounded-lg cursor-pointer" @click="viewStory(story)">
+                        <div v-if="story.coverUrl" class="mb-4 h-40 overflow-hidden rounded-lg">
                             <img :src="getOptimizedImageUrl(story.coverUrl, 400, 200)" :alt="story.title" class="w-full h-full object-cover hover:scale-105 transition-transform">
                         </div>
                         
                         <!-- Story Excerpt -->
-                        <p class="text-gray-600 mb-4 line-clamp-3 flex-grow cursor-pointer" @click="viewStory(story)">
+                        <p class="text-gray-600 mb-4 line-clamp-3 flex-grow">
                             {{ story.excerpt || (story.story ? story.story.substring(0, 150) + '...' : 'No preview available') }}
                         </p>
                         
                         <!-- Date and View Button -->
                         <div class="flex justify-between items-center mt-auto">
                             <span class="text-sm text-gray-500">{{ formatDate(story.createdAt) }}</span>
-                            <button @click="viewStory(story)" class="text-[#0284C7] hover:text-[#0EA5E9] flex items-center gap-1">
+                            <div class="text-[#0284C7] hover:text-[#0EA5E9] flex items-center gap-1">
                                 <span>Listen</span>
                                 <i class="fa-solid fa-arrow-right text-sm"></i>
-                            </button>
+                            </div>
                         </div>
                     </div>
                 </div>
