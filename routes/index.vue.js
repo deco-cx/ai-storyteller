@@ -4,28 +4,32 @@ window.IndexPage = {
     template: `
         <div class="min-h-screen bg-gradient-to-b from-[#F0F9FF] to-[#E0F7FA] pb-16">
             <!-- Navigation -->
-            <nav class="bg-white shadow-md rounded-b-3xl px-4 sm:px-6 py-3">
-                <div class="max-w-7xl mx-auto flex justify-between items-center">
-                    <div></div>
-                    
-                    <div class="flex space-x-1 sm:space-x-4">
-                        <router-link to="/" class="px-3 py-2 rounded-full text-[#4ECDC4] hover:bg-[#E0F7FA] font-medium transition-colors duration-200">
+            <div>
+                <!-- Navigation Menu -->
+                <nav class="bg-white shadow-md py-3 px-4 sm:px-6">
+                    <div class="flex justify-center sm:justify-start flex-wrap gap-2">
+                        <router-link to="/" class="px-3 py-2 rounded-lg bg-[#E0F2FE] text-[#0284C7] font-medium text-sm sm:text-base flex-grow-0">
                             {{ $t('ui.home') }}
                         </router-link>
-                        <router-link to="/create" class="px-3 py-2 rounded-full text-[#FF6B6B] hover:bg-[#FFF0F0] font-medium transition-colors duration-200">
+                        <router-link to="/create" class="px-3 py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base flex-grow-0">
                             {{ $t('ui.create') }}
                         </router-link>
-                        <router-link to="/my-stories" class="px-3 py-2 rounded-full text-[#FFD166] hover:bg-[#FFFBF0] font-medium transition-colors duration-200">
+                        <router-link to="/my-stories" class="px-3 py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base flex-grow-0">
                             {{ $t('ui.myStories') }}
                         </router-link>
-                        <router-link v-if="isAdmin" to="/admin" class="px-3 py-2 rounded-full text-[#6A0572] hover:bg-[#F9F0FA] font-medium transition-colors duration-200">
+                        <router-link v-if="isAdmin" to="/_admin" class="px-3 py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base flex-grow-0">
                             {{ $t('ui.admin') }}
                         </router-link>
                     </div>
-                </div>
-            </nav>
+                </nav>
+            </div>
             
             <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-8">
+                <!-- Language Selector - Centered above the title -->
+                <div class="flex justify-center mb-4">
+                    <language-switcher></language-switcher>
+                </div>
+                
                 <!-- Hero Section -->
                 <div class="relative bg-white rounded-3xl shadow-lg overflow-hidden mb-12 border-4 border-[#FFD166]">
                     <!-- Decorative Elements -->

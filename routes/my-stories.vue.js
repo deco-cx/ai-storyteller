@@ -4,20 +4,27 @@ window.MyStoriesPage = {
     template: `
         <div class="min-h-screen bg-[#FFF9F6]">
             <!-- Navigation -->
-            <nav class="bg-white shadow-md py-4 px-4 sm:px-6 flex items-center justify-between">
-                <div class="flex items-center space-x-1 sm:space-x-4 overflow-x-auto whitespace-nowrap">
-                    <router-link to="/" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base">
-                        {{ $t('ui.home') }}
-                    </router-link>
-                    <router-link to="/create" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base">
-                        {{ $t('ui.new') }}
-                    </router-link>
-                    <router-link to="/my-stories" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg bg-[#E0F2FE] text-[#0284C7] font-medium text-sm sm:text-base">
-                        {{ $t('ui.myStories') }}
-                    </router-link>
+            <div>
+                <!-- Language Selector - Moved outside the menu -->
+                <div class="bg-white pt-4 px-4 sm:px-6 flex justify-end">
+                    <language-switcher></language-switcher>
                 </div>
-                <language-switcher></language-switcher>
-            </nav>
+                
+                <!-- Navigation Menu -->
+                <nav class="bg-white shadow-md py-3 px-4 sm:px-6">
+                    <div class="flex justify-center sm:justify-start flex-wrap gap-2">
+                        <router-link to="/" class="px-3 py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base flex-grow-0">
+                            {{ $t('ui.home') }}
+                        </router-link>
+                        <router-link to="/create" class="px-3 py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base flex-grow-0">
+                            {{ $t('ui.new') }}
+                        </router-link>
+                        <router-link to="/my-stories" class="px-3 py-2 rounded-lg bg-[#E0F2FE] text-[#0284C7] font-medium text-sm sm:text-base flex-grow-0">
+                            {{ $t('ui.myStories') }}
+                        </router-link>
+                    </div>
+                </nav>
+            </div>
 
             <!-- Main Content -->
             <main class="max-w-6xl mx-auto px-6 py-12">
