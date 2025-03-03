@@ -5,11 +5,6 @@ window.MyStoriesPage = {
         <div class="min-h-screen bg-[#FFF9F6]">
             <!-- Navigation -->
             <div>
-                <!-- Language Selector - Moved outside the menu -->
-                <div class="bg-white pt-4 px-4 sm:px-6 flex justify-end">
-                    <language-switcher></language-switcher>
-                </div>
-                
                 <!-- Navigation Menu -->
                 <nav class="bg-white shadow-md py-3 px-4 sm:px-6">
                     <div class="flex justify-center sm:justify-start flex-wrap gap-2">
@@ -68,15 +63,6 @@ window.MyStoriesPage = {
                     <button @click="goToNewStory" class="bg-gradient-to-b from-[#38BDF8] to-[#0284C7] text-white px-6 py-3 rounded-full hover:from-[#0284C7] hover:to-[#0284C7] border border-[#0369A1] font-medium flex items-center gap-2 mx-auto">
                         <i class="fa-solid fa-book-open"></i>
                         {{ $t('myStories.createFirstText') }}
-                    </button>
-                </div>
-                
-                <!-- No Search Results -->
-                <div v-else-if="filteredGenerations.length === 0" class="bg-[#E0F2FE] border border-[#BAE6FD] rounded-xl p-12 text-center">
-                    <div class="text-[#0284C7] text-xl mb-4">{{ $t('myStories.noSearchResults') }}</div>
-                    <button @click="searchQuery = ''" class="bg-gradient-to-b from-[#38BDF8] to-[#0284C7] text-white px-6 py-3 rounded-full hover:from-[#0284C7] hover:to-[#0284C7] border border-[#0369A1] font-medium flex items-center gap-2 mx-auto">
-                        <i class="fa-solid fa-arrow-rotate-left"></i>
-                        {{ $t('ui.back') }}
                     </button>
                 </div>
 

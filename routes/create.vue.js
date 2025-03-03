@@ -1077,19 +1077,7 @@ window.CreatePage = {
             {{ $t('ui.myStories') }}
           </router-link>
         </div>
-        <language-switcher></language-switcher>
       </nav>
-      
-      <button
-        v-if="screen === 'loading' || screen === 'result'"
-        @click="goBack"
-        class="fixed top-20 left-4 bg-sky-600 hover:bg-sky-500 text-white px-6 py-2 rounded-full shadow-lg transition-all duration-300 z-50 flex items-center gap-2"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        {{ $t('ui.back') }}
-      </button>
 
       <div v-if="screen === 'form' || screen === 'loading'" class="max-w-3xl mx-auto w-full px-4 pt-6 pb-16">
         <template v-if="screen === 'loading'">

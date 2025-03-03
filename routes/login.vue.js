@@ -14,7 +14,6 @@ window.LoginPage = {
                         {{ $t('ui.myStories') }}
                     </router-link>
                 </div>
-                <language-switcher></language-switcher>
             </nav>
             
             <main class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md mt-8">

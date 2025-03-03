@@ -17,9 +17,6 @@ window.StoryPage = {
                         {{ $t('ui.myStories') }}
                     </router-link>
                 </div>
-                <div class="flex items-center gap-2">
-                    <language-switcher></language-switcher>
-                </div>
             </nav>
 
             <!-- Loading State -->

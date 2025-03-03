@@ -170,19 +170,7 @@ window.IndexPage = {
                                 </div>
                                 
                                 <!-- Action Buttons -->
-                                <div class="grid grid-cols-2 gap-3 mt-4">
-                                    <button @click="toggleAudio(example)" 
-                                            :class="[
-                                                index % 4 === 0 ? 'bg-[#FF6B6B] hover:bg-[#FF8080] border-[#FF5252]' : '',
-                                                index % 4 === 1 ? 'bg-[#4ECDC4] hover:bg-[#6FDED6] border-[#3DBCB4]' : '',
-                                                index % 4 === 2 ? 'bg-[#FFD166] hover:bg-[#FFE08A] border-[#FFC233]' : '',
-                                                index % 4 === 3 ? 'bg-[#6A0572] hover:bg-[#8A2793] border-[#590462]' : ''
-                                            ]"
-                                            class="text-white rounded-full py-3 px-4 flex items-center justify-center font-medium border-2 transition-colors duration-200 shadow-md">
-                                        <i class="fa-solid fa-headphones mr-2"></i>
-                                        {{ example.isPlaying ? $t('home.pauseStory') : $t('home.listenStory') }}
-                                    </button>
-                                    
+                                <div class="grid grid-cols-1 gap-3 mt-4">
                                     <router-link to="/create" 
                                             :class="[
                                                 index % 4 === 0 ? 'bg-white text-[#FF6B6B] hover:bg-[#FFF5F5] border-[#FF6B6B]' : '',

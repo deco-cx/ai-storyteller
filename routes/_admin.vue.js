@@ -515,7 +515,6 @@ window.AdminPage = {
             {{ $t('ui.myStories') }}
           </router-link>
         </div>
-        <language-switcher></language-switcher>
       </nav>
       
       <div class="admin-container p-4">
