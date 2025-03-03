@@ -45,7 +45,7 @@ window.IndexPage = {
                     <div class="relative z-10 flex flex-col md:flex-row items-center p-6 md:p-10 bg-white shadow-lg rounded-xl">
                         <div class="md:w-full mb-8 md:mb-0 md:pr-8">
                             <h1 class="text-3xl md:text-4xl font-bold mb-4 text-gray-800 leading-tight">
-                                <span class="bg-clip-text text-transparent bg-gradient-to-r from-[#4A90E2] to-[#81D4FA]">
+                                <span class="text-[#4A90E2]">
                                     {{ $t('home.welcome') }}
                                 </span>
                             </h1>
@@ -82,7 +82,7 @@ window.IndexPage = {
                         <div class="relative z-10 p-6">
                             <h2 class="text-2xl font-bold text-center relative py-2">
                                 <i class="fa-solid fa-book-open text-[#4A90E2] mr-2"></i>
-                                <span class="inline-block bg-clip-text text-transparent bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] mb-3">
+                                <span class="inline-block text-[#4A90E2] mb-3">
                                     {{ $t('home.examples') }}
                                 </span>
                                 <div class="absolute left-0 right-0 bottom-0 h-1 bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] rounded-full"></div>
@@ -92,7 +92,7 @@ window.IndexPage = {
                     
                     <!-- Título quando não há exemplos -->
                     <h2 v-if="!examples || examples.length === 0" class="text-2xl font-bold mb-8 text-center relative">
-                        <span class="inline-block bg-clip-text text-transparent bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] mb-3">
+                        <span class="inline-block text-[#4A90E2] mb-3">
                             {{ $t('home.examples') }}
                         </span>
                         <div class="absolute left-0 right-0 bottom-0 h-1 bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] rounded-full"></div>
@@ -358,8 +358,8 @@ window.IndexPage = {
                 
                 <!-- How It Works Section -->
                 <div class="mt-16 space-y-8">
-                    <h2 class="text-2xl font-bold mb-8 text-center relative">
-                        <span class="inline-block bg-clip-text text-transparent bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] mb-3">
+                    <h2 class="text-2xl font-bold mb-8 text-center relative bg-white p-4 rounded-xl shadow-sm">
+                        <span class="inline-block text-[#4A90E2] mb-3">
                             {{ $t('home.howItWorksTitle') }}
                         </span>
                         <div class="absolute left-0 right-0 bottom-0 h-1 bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] rounded-full"></div>
@@ -713,9 +713,20 @@ window.IndexPage = {
                 processedUrl = '/' + url;
             }
             
-            // For local development, use the image directly
+            // For local development, use ai-storytest.webdraw.app as the base URL
             if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                return processedUrl;
+                // If it's a local file path, prefix with the test site URL
+                if (!processedUrl.startsWith('http')) {
+                    processedUrl = `https://ai-storytest.webdraw.app${processedUrl}`;
+                }
+                // Use the webdraw.com image optimization service for testing
+                return `https://webdraw.com/image-optimize?src=${encodeURIComponent(processedUrl)}&width=${width}&height=${height}&fit=cover`;
+            }
+            
+            // For production, if it's a local file path (including /assets/...), add the current site's origin
+            if (!processedUrl.startsWith('http')) {
+                // This will correctly handle paths like "/assets/image/ex2.png"
+                processedUrl = `${window.location.origin}${processedUrl}`;
             }
             
             // Use the webdraw.com image optimization service for production
@@ -723,6 +734,8 @@ window.IndexPage = {
             return finalUrl;
         },
         getOptimizedAudioUrl(url) {
+            if (url.startsWith('/')) return url;
+            
             if (!url || url.startsWith('data:')) return url;
             
             // Ensure the URL has the correct format
