@@ -2,19 +2,19 @@ import { sdk } from "../sdk.js";
 
 window.MyStoriesPage = {
     template: `
-        <div class="min-h-screen bg-[#FFF9F6]">
+        <div class="min-h-screen bg-gradient-to-b from-[#E1F5FE] to-[#BBDEFB] pb-16">
             <!-- Navigation -->
             <div>
                 <!-- Navigation Menu -->
                 <nav class="bg-white shadow-md py-3 px-4 sm:px-6">
                     <div class="flex justify-center sm:justify-start flex-wrap gap-2">
-                        <router-link to="/" class="px-3 py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base flex-grow-0">
+                        <router-link to="/" class="px-3 py-2 rounded-lg text-[#4A90E2] hover:bg-[#F0F9FF] text-sm sm:text-base flex-grow-0">
                             {{ $t('ui.home') }}
                         </router-link>
-                        <router-link to="/create" class="px-3 py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base flex-grow-0">
+                        <router-link to="/create" class="px-3 py-2 rounded-lg text-[#4A90E2] hover:bg-[#F0F9FF] text-sm sm:text-base flex-grow-0">
                             {{ $t('ui.new') }}
                         </router-link>
-                        <router-link to="/my-stories" class="px-3 py-2 rounded-lg bg-[#E0F2FE] text-[#0284C7] font-medium text-sm sm:text-base flex-grow-0">
+                        <router-link to="/my-stories" class="px-3 py-2 rounded-lg bg-[#4A90E2] text-white font-medium text-sm sm:text-base flex-grow-0">
                             {{ $t('ui.myStories') }}
                         </router-link>
                     </div>
@@ -22,10 +22,15 @@ window.MyStoriesPage = {
             </div>
 
             <!-- Main Content -->
-            <main class="max-w-6xl mx-auto px-6 py-12">
+            <main class="max-w-3xl mx-auto w-full px-4 pt-6 pb-16">
                 <!-- Header with Title -->
-                <div class="flex justify-between items-center mb-8">
-                    <h2 class="text-3xl font-semibold text-[#00B7EA]">{{ $t('myStories.pageTitle') }}</h2>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold mb-8 text-center relative w-full">
+                        <span class="inline-block bg-clip-text text-transparent bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] mb-3">
+                            {{ $t('myStories.pageTitle') }}
+                        </span>
+                        <div class="absolute left-0 right-0 bottom-0 h-1 bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] rounded-full"></div>
+                    </h2>
                 </div>
                 
                 <!-- Search Bar (only show if there are stories) -->
@@ -35,13 +40,13 @@ window.MyStoriesPage = {
                             v-model="searchQuery"
                             type="text" 
                             :placeholder="$t('myStories.searchPlaceholder')"
-                            class="w-full px-4 py-3 rounded-lg border border-sky-200 focus:outline-none focus:ring-2 focus:ring-[#38BDF8] pl-10"
+                            class="w-full px-4 py-3 rounded-lg border border-[#BBDEFB] focus:outline-none focus:ring-2 focus:ring-[#4A90E2] focus:border-[#4A90E2] pl-10 shadow-sm"
                         />
-                        <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[#81D4FA]"></i>
                         <button 
                             v-if="searchQuery" 
                             @click="searchQuery = ''" 
-                            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#4A90E2]"
                         >
                             <i class="fa-solid fa-times"></i>
                         </button>
@@ -50,13 +55,13 @@ window.MyStoriesPage = {
 
                 <!-- Loading State -->
                 <div v-if="loading" class="flex justify-center items-center py-20">
-                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00B7EA]"></div>
+                    <div class="animate-spin rounded-full h-12 w-12 border-4 border-[#BBDEFB] border-t-[#4A90E2]"></div>
                 </div>
 
                 <!-- No Stories State -->
-                <div v-else-if="generations.length === 0" class="bg-[#E0F2FE] border border-[#BAE6FD] rounded-xl p-12 text-center">
-                    <div class="text-[#0284C7] text-xl mb-4">{{ $t('myStories.noStoriesText') }}</div>
-                    <button @click="goToNewStory" class="bg-gradient-to-b from-[#38BDF8] to-[#0284C7] text-white px-6 py-3 rounded-full hover:from-[#0284C7] hover:to-[#0284C7] border border-[#0369A1] font-medium flex items-center gap-2 mx-auto">
+                <div v-else-if="generations.length === 0" class="bg-white rounded-3xl shadow-lg overflow-hidden border-4 border-[#4A90E2] p-12 text-center transform transition-all duration-300 hover:shadow-xl">
+                    <div class="text-[#4A90E2] text-xl mb-4 font-medium">{{ $t('myStories.noStoriesText') }}</div>
+                    <button @click="goToNewStory" class="bg-gradient-to-b from-[#4A90E2] to-[#2871CC] text-white px-6 py-3 rounded-full hover:from-[#5FA0E9] hover:to-[#4A90E2] border border-[#2871CC] font-medium flex items-center gap-2 mx-auto shadow-md transition-all duration-200">
                         <i class="fa-solid fa-book-open"></i>
                         {{ $t('myStories.createFirstText') }}
                     </button>
@@ -65,32 +70,51 @@ window.MyStoriesPage = {
                 <!-- Stories Grid -->
                 <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div v-for="(story, index) in filteredGenerations" :key="index" 
-                         class="bg-[#E0F2FE] border border-[#BAE6FD] rounded-xl p-6 flex flex-col hover:shadow-lg transition-shadow cursor-pointer"
+                         class="bg-white rounded-3xl shadow-lg overflow-hidden transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-4 border-[#4A90E2]"
+                         :class="[
+                            index % 4 === 0 ? 'border-[#2871CC]' : '',
+                            index % 4 === 1 ? 'border-[#4A90E2]' : '',
+                            index % 4 === 2 ? 'border-[#64B5F6]' : '',
+                            index % 4 === 3 ? 'border-[#81D4FA]' : ''
+                         ]"
                          @click="viewStory(story)">
                         <!-- Story Card Content -->
-                        <div class="flex justify-between items-start mb-3">
-                            <h3 class="text-xl font-semibold text-[#00B7EA] line-clamp-1">{{ story.title }}</h3>
-                            <button @click.stop="deleteStory(generations.indexOf(story))" class="text-gray-400 hover:text-red-500 p-1">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </div>
-                        
-                        <!-- Cover Image (if available) -->
-                        <div v-if="story.coverUrl" class="mb-4 h-40 overflow-hidden rounded-lg">
-                            <img :src="getOptimizedImageUrl(story.coverUrl, 400, 200)" :alt="story.title" class="w-full h-full object-cover hover:scale-105 transition-transform">
-                        </div>
-                        
-                        <!-- Story Excerpt -->
-                        <p class="text-gray-600 mb-4 line-clamp-3 flex-grow">
-                            {{ story.excerpt || (story.story ? story.story.substring(0, 150) + '...' : 'No preview available') }}
-                        </p>
-                        
-                        <!-- Date and View Button -->
-                        <div class="flex justify-between items-center mt-auto">
-                            <span class="text-sm text-gray-500">{{ formatDate(story.createdAt) }}</span>
-                            <div class="text-[#0284C7] hover:text-[#0EA5E9] flex items-center gap-1">
-                                <span>{{ $t('myStories.listen') }}</span>
-                                <i class="fa-solid fa-arrow-right text-sm"></i>
+                        <div class="p-6 flex flex-col">
+                            <div class="flex justify-between items-start mb-3">
+                                <h3 class="text-xl font-semibold text-[#4A90E2] line-clamp-1">{{ story.title }}</h3>
+                                <button @click.stop="deleteStory(generations.indexOf(story))" class="text-gray-400 hover:text-red-500 p-1">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Cover Image (if available) -->
+                            <div v-if="story.coverUrl" class="relative mb-4 h-40 overflow-hidden rounded-xl">
+                                <img :src="getOptimizedImageUrl(story.coverUrl, 400, 200)" :alt="story.title" class="w-full h-full object-cover transition-transform duration-500 hover:scale-110">
+                                <!-- Decorative Elements -->
+                                <div class="absolute top-2 left-2 w-10 h-10 rounded-full bg-white bg-opacity-70 flex items-center justify-center"
+                                     :class="[
+                                        index % 4 === 0 ? 'text-[#2871CC]' : '',
+                                        index % 4 === 1 ? 'text-[#4A90E2]' : '',
+                                        index % 4 === 2 ? 'text-[#64B5F6]' : '',
+                                        index % 4 === 3 ? 'text-[#81D4FA]' : ''
+                                     ]">
+                                   <i class="fa-solid fa-book-open text-lg"></i>
+                                </div>
+                                <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent h-16 opacity-60"></div>
+                            </div>
+                            
+                            <!-- Story Excerpt -->
+                            <p class="text-gray-600 mb-4 line-clamp-3 flex-grow">
+                                {{ story.excerpt || (story.story ? story.story.substring(0, 150) + '...' : 'No preview available') }}
+                            </p>
+                            
+                            <!-- Date and View Button -->
+                            <div class="flex justify-between items-center mt-auto">
+                                <span class="text-sm text-gray-500">{{ formatDate(story.createdAt) }}</span>
+                                <div class="text-[#4A90E2] hover:text-[#5FA0E9] flex items-center gap-1 font-medium">
+                                    <span>{{ $t('myStories.listen') }}</span>
+                                    <i class="fa-solid fa-arrow-right text-sm transition-transform group-hover:translate-x-1"></i>
+                                </div>
                             </div>
                         </div>
                     </div>

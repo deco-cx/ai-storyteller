@@ -3,17 +3,17 @@ import i18n from "../i18n/index.js";
 
 window.StoryPage = {
     template: `
-        <div v-if="sdkAvailable" class="min-h-screen bg-[#FFF9F6]">
+        <div v-if="sdkAvailable" class="min-h-screen bg-gradient-to-b from-[#E1F5FE] to-[#BBDEFB] pb-16">
             <!-- Navigation -->
             <nav class="bg-white shadow-md py-4 px-4 sm:px-6 flex items-center justify-between">
                 <div class="flex items-center space-x-1 sm:space-x-4 overflow-x-auto whitespace-nowrap">
-                    <router-link to="/" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base">
+                    <router-link to="/" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#4A90E2] hover:bg-[#F0F9FF] text-sm sm:text-base">
                         {{ $t('ui.home') }}
                     </router-link>
-                    <router-link to="/create" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base">
+                    <router-link to="/create" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#4A90E2] hover:bg-[#F0F9FF] text-sm sm:text-base">
                         {{ $t('ui.new') }}
                     </router-link>
-                    <router-link to="/my-stories" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base">
+                    <router-link to="/my-stories" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#4A90E2] hover:bg-[#F0F9FF] text-sm sm:text-base">
                         {{ $t('ui.myStories') }}
                     </router-link>
                 </div>
@@ -21,8 +21,8 @@ window.StoryPage = {
 
             <!-- Loading State -->
             <div v-if="loading" class="max-w-4xl mx-auto px-6 py-12 flex flex-col items-center justify-center min-h-[70vh]">
-                <div class="w-16 h-16 border-4 border-[#BAE6FD] border-t-[#0284C7] rounded-full animate-spin mb-6"></div>
-                <p class="text-xl text-[#0284C7] font-medium">{{ $t('story.loadingStory') }}</p>
+                <div class="w-16 h-16 border-4 border-[#BBDEFB] border-t-[#4A90E2] rounded-full animate-spin mb-6"></div>
+                <p class="text-xl text-[#4A90E2] font-medium">{{ $t('story.loadingStory') }}</p>
             </div>
 
             <!-- Error State -->
@@ -38,23 +38,23 @@ window.StoryPage = {
 
             <!-- Story Display -->
             <main v-else class="max-w-4xl mx-auto px-6 py-12">
-                <div class="bg-[#E0F2FE] border border-[#BAE6FD] rounded-xl p-8">
-                    <h1 class="text-3xl font-semibold text-[#00B7EA] mb-8 text-center">{{ formatTitle(story.title) }}</h1>
+                <div class="bg-[#E1F5FE] border border-[#BBDEFB] rounded-xl p-8">
+                    <h1 class="text-3xl font-semibold text-[#4A90E2] mb-8 text-center">{{ formatTitle(story.title) }}</h1>
                     
                     <!-- Story Content -->
-                    <div class="bg-[#F0F9FF] border border-[#BAE6FD] rounded-xl p-6 mb-8">
+                    <div class="bg-[#F0F9FF] border border-[#BBDEFB] rounded-xl p-6 mb-8">
                         <img :src="getOptimizedImageUrl(story.coverUrl, 800, 400)" 
                              :alt="story.title" 
                              class="w-full h-64 object-cover rounded-lg mb-6" />
                         
                         <!-- Audio Player -->
                         <div class="flex items-center gap-4 mb-6">
-                            <button @click="toggleAudio" class="bg-[#0EA5E9] text-white p-3 rounded-full w-12 h-12 flex items-center justify-center hover:bg-[#0284C7] transition-colors">
+                            <button @click="toggleAudio" class="bg-[#4A90E2] text-white p-3 rounded-full w-12 h-12 flex items-center justify-center hover:bg-[#5FA0E9] transition-colors">
                                 <i :class="isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'"></i>
                             </button>
-                            <div class="flex-1 h-10 bg-[#E0F2FE] rounded-full relative cursor-pointer" @click="seekAudio($event)">
+                            <div class="flex-1 h-10 bg-[#E1F5FE] rounded-full relative cursor-pointer" @click="seekAudio($event)">
                                 <div class="absolute inset-0 flex items-center px-2">
-                                    <div class="h-2 bg-[#7DD3FC] rounded-full" :style="{ width: audioProgress + '%' }"></div>
+                                    <div class="h-2 bg-[#4A90E2] rounded-full" :style="{ width: audioProgress + '%' }"></div>
                                 </div>
                             </div>
                             <audio ref="audioPlayer" :src="story.audioUrl" @timeupdate="updateProgress" @ended="audioEnded"></audio>
@@ -62,7 +62,7 @@ window.StoryPage = {
                         
                         <!-- Story Text -->
                         <div class="mt-4">
-                            <label class="block text-sm font-medium text-[#005B79] mb-2">{{ $t('ui.storyText') }}</label>
+                            <label class="block text-sm font-medium text-[#4A90E2] mb-2">{{ $t('ui.storyText') }}</label>
                             <div class="w-full bg-white border border-gray-200 rounded-lg p-4 text-gray-700 max-h-96 overflow-y-auto">
                                 <div v-if="hasHtmlContent(story.story)" v-html="story.story" class="prose prose-sky max-w-none"></div>
                                 <div v-else class="whitespace-pre-wrap">{{ story.story }}</div>
@@ -72,15 +72,15 @@ window.StoryPage = {
 
                     <!-- Action Buttons -->
                     <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-                        <a :href="story.audioUrl" download class="bg-[#0EA5E9] text-white px-6 py-3 rounded-full hover:bg-[#0284C7] font-medium flex items-center justify-center gap-2">
+                        <a :href="story.audioUrl" download class="bg-[#4A90E2] text-white px-6 py-3 rounded-full hover:bg-[#5FA0E9] font-medium flex items-center justify-center gap-2">
                             <i class="fa-solid fa-download"></i>
                             {{ $t('ui.downloadAudio') }}
                         </a>
-                        <button @click="shareStory" class="border border-[#00B7EA] text-[#00B7EA] px-6 py-3 rounded-full hover:bg-[#F0F9FF] font-medium flex items-center justify-center gap-2">
+                        <button @click="shareStory" class="border border-[#4A90E2] text-[#4A90E2] px-6 py-3 rounded-full hover:bg-[#F0F9FF] font-medium flex items-center justify-center gap-2">
                             <i class="fa-solid fa-share-nodes"></i>
                             {{ $t('ui.shareStory') }}
                         </button>
-                        <router-link to="/create" class="border border-[#00B7EA] text-[#00B7EA] px-6 py-3 rounded-full hover:bg-[#F0F9FF] font-medium flex items-center justify-center gap-2">
+                        <router-link to="/create" class="border border-[#4A90E2] text-[#4A90E2] px-6 py-3 rounded-full hover:bg-[#F0F9FF] font-medium flex items-center justify-center gap-2">
                             <i class="fa-solid fa-plus"></i>
                             {{ $t('ui.createNewStory') }}
                         </router-link>
@@ -88,7 +88,7 @@ window.StoryPage = {
                         <button 
                             v-if="isAdmin && translationsFileExists" 
                             @click="addAsExample" 
-                            class="border border-[#00B7EA] text-[#00B7EA] px-6 py-3 rounded-full hover:bg-[#F0F9FF] font-medium flex items-center justify-center gap-2"
+                            class="border border-[#4A90E2] text-[#4A90E2] px-6 py-3 rounded-full hover:bg-[#F0F9FF] font-medium flex items-center justify-center gap-2"
                             :disabled="addingAsExample"
                         >
                             <i class="fa-solid fa-bookmark"></i>
@@ -103,28 +103,28 @@ window.StoryPage = {
                     </div>
                     
                     <!-- Story Settings (Collapsible) -->
-                    <details class="bg-[#F0F9FF] border border-[#BAE6FD] rounded-xl p-4">
-                        <summary class="text-[#0284C7] font-medium cursor-pointer hover:text-[#00B7EA] flex items-center">
+                    <details class="bg-[#F0F9FF] border border-[#BBDEFB] rounded-xl p-4">
+                        <summary class="text-[#4A90E2] font-medium cursor-pointer hover:text-[#00B7EA] flex items-center">
                             <i class="fa-solid fa-gear mr-2"></i>
                             {{ $t('ui.storySettings') }}
                         </summary>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
                             <div v-if="story.childName" class="space-y-2">
-                                <label class="block text-sm font-medium text-[#005B79]">{{ $t('ui.childName') }}</label>
+                                <label class="block text-sm font-medium text-[#4A90E2]">{{ $t('ui.childName') }}</label>
                                 <div class="bg-white border border-gray-200 rounded-full px-4 py-2 text-lg text-gray-600">
                                     {{ story.childName }}
                                 </div>
                             </div>
                             
                             <div v-if="story.themes || story.interests" class="space-y-2">
-                                <label class="block text-sm font-medium text-[#005B79]">{{ $t('ui.themes') }}</label>
+                                <label class="block text-sm font-medium text-[#4A90E2]">{{ $t('ui.themes') }}</label>
                                 <div class="bg-white border border-gray-200 rounded-full px-4 py-2 text-lg text-gray-600">
                                     {{ story.themes || story.interests }}
                                 </div>
                             </div>
 
                             <div v-if="story.voice" class="space-y-2">
-                                <label class="block text-sm font-medium text-[#005B79]">{{ $t('ui.voice') }}</label>
+                                <label class="block text-sm font-medium text-[#4A90E2]">{{ $t('ui.voice') }}</label>
                                 <div class="bg-white border border-gray-200 rounded-full p-2 text-lg text-gray-600 flex items-center gap-2">
                                     <img v-if="story.voice.avatar" :src="story.voice.avatar" class="w-8 h-8 rounded-full" />
                                     <span>{{ typeof story.voice === 'object' ? story.voice.name : story.voice }}</span>
@@ -135,7 +135,7 @@ window.StoryPage = {
                 </div>
             </main>
         </div>
-        <div v-else class="min-h-screen bg-[#FFF9F6] flex items-center justify-center">
+        <div v-else class="min-h-screen bg-gradient-to-b from-[#E1F5FE] to-[#BBDEFB] pb-16 flex items-center justify-center">
             <div class="bg-red-100 border border-red-300 text-red-700 px-8 py-6 rounded-xl max-w-md mx-auto text-center">
                 <h3 class="text-xl font-medium mb-4">Webdraw SDK Required</h3>
                 <p class="mb-4">This app requires the Webdraw SDK to function properly. Please open it in the Webdraw browser environment.</p>

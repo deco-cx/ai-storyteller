@@ -501,17 +501,17 @@ window.AdminPage = {
     }
   },
   template: `
-    <div class="min-h-screen bg-[#FFF9F6]">
+    <div class="min-h-screen bg-gradient-to-b from-[#E1F5FE] to-[#BBDEFB] pb-16">
       <!-- Navigation -->
       <nav class="bg-white shadow-md py-4 px-4 sm:px-6 flex items-center justify-between mb-4">
         <div class="flex items-center space-x-1 sm:space-x-4 overflow-x-auto whitespace-nowrap">
-          <router-link to="/" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base">
+          <router-link to="/" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#4A90E2] hover:bg-[#F0F9FF] text-sm sm:text-base">
             {{ $t('ui.home') }}
           </router-link>
-          <router-link to="/create" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base">
+          <router-link to="/create" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#4A90E2] hover:bg-[#F0F9FF] text-sm sm:text-base">
             {{ $t('ui.new') }}
           </router-link>
-          <router-link to="/my-stories" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base">
+          <router-link to="/my-stories" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#4A90E2] hover:bg-[#F0F9FF] text-sm sm:text-base">
             {{ $t('ui.myStories') }}
           </router-link>
         </div>
