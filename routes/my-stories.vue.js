@@ -770,15 +770,19 @@ window.MyStoriesPage = {
                 // Try to update both storage methods if SDK.fs is available
                 if (sdk && typeof sdk.fs?.read === 'function') {
                     // 1. Try to delete the individual file if it exists
-                    if (typeof sdk.fs?.delete === 'function') {
+                    if (typeof sdk.fs?.remove === 'function') {
                         try {
                             // First try using the stored file path if available
                             if (story._filePath) {
                                 console.log("Attempting to delete file using stored path:", story._filePath);
                                 
-                                // Try to delete the file
-                                sdk.fs.delete(story._filePath)
-                                    .then(() => console.log("Individual story file deleted successfully using stored path"))
+                                // Try to delete the story JSON file
+                                sdk.fs.remove(story._filePath)
+                                    .then(() => {
+                                        console.log("Individual story file deleted successfully using stored path");
+                                        // After deleting the JSON file, delete the associated media files
+                                        this.deleteAssociatedMediaFiles(story);
+                                    })
                                     .catch(err => {
                                         console.log("Could not delete using stored path:", err);
                                         // Fall back to title-based deletion
@@ -814,34 +818,215 @@ window.MyStoriesPage = {
             console.log("Attempting to delete file by title:", `${baseFilename}.json`);
             
             // Try to delete the file
-            sdk.fs.delete(`${baseFilename}.json`)
-                .then(() => console.log("Individual story file deleted successfully by title"))
+            sdk.fs.remove(`${baseFilename}.json`)
+                .then(() => {
+                    console.log("Individual story file deleted successfully by title");
+                    // After deleting the JSON file, delete the associated media files
+                    this.deleteAssociatedMediaFiles(story);
+                })
                 .catch(err => {
                     console.log("Individual story file not found or could not be deleted by title:", err);
                     
                     // Try with counter suffixes if the base name doesn't work
-                    this.tryDeleteWithCounters(safeName);
+                    this.tryDeleteWithCounters(safeName, story);
                 });
         },
         
         // Try to delete files with counter suffixes
-        async tryDeleteWithCounters(safeName) {
+        async tryDeleteWithCounters(safeName, story) {
             try {
+                let deleted = false;
                 // Try with counter suffixes (up to 5)
                 for (let i = 1; i <= 5; i++) {
                     const filename = `~/AI Storyteller/${safeName}_${i}.json`;
                     console.log("Trying to delete with counter:", filename);
                     
                     try {
-                        await sdk.fs.delete(filename);
+                        await sdk.fs.remove(filename);
                         console.log("Successfully deleted file with counter:", filename);
+                        deleted = true;
                         break; // Exit the loop if successful
                     } catch (err) {
                         console.log(`File with counter ${i} not found:`, err);
                     }
                 }
+                
+                if (deleted && story) {
+                    this.deleteAssociatedMediaFiles(story);
+                }
             } catch (error) {
                 console.log("Error in tryDeleteWithCounters:", error);
+            }
+        },
+        
+        async deleteAssociatedMediaFiles(story) {
+            if (!story || !story.title) return;
+            
+            try {
+                const safeName = this.safeFolderName(story.title);
+                console.log("Deleting associated media files for story:", story.title);
+                
+                const attemptedPaths = new Set();
+                
+                if (story.audioUrl) {
+                    await this.deleteFileFromUrl(story.audioUrl);
+                    try {
+                        const audioUrl = new URL(story.audioUrl);
+                        const audioPath = audioUrl.pathname;
+                        const audioFilename = audioPath.split('/').pop();
+                        if (audioFilename) {
+                            attemptedPaths.add(`~/Audio/${audioFilename}`);
+                            try {
+                                await sdk.fs.remove(`~/Audio/${audioFilename}`);
+                                console.log(`Deleted audio file using extracted filename: ~/Audio/${audioFilename}`);
+                            } catch (err) {
+                                console.log(`Could not delete audio file using extracted filename: ~/Audio/${audioFilename}`, err);
+                            }
+                        }
+                    } catch (err) {
+                        console.log("Error extracting audio filename from URL:", err);
+                    }
+                }
+                
+                if (story.coverUrl) {
+                    await this.deleteFileFromUrl(story.coverUrl);
+                    try {
+                        const imageUrl = new URL(story.coverUrl);
+                        const imagePath = imageUrl.pathname;
+                        const imageFilename = imagePath.split('/').pop();
+                        if (imageFilename) {
+                            attemptedPaths.add(`~/Pictures/${imageFilename}`);
+                            try {
+                                await sdk.fs.remove(`~/Pictures/${imageFilename}`);
+                                console.log(`Deleted image file using extracted filename: ~/Pictures/${imageFilename}`);
+                            } catch (err) {
+                                console.log(`Could not delete image file using extracted filename: ~/Pictures/${imageFilename}`, err);
+                            }
+                        }
+                    } catch (err) {
+                        console.log("Error extracting image filename from URL:", err);
+                    }
+                }
+                
+                if (story.story) {
+                    const textFileRegex = /historia_([a-zA-Z0-9_]+)\.txt/g;
+                    const matches = [...story.story.matchAll(textFileRegex)];
+                    for (const match of matches) {
+                        if (match[1]) {
+                            const textFilename = `historia_${match[1]}.txt`;
+                            const textFilePath = `~/Documents/${textFilename}`;
+                            if (!attemptedPaths.has(textFilePath)) {
+                                attemptedPaths.add(textFilePath);
+                                try {
+                                    await sdk.fs.remove(textFilePath);
+                                    console.log(`Deleted text file found in story content: ${textFilePath}`);
+                                } catch (err) {
+                                    console.log(`Could not delete text file from story content: ${textFilePath}`, err);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                const textFileName = `~/Documents/historia_${safeName}.txt`;
+                if (!attemptedPaths.has(textFileName)) {
+                    try {
+                        await sdk.fs.remove(textFileName);
+                        console.log("Deleted text file:", textFileName);
+                    } catch (err) {
+                        console.log("Could not delete text file or not found:", textFileName, err);
+                    }
+                }
+                
+                const altTextFileName = `~/Documents/${safeName}.txt`;
+                if (!attemptedPaths.has(altTextFileName)) {
+                    try {
+                        await sdk.fs.remove(altTextFileName);
+                        console.log("Deleted alternative text file:", altTextFileName);
+                    } catch (err) {
+                        console.log("Could not delete alternative text file or not found:", altTextFileName, err);
+                    }
+                }
+                
+                const audioFileName = `~/Audio/${safeName}.mp3`;
+                if (!attemptedPaths.has(audioFileName)) {
+                    try {
+                        await sdk.fs.remove(audioFileName);
+                        console.log("Deleted audio file:", audioFileName);
+                    } catch (err) {
+                        console.log("Could not delete audio file or not found:", audioFileName, err);
+                    }
+                }
+                
+                const imageFileName = `~/Pictures/${safeName}.webp`;
+                if (!attemptedPaths.has(imageFileName)) {
+                    try {
+                        await sdk.fs.remove(imageFileName);
+                        console.log("Deleted image file:", imageFileName);
+                    } catch (err) {
+                        console.log("Could not delete image file or not found:", imageFileName, err);
+                    }
+                }
+                
+                console.log("Completed media file deletion process for story:", story.title);
+            } catch (error) {
+                console.error("Error deleting associated media files:", error);
+            }
+        },
+        
+        async deleteFileFromUrl(url) {
+            if (!url) return;
+            
+            try {
+                if (url.includes('fs.webdraw.com')) {
+                    try {
+                        const parsedUrl = new URL(url);
+                        const filePath = parsedUrl.pathname;
+                        
+                        if (filePath.startsWith('/users/')) {
+                            const relativePath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
+                            
+                            try {
+                                await sdk.fs.remove(`~/${relativePath}`);
+                                console.log("Deleted file from URL path:", relativePath);
+                                return true;
+                            } catch (err) {
+                                console.log("Could not delete using full path, trying alternative approaches:", err);
+                            }
+                            
+                            const parts = filePath.split('/');
+                            const filename = parts[parts.length - 1];
+                            const directory = parts[parts.length - 2];
+                            
+                            if (filename) {
+                                let altPath = null;
+                                if (directory === 'Audio') {
+                                    altPath = `~/Audio/${filename}`;
+                                } else if (directory === 'Pictures') {
+                                    altPath = `~/Pictures/${filename}`;
+                                } else if (directory === 'Documents') {
+                                    altPath = `~/Documents/${filename}`;
+                                }
+                                
+                                if (altPath) {
+                                    try {
+                                        await sdk.fs.remove(altPath);
+                                        console.log("Deleted file using directory-based path:", altPath);
+                                        return true;
+                                    } catch (dirErr) {
+                                        console.log("Could not delete using directory-based path:", altPath, dirErr);
+                                    }
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.log("Could not parse or delete URL:", url, e);
+                    }
+                }
+                return false;
+            } catch (error) {
+                console.error("Error in deleteFileFromUrl:", error);
+                return false;
             }
         },
         
