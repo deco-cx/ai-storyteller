@@ -2,22 +2,22 @@ import { sdk } from "../sdk.js";
 
 window.IndexPage = {
     template: `
-        <div class="min-h-screen bg-gradient-to-b from-[#F0F9FF] to-[#E0F7FA] pb-16">
+        <div class="min-h-screen bg-gradient-to-b from-[#E1F5FE] to-[#BBDEFB] pb-16">
             <!-- Navigation -->
             <div>
                 <!-- Navigation Menu -->
                 <nav class="bg-white shadow-md py-3 px-4 sm:px-6">
                     <div class="flex justify-center sm:justify-start flex-wrap gap-2">
-                        <router-link to="/" class="px-3 py-2 rounded-lg bg-[#E0F2FE] text-[#0284C7] font-medium text-sm sm:text-base flex-grow-0">
+                        <router-link to="/" class="px-3 py-2 rounded-lg bg-[#4A90E2] text-white font-medium text-sm sm:text-base flex-grow-0">
                             {{ $t('ui.home') }}
                         </router-link>
-                        <router-link to="/create" class="px-3 py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base flex-grow-0">
+                        <router-link to="/create" class="px-3 py-2 rounded-lg text-[#4A90E2] hover:bg-[#F0F9FF] text-sm sm:text-base flex-grow-0">
                             {{ $t('ui.create') }}
                         </router-link>
-                        <router-link to="/my-stories" class="px-3 py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base flex-grow-0">
+                        <router-link to="/my-stories" class="px-3 py-2 rounded-lg text-[#4A90E2] hover:bg-[#F0F9FF] text-sm sm:text-base flex-grow-0">
                             {{ $t('ui.myStories') }}
                         </router-link>
-                        <router-link v-if="isAdmin" to="/_admin" class="px-3 py-2 rounded-lg text-[#00B7EA] hover:bg-[#F0F9FF] text-sm sm:text-base flex-grow-0">
+                        <router-link v-if="isAdmin" to="/_admin" class="px-3 py-2 rounded-lg text-[#4A90E2] hover:bg-[#F0F9FF] text-sm sm:text-base flex-grow-0">
                             {{ $t('ui.admin') }}
                         </router-link>
                     </div>
@@ -31,33 +31,33 @@ window.IndexPage = {
                 </div>
                 
                 <!-- Hero Section -->
-                <div class="relative bg-white rounded-3xl shadow-lg overflow-hidden mb-12 border-4 border-[#FFD166]">
+                <div class="relative bg-white rounded-3xl shadow-lg overflow-hidden mb-12 border-4 border-[#4A90E2]">
                     <!-- Decorative Elements -->
-                    <div class="absolute top-0 left-0 w-24 h-24 bg-[#FF6B6B] opacity-10 rounded-full -translate-x-12 -translate-y-12"></div>
-                    <div class="absolute bottom-0 right-0 w-32 h-32 bg-[#4ECDC4] opacity-10 rounded-full translate-x-16 translate-y-16"></div>
-                    <div class="absolute top-1/2 right-24 w-16 h-16 bg-[#FFD166] opacity-10 rounded-full"></div>
+                    <div class="absolute top-0 left-0 w-24 h-24 bg-[#4A90E2] opacity-10 rounded-full -translate-x-12 -translate-y-12"></div>
+                    <div class="absolute bottom-0 right-0 w-32 h-32 bg-[#81D4FA] opacity-10 rounded-full translate-x-16 translate-y-16"></div>
+                    <div class="absolute top-1/2 right-24 w-16 h-16 bg-[#64B5F6] opacity-10 rounded-full"></div>
                     
                     <div class="relative z-10 flex flex-col md:flex-row items-center p-6 md:p-10">
                         <div class="md:w-full mb-8 md:mb-0 md:pr-8">
                             <h1 class="text-3xl md:text-4xl font-bold mb-4 text-gray-800 leading-tight">
-                                <span class="bg-clip-text text-transparent bg-gradient-to-r from-[#FF6B6B] to-[#6A0572]">
+                                <span class="bg-clip-text text-transparent bg-gradient-to-r from-[#4A90E2] to-[#81D4FA]">
                                     {{ $t('home.welcome') }}
                                 </span>
                             </h1>
                             <p class="text-gray-600 mb-6 text-lg">{{ $t('home.tagline') }}</p>
                             
                             <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
-                                <router-link to="/create" class="btn-primary flex items-center justify-center">
+                                <router-link to="/create" class="bg-[#4A90E2] hover:bg-[#5FA0E9] text-white py-3 px-6 rounded-full font-medium transition-colors duration-200 shadow-md flex items-center justify-center">
                                     <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>
                                     {{ $t('home.createButton') }}
                                 </router-link>
                                 
-                                <button v-if="!user" @click="handleLogin" class="btn-secondary flex items-center justify-center">
+                                <button v-if="!user" @click="handleLogin" class="bg-white text-[#4A90E2] hover:bg-[#EEF6FD] border-[#4A90E2] border-2 py-3 px-6 rounded-full font-medium transition-colors duration-200 shadow-md flex items-center justify-center">
                                     <i class="fa-solid fa-user mr-2"></i>
                                     {{ $t('home.signInToCreate') }}
                                 </button>
                                 
-                                <router-link v-else to="/my-stories" class="btn-secondary flex items-center justify-center">
+                                <router-link v-else to="/my-stories" class="bg-white text-[#4A90E2] hover:bg-[#EEF6FD] border-[#4A90E2] border-2 py-3 px-6 rounded-full font-medium transition-colors duration-200 shadow-md flex items-center justify-center">
                                     <i class="fa-solid fa-book-open mr-2"></i>
                                     {{ $t('home.myStoriesButton') }}
                                 </router-link>
@@ -69,20 +69,20 @@ window.IndexPage = {
                 <!-- Example Stories Section -->
                 <div class="mb-16">
                     <h2 class="text-2xl font-bold mb-8 text-center relative">
-                        <span class="inline-block bg-clip-text text-transparent bg-gradient-to-r from-[#FF6B6B] via-[#FFD166] to-[#4ECDC4] mb-3">
+                        <span class="inline-block bg-clip-text text-transparent bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] mb-3">
                             {{ $t('home.examples') }}
                         </span>
-                        <div class="absolute left-0 right-0 bottom-0 h-1 bg-gradient-to-r from-[#FF6B6B] via-[#FFD166] to-[#4ECDC4] rounded-full"></div>
+                        <div class="absolute left-0 right-0 bottom-0 h-1 bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] rounded-full"></div>
                     </h2>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
                         <div v-for="(example, index) in examples" :key="index" 
                              class="bg-white rounded-3xl shadow-lg overflow-hidden transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-4"
                              :class="[
-                                index % 4 === 0 ? 'border-[#FF6B6B]' : '',
-                                index % 4 === 1 ? 'border-[#4ECDC4]' : '',
-                                index % 4 === 2 ? 'border-[#FFD166]' : '',
-                                index % 4 === 3 ? 'border-[#6A0572]' : ''
+                                index % 4 === 0 ? 'border-[#2871CC]' : '',
+                                index % 4 === 1 ? 'border-[#4A90E2]' : '',
+                                index % 4 === 2 ? 'border-[#64B5F6]' : '',
+                                index % 4 === 3 ? 'border-[#81D4FA]' : ''
                              ]">
                             
                             <!-- Story Cover Image -->
@@ -96,10 +96,10 @@ window.IndexPage = {
                                 <!-- Decorative Elements -->
                                 <div class="absolute top-2 left-2 w-12 h-12 rounded-full bg-white bg-opacity-70 flex items-center justify-center"
                                      :class="[
-                                        index % 4 === 0 ? 'text-[#FF6B6B]' : '',
-                                        index % 4 === 1 ? 'text-[#4ECDC4]' : '',
-                                        index % 4 === 2 ? 'text-[#FFD166]' : '',
-                                        index % 4 === 3 ? 'text-[#6A0572]' : ''
+                                        index % 4 === 0 ? 'text-[#2871CC]' : '',
+                                        index % 4 === 1 ? 'text-[#4A90E2]' : '',
+                                        index % 4 === 2 ? 'text-[#64B5F6]' : '',
+                                        index % 4 === 3 ? 'text-[#81D4FA]' : ''
                                      ]">
                                     <i class="fa-solid fa-book-open text-xl"></i>
                                 </div>
@@ -113,10 +113,10 @@ window.IndexPage = {
                                 <div class="flex items-center mb-5">
                                     <div class="w-12 h-12 rounded-full overflow-hidden border-2 mr-3"
                                          :class="[
-                                            index % 4 === 0 ? 'border-[#FF6B6B]' : '',
-                                            index % 4 === 1 ? 'border-[#4ECDC4]' : '',
-                                            index % 4 === 2 ? 'border-[#FFD166]' : '',
-                                            index % 4 === 3 ? 'border-[#6A0572]' : ''
+                                            index % 4 === 0 ? 'border-[#4A90E2]' : '',
+                                            index % 4 === 1 ? 'border-[#64B5F6]' : '',
+                                            index % 4 === 2 ? 'border-[#90CAF9]' : '',
+                                            index % 4 === 3 ? 'border-[#81D4FA]' : ''
                                          ]">
                                         <img :src="getOptimizedImageUrl(example.voiceAvatar, 64, 64)" 
                                              :alt="example.voice" 
@@ -137,9 +137,15 @@ window.IndexPage = {
                                             <i class="fa-solid fa-child text-gray-600 mr-1"></i>
                                             <span>{{ example.childName }}</span>
                                         </div>
-                                        <div v-if="example.theme" class="bg-gray-200 rounded-full px-3 py-1 text-sm flex items-center">
-                                            <i class="fa-solid fa-palette text-gray-600 mr-1"></i>
-                                            <span>{{ example.theme }}</span>
+                                        <div v-if="example.themes" class="rounded-full px-3 py-1 text-sm flex items-center text-white"
+                                             :class="[
+                                                index % 4 === 0 ? 'bg-[#4A90E2]' : '',
+                                                index % 4 === 1 ? 'bg-[#64B5F6]' : '',
+                                                index % 4 === 2 ? 'bg-[#90CAF9]' : '',
+                                                index % 4 === 3 ? 'bg-[#81D4FA]' : ''
+                                             ]">
+                                            <i class="fa-solid fa-lightbulb mr-1"></i>
+                                            <span class="truncate max-w-[150px]">{{ example.themes }}</span>
                                         </div>
                                     </div>
                                     <p v-if="example.description" class="text-sm text-gray-600 line-clamp-2">{{ example.description }}</p>
@@ -149,10 +155,10 @@ window.IndexPage = {
                                 <div class="flex items-center gap-3 w-full mb-4">
                                     <button @click="toggleAudio(example)" 
                                             :class="[
-                                                index % 4 === 0 ? 'bg-[#FF6B6B] hover:bg-[#FF8080]' : '',
-                                                index % 4 === 1 ? 'bg-[#4ECDC4] hover:bg-[#6FDED6]' : '',
-                                                index % 4 === 2 ? 'bg-[#FFD166] hover:bg-[#FFE08A]' : '',
-                                                index % 4 === 3 ? 'bg-[#6A0572] hover:bg-[#8A2793]' : ''
+                                                index % 4 === 0 ? 'bg-[#2871CC] hover:bg-[#3D82D6]' : '',
+                                                index % 4 === 1 ? 'bg-[#4A90E2] hover:bg-[#5FA0E9]' : '',
+                                                index % 4 === 2 ? 'bg-[#64B5F6] hover:bg-[#7BC4FF]' : '',
+                                                index % 4 === 3 ? 'bg-[#81D4FA] hover:bg-[#99E0FF]' : ''
                                             ]"
                                             class="text-white p-3 rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0 transition-colors duration-200 shadow-md">
                                         <i :class="example.isPlaying ? 'fa-solid fa-pause text-lg' : 'fa-solid fa-play text-lg'"></i>
@@ -161,10 +167,10 @@ window.IndexPage = {
                                         <div class="absolute inset-0 h-4 rounded-full" 
                                              :style="{ width: example.progress }"
                                              :class="[
-                                                index % 4 === 0 ? 'bg-[#FF6B6B]' : '',
-                                                index % 4 === 1 ? 'bg-[#4ECDC4]' : '',
-                                                index % 4 === 2 ? 'bg-[#FFD166]' : '',
-                                                index % 4 === 3 ? 'bg-[#6A0572]' : ''
+                                                index % 4 === 0 ? 'bg-[#2871CC]' : '',
+                                                index % 4 === 1 ? 'bg-[#4A90E2]' : '',
+                                                index % 4 === 2 ? 'bg-[#64B5F6]' : '',
+                                                index % 4 === 3 ? 'bg-[#81D4FA]' : ''
                                              ]"></div>
                                     </div>
                                 </div>
@@ -173,10 +179,10 @@ window.IndexPage = {
                                 <div class="grid grid-cols-1 gap-3 mt-4">
                                     <router-link :to="{ path: '/create', query: { themes: example.themes, voiceId: example.voiceId } }" 
                                             :class="[
-                                                index % 4 === 0 ? 'bg-white text-[#FF6B6B] hover:bg-[#FFF5F5] border-[#FF6B6B]' : '',
-                                                index % 4 === 1 ? 'bg-white text-[#4ECDC4] hover:bg-[#F0FDFB] border-[#4ECDC4]' : '',
-                                                index % 4 === 2 ? 'bg-white text-[#FFD166] hover:bg-[#FFFBF0] border-[#FFD166]' : '',
-                                                index % 4 === 3 ? 'bg-white text-[#6A0572] hover:bg-[#F9F0FA] border-[#6A0572]' : ''
+                                                index % 4 === 0 ? 'bg-white text-[#2871CC] hover:bg-[#EEF6FD] border-[#2871CC]' : '',
+                                                index % 4 === 1 ? 'bg-white text-[#4A90E2] hover:bg-[#EEF6FD] border-[#4A90E2]' : '',
+                                                index % 4 === 2 ? 'bg-white text-[#64B5F6] hover:bg-[#EEF6FD] border-[#64B5F6]' : '',
+                                                index % 4 === 3 ? 'bg-white text-[#81D4FA] hover:bg-[#EEF6FD] border-[#81D4FA]' : ''
                                             ]"
                                             class="rounded-full py-3 px-4 flex items-center justify-center font-medium border-2 transition-colors duration-200 shadow-md">
                                         <i class="fa-solid fa-magic mr-2"></i>
@@ -197,9 +203,9 @@ window.IndexPage = {
                     </div>
                     
                     <!-- Empty State -->
-                    <div v-if="examples.length === 0" class="bg-white rounded-3xl p-8 text-center shadow-lg border-4 border-dashed border-[#FF9E7D]">
-                        <div class="w-24 h-24 mx-auto mb-4 bg-[#FFF5F0] rounded-full flex items-center justify-center">
-                            <i class="fa-solid fa-book text-[#FF9E7D] text-4xl"></i>
+                    <div v-if="examples.length === 0" class="bg-white rounded-3xl p-8 text-center shadow-lg border-4 border-dashed border-[#64B5F6]">
+                        <div class="w-24 h-24 mx-auto mb-4 bg-[#F0F9FF] rounded-full flex items-center justify-center">
+                            <i class="fa-solid fa-book text-[#4A90E2] text-4xl"></i>
                         </div>
                         <h3 class="text-xl font-bold text-gray-700 mb-2">{{ $t('home.noExamples') }}</h3>
                         <p class="text-gray-600">{{ $t('home.checkBackSoon') }}</p>
@@ -209,32 +215,32 @@ window.IndexPage = {
                 <!-- Features Section -->
                 <div class="mt-16 space-y-8">
                     <h2 class="text-2xl font-bold mb-8 text-center relative">
-                        <span class="inline-block bg-clip-text text-transparent bg-gradient-to-r from-[#4ECDC4] via-[#6A0572] to-[#FF6B6B] mb-3">
+                        <span class="inline-block bg-clip-text text-transparent bg-gradient-to-r from-[#4A90E2] via-[#64B5F6] to-[#81D4FA] mb-3">
                             {{ $t('home.featuresTitle') }}
                         </span>
-                        <div class="absolute left-0 right-0 bottom-0 h-1 bg-gradient-to-r from-[#4ECDC4] via-[#6A0572] to-[#FF6B6B] rounded-full"></div>
+                        <div class="absolute left-0 right-0 bottom-0 h-1 bg-gradient-to-r from-[#4A90E2] via-[#64B5F6] to-[#81D4FA] rounded-full"></div>
                     </h2>
                     
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-white border-4 border-[#FF6B6B] rounded-3xl p-6 shadow-lg transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                            <div class="w-16 h-16 mx-auto mb-4 bg-[#FFF5F0] rounded-full flex items-center justify-center">
-                                <i class="fa-solid fa-child text-[#FF6B6B] text-2xl"></i>
+                        <div class="bg-white border-4 border-[#4A90E2] rounded-3xl p-6 shadow-lg transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                            <div class="w-16 h-16 mx-auto mb-4 bg-[#F0F9FF] rounded-full flex items-center justify-center">
+                                <i class="fa-solid fa-child text-[#4A90E2] text-2xl"></i>
                             </div>
-                            <h3 class="text-xl font-semibold text-[#FF6B6B] mb-3 text-center">{{ $t('home.feature1Title') }}</h3>
+                            <h3 class="text-xl font-semibold text-[#4A90E2] mb-3 text-center">{{ $t('home.feature1Title') }}</h3>
                             <p class="text-gray-600 text-center">{{ $t('home.feature1Text') }}</p>
                         </div>
-                        <div class="bg-white border-4 border-[#4ECDC4] rounded-3xl p-6 shadow-lg transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                            <div class="w-16 h-16 mx-auto mb-4 bg-[#F0FDFB] rounded-full flex items-center justify-center">
-                                <i class="fa-solid fa-headphones text-[#4ECDC4] text-2xl"></i>
+                        <div class="bg-white border-4 border-[#64B5F6] rounded-3xl p-6 shadow-lg transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                            <div class="w-16 h-16 mx-auto mb-4 bg-[#F0F9FF] rounded-full flex items-center justify-center">
+                                <i class="fa-solid fa-headphones text-[#64B5F6] text-2xl"></i>
                             </div>
-                            <h3 class="text-xl font-semibold text-[#4ECDC4] mb-3 text-center">{{ $t('home.feature2Title') }}</h3>
+                            <h3 class="text-xl font-semibold text-[#64B5F6] mb-3 text-center">{{ $t('home.feature2Title') }}</h3>
                             <p class="text-gray-600 text-center">{{ $t('home.feature2Text') }}</p>
                         </div>
-                        <div class="bg-white border-4 border-[#FFD166] rounded-3xl p-6 shadow-lg transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                            <div class="w-16 h-16 mx-auto mb-4 bg-[#FFFBF0] rounded-full flex items-center justify-center">
-                                <i class="fa-solid fa-image text-[#FFD166] text-2xl"></i>
+                        <div class="bg-white border-4 border-[#81D4FA] rounded-3xl p-6 shadow-lg transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                            <div class="w-16 h-16 mx-auto mb-4 bg-[#F0F9FF] rounded-full flex items-center justify-center">
+                                <i class="fa-solid fa-image text-[#81D4FA] text-2xl"></i>
                             </div>
-                            <h3 class="text-xl font-semibold text-[#FFD166] mb-3 text-center">{{ $t('home.feature3Title') }}</h3>
+                            <h3 class="text-xl font-semibold text-[#81D4FA] mb-3 text-center">{{ $t('home.feature3Title') }}</h3>
                             <p class="text-gray-600 text-center">{{ $t('home.feature3Text') }}</p>
                         </div>
                     </div>
@@ -243,25 +249,25 @@ window.IndexPage = {
                 <!-- How It Works Section -->
                 <div class="mt-16 space-y-8">
                     <h2 class="text-2xl font-bold mb-8 text-center relative">
-                        <span class="inline-block bg-clip-text text-transparent bg-gradient-to-r from-[#6A0572] via-[#FF6B6B] to-[#FFD166] mb-3">
+                        <span class="inline-block bg-clip-text text-transparent bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] mb-3">
                             {{ $t('home.howItWorksTitle') }}
                         </span>
-                        <div class="absolute left-0 right-0 bottom-0 h-1 bg-gradient-to-r from-[#6A0572] via-[#FF6B6B] to-[#FFD166] rounded-full"></div>
+                        <div class="absolute left-0 right-0 bottom-0 h-1 bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] rounded-full"></div>
                     </h2>
                     
                     <div class="relative">
                         <!-- Connecting Line -->
-                        <div class="absolute top-24 left-1/2 w-2 bg-gradient-to-b from-[#6A0572] via-[#FF6B6B] to-[#FFD166] h-3/4 -translate-x-1/2 hidden md:block"></div>
+                        <div class="absolute top-24 left-1/2 w-2 bg-gradient-to-b from-[#2871CC] via-[#4A90E2] to-[#81D4FA] h-3/4 -translate-x-1/2 hidden md:block"></div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <!-- Step 1 -->
-                            <div class="bg-white rounded-3xl p-6 shadow-lg border-4 border-[#6A0572] relative z-10">
-                                <div class="absolute -top-5 -left-5 w-10 h-10 bg-[#6A0572] text-white rounded-full flex items-center justify-center font-bold text-xl">1</div>
+                            <div class="bg-white rounded-3xl p-6 shadow-lg border-4 border-[#2871CC] relative z-10">
+                                <div class="absolute -top-5 -left-5 w-10 h-10 bg-[#2871CC] text-white rounded-full flex items-center justify-center font-bold text-xl">1</div>
                                 <div class="flex items-center mb-4">
-                                    <div class="w-16 h-16 bg-[#F9F0FA] rounded-full flex items-center justify-center mr-4">
-                                        <i class="fa-solid fa-user-pen text-[#6A0572] text-2xl"></i>
+                                    <div class="w-16 h-16 bg-[#F0F9FF] rounded-full flex items-center justify-center mr-4">
+                                        <i class="fa-solid fa-user-pen text-[#2871CC] text-2xl"></i>
                                     </div>
-                                    <h3 class="text-xl font-semibold text-[#6A0572]">{{ $t('home.step1') }}</h3>
+                                    <h3 class="text-xl font-semibold text-[#2871CC]">{{ $t('home.step1') }}</h3>
                                 </div>
                                 <div class="pl-20">
                                     <p class="text-gray-600">{{ $t('home.step1Description') }}</p>
@@ -269,13 +275,13 @@ window.IndexPage = {
                             </div>
                             
                             <!-- Step 2 -->
-                            <div class="bg-white rounded-3xl p-6 shadow-lg border-4 border-[#FF6B6B] relative z-10 md:mt-16">
-                                <div class="absolute -top-5 -left-5 w-10 h-10 bg-[#FF6B6B] text-white rounded-full flex items-center justify-center font-bold text-xl">2</div>
+                            <div class="bg-white rounded-3xl p-6 shadow-lg border-4 border-[#4A90E2] relative z-10 md:mt-16">
+                                <div class="absolute -top-5 -left-5 w-10 h-10 bg-[#4A90E2] text-white rounded-full flex items-center justify-center font-bold text-xl">2</div>
                                 <div class="flex items-center mb-4">
-                                    <div class="w-16 h-16 bg-[#FFF5F5] rounded-full flex items-center justify-center mr-4">
-                                        <i class="fa-solid fa-microphone text-[#FF6B6B] text-2xl"></i>
+                                    <div class="w-16 h-16 bg-[#F0F9FF] rounded-full flex items-center justify-center mr-4">
+                                        <i class="fa-solid fa-microphone text-[#4A90E2] text-2xl"></i>
                                     </div>
-                                    <h3 class="text-xl font-semibold text-[#FF6B6B]">{{ $t('home.step2') }}</h3>
+                                    <h3 class="text-xl font-semibold text-[#4A90E2]">{{ $t('home.step2') }}</h3>
                                 </div>
                                 <div class="pl-20">
                                     <p class="text-gray-600">{{ $t('home.narratorDescription') }}</p>
@@ -283,13 +289,13 @@ window.IndexPage = {
                             </div>
                             
                             <!-- Step 3 -->
-                            <div class="bg-white rounded-3xl p-6 shadow-lg border-4 border-[#4ECDC4] relative z-10">
-                                <div class="absolute -top-5 -left-5 w-10 h-10 bg-[#4ECDC4] text-white rounded-full flex items-center justify-center font-bold text-xl">3</div>
+                            <div class="bg-white rounded-3xl p-6 shadow-lg border-4 border-[#64B5F6] relative z-10">
+                                <div class="absolute -top-5 -left-5 w-10 h-10 bg-[#64B5F6] text-white rounded-full flex items-center justify-center font-bold text-xl">3</div>
                                 <div class="flex items-center mb-4">
-                                    <div class="w-16 h-16 bg-[#F0FDFB] rounded-full flex items-center justify-center mr-4">
-                                        <i class="fa-solid fa-wand-magic-sparkles text-[#4ECDC4] text-2xl"></i>
+                                    <div class="w-16 h-16 bg-[#F0F9FF] rounded-full flex items-center justify-center mr-4">
+                                        <i class="fa-solid fa-wand-magic-sparkles text-[#64B5F6] text-2xl"></i>
                                     </div>
-                                    <h3 class="text-xl font-semibold text-[#4ECDC4]">{{ $t('home.step3') }}</h3>
+                                    <h3 class="text-xl font-semibold text-[#64B5F6]">{{ $t('home.step3') }}</h3>
                                 </div>
                                 <div class="pl-20">
                                     <p class="text-gray-600">{{ $t('home.step3Description') }}</p>
@@ -297,13 +303,13 @@ window.IndexPage = {
                             </div>
                             
                             <!-- Step 4 -->
-                            <div class="bg-white rounded-3xl p-6 shadow-lg border-4 border-[#FFD166] relative z-10 md:mt-16">
-                                <div class="absolute -top-5 -left-5 w-10 h-10 bg-[#FFD166] text-white rounded-full flex items-center justify-center font-bold text-xl">4</div>
+                            <div class="bg-white rounded-3xl p-6 shadow-lg border-4 border-[#81D4FA] relative z-10 md:mt-16">
+                                <div class="absolute -top-5 -left-5 w-10 h-10 bg-[#81D4FA] text-white rounded-full flex items-center justify-center font-bold text-xl">4</div>
                                 <div class="flex items-center mb-4">
-                                    <div class="w-16 h-16 bg-[#FFFBF0] rounded-full flex items-center justify-center mr-4">
-                                        <i class="fa-solid fa-share-nodes text-[#FFD166] text-2xl"></i>
+                                    <div class="w-16 h-16 bg-[#F0F9FF] rounded-full flex items-center justify-center mr-4">
+                                        <i class="fa-solid fa-share-nodes text-[#81D4FA] text-2xl"></i>
                                     </div>
-                                    <h3 class="text-xl font-semibold text-[#FFD166]">{{ $t('home.step4') }}</h3>
+                                    <h3 class="text-xl font-semibold text-[#81D4FA]">{{ $t('home.step4') }}</h3>
                                 </div>
                                 <div class="pl-20">
                                     <p class="text-gray-600">{{ $t('home.step4Description') }}</p>
@@ -770,36 +776,36 @@ window.IndexPage = {
         const styleEl = document.createElement('style');
         styleEl.textContent = `
             .btn-primary {
-                background-image: linear-gradient(to right, #FF6B6B, #FF9E7D);
+                background-image: linear-gradient(to right, #2871CC, #4A90E2);
                 color: white;
                 padding: 0.75rem 1.5rem;
                 border-radius: 9999px;
                 font-weight: 500;
                 transition: all 0.3s ease;
-                border: 2px solid #FF5252;
-                box-shadow: 0 4px 6px rgba(255, 107, 107, 0.2);
+                border: 2px solid #2871CC;
+                box-shadow: 0 4px 6px rgba(74, 144, 226, 0.2);
             }
             
             .btn-primary:hover {
                 transform: translateY(-2px);
-                box-shadow: 0 6px 8px rgba(255, 107, 107, 0.3);
+                box-shadow: 0 6px 8px rgba(74, 144, 226, 0.3);
             }
             
             .btn-secondary {
                 background-color: white;
-                color: #4ECDC4;
+                color: #4A90E2;
                 padding: 0.75rem 1.5rem;
                 border-radius: 9999px;
                 font-weight: 500;
                 transition: all 0.3s ease;
-                border: 2px solid #4ECDC4;
-                box-shadow: 0 4px 6px rgba(78, 205, 196, 0.1);
+                border: 2px solid #4A90E2;
+                box-shadow: 0 4px 6px rgba(74, 144, 226, 0.1);
             }
             
             .btn-secondary:hover {
-                background-color: #F0FDFB;
+                background-color: #EEF6FD;
                 transform: translateY(-2px);
-                box-shadow: 0 6px 8px rgba(78, 205, 196, 0.2);
+                box-shadow: 0 6px 8px rgba(74, 144, 226, 0.2);
             }
         `;
         document.head.appendChild(styleEl);
