@@ -171,7 +171,7 @@ window.IndexPage = {
                                 
                                 <!-- Action Buttons -->
                                 <div class="grid grid-cols-1 gap-3 mt-4">
-                                    <router-link to="/create" 
+                                    <router-link :to="{ path: '/create', query: { themes: example.themes, voiceId: example.voiceId } }" 
                                             :class="[
                                                 index % 4 === 0 ? 'bg-white text-[#FF6B6B] hover:bg-[#FFF5F5] border-[#FF6B6B]' : '',
                                                 index % 4 === 1 ? 'bg-white text-[#4ECDC4] hover:bg-[#F0FDFB] border-[#4ECDC4]' : '',

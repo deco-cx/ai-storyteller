@@ -564,6 +564,22 @@ window.StoryPage = {
                 return text; // Return as-is if it contains HTML
             }
             
+            // Remove the title if it appears at the beginning of the story
+            // This way the title only appears in the blue header above
+            if (this.story && this.story.title) {
+                const title = this.story.title.trim();
+                
+                // Check for common title patterns at the beginning of the text
+                // 1. Exact title match at beginning
+                text = text.replace(new RegExp(`^\\s*${title}\\s*[\n\r]+`), '');
+                
+                // 2. Title with markdown heading format (# Title)
+                text = text.replace(new RegExp(`^\\s*#\\s*${title}\\s*[\n\r]+`), '');
+                
+                // 3. Title with double line or other formatting
+                text = text.replace(new RegExp(`^\\s*${title}\\s*[\n\r]+[-=]+[\n\r]+`), '');
+            }
+            
             // Ensure proper paragraph breaks
             let formattedText = text
                 // Replace single newlines with spaces (if they're not part of a paragraph break)

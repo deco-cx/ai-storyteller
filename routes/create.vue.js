@@ -47,17 +47,57 @@ window.CreatePage = {
     if (window.i18n && window.i18n.translations) {
       this.updateVoicesForLanguage();
       this.updateInterestSuggestions();
-    } else {
-      console.log('Translations not loaded yet, will wait for them');
-      // Set up a listener for translations loaded event
-      if (window.eventBus) {
-        window.eventBus.on('translations-loaded', () => {
-          console.log('Translations loaded, now updating voices');
-          this.updateVoicesForLanguage();
-          this.updateInterestSuggestions();
-        });
+      
+      // Check for URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const themes = urlParams.get('themes');
+      const voiceId = urlParams.get('voiceId');
+      
+      // Pre-fill the themes if provided
+      if (themes) {
+        this.interests = themes;
       }
+      
+      // Pre-select the voice if provided
+      if (voiceId && this.voices.length > 0) {
+        const matchingVoice = this.voices.find(voice => voice.id === voiceId);
+        if (matchingVoice) {
+          this.selectedVoice = matchingVoice;
+        }
+      }
+    } else {
+      // If translations aren't loaded yet, listen for the event
+      const onTranslationsLoaded = () => {
+        this.updateVoicesForLanguage();
+        this.updateInterestSuggestions();
+        
+        // Check for URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const themes = urlParams.get('themes');
+        const voiceId = urlParams.get('voiceId');
+        
+        // Pre-fill the themes if provided
+        if (themes) {
+          this.interests = themes;
+        }
+        
+        // Pre-select the voice if provided
+        if (voiceId && this.voices.length > 0) {
+          const matchingVoice = this.voices.find(voice => voice.id === voiceId);
+          if (matchingVoice) {
+            this.selectedVoice = matchingVoice;
+          }
+        }
+        
+        // Remove the listener after handling it once
+        document.removeEventListener('translations-loaded', onTranslationsLoaded);
+      };
+      
+      document.addEventListener('translations-loaded', onTranslationsLoaded);
     }
+    
+    // Listen for audio errors
+    document.addEventListener('audioerror', this.handleAudioError);
     
     this.previewAudioElement = new Audio();
     this.previewAudioElement.addEventListener('ended', () => {
@@ -325,7 +365,7 @@ window.CreatePage = {
         const imagePromise = sdk.ai.generateImage({
           model: "openai:dall-e-3",
                 n: 1,
-                size: "1024x1024",
+                size: "1792x1024",
           prompt: imagePrompt
         });
         
@@ -761,6 +801,22 @@ window.CreatePage = {
     },
     formatStoryText(text) {
       if (!text) return '';
+      
+      // Remove the title if it appears at the beginning of the story
+      // This way the title only appears in the blue header above
+      if (this.storyData && this.storyData.title) {
+        const title = this.storyData.title.trim();
+        
+        // Check for common title patterns at the beginning of the text
+        // 1. Exact title match at beginning
+        text = text.replace(new RegExp(`^\\s*${title}\\s*[\n\r]+`), '');
+        
+        // 2. Title with markdown heading format (# Title)
+        text = text.replace(new RegExp(`^\\s*#\\s*${title}\\s*[\n\r]+`), '');
+        
+        // 3. Title with double line or other formatting
+        text = text.replace(new RegExp(`^\\s*${title}\\s*[\n\r]+[-=]+[\n\r]+`), '');
+      }
       
       text = text.replace(/^# (.*$)/gm, '<h1>$1</h1>');
       text = text.replace(/^## (.*$)/gm, '<h2>$1</h2>');
