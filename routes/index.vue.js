@@ -2,9 +2,14 @@ import { sdk } from "../sdk.js";
 
 window.IndexPage = {
     template: `
-        <div class="min-h-screen bg-gradient-to-b from-[#E1F5FE] to-[#BBDEFB] pb-16">
+        <div class="min-h-screen bg-gradient-to-b from-[#E1F5FE] to-[#BBDEFB] pb-16 relative">
+            <!-- Background image for mobile only -->
+            <div class="absolute inset-0 z-0 md:hidden">
+                <img src="/assets/image/bg.png" alt="Background" class="w-full h-full object-cover fixed" />
+            </div>
+            
             <!-- Navigation -->
-            <div>
+            <div class="relative z-10">
                 <!-- Navigation Menu -->
                 <nav class="bg-white shadow-md py-3 px-4 sm:px-6">
                     <div class="flex justify-center sm:justify-start flex-wrap gap-2">
@@ -24,20 +29,20 @@ window.IndexPage = {
                 </nav>
             </div>
             
-            <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-8">
+            <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-8 relative z-10">
                 <!-- Language Selector - Centered above the title -->
                 <div class="flex justify-center mb-4">
                     <language-switcher></language-switcher>
                 </div>
                 
                 <!-- Hero Section -->
-                <div class="relative bg-white rounded-3xl shadow-lg overflow-hidden mb-12 border-4 border-[#4A90E2]">
+                <div class="relative rounded-3xl shadow-lg overflow-hidden mb-12 border border-[#4A90E2]">
                     <!-- Decorative Elements -->
                     <div class="absolute top-0 left-0 w-24 h-24 bg-[#4A90E2] opacity-10 rounded-full -translate-x-12 -translate-y-12"></div>
                     <div class="absolute bottom-0 right-0 w-32 h-32 bg-[#81D4FA] opacity-10 rounded-full translate-x-16 translate-y-16"></div>
                     <div class="absolute top-1/2 right-24 w-16 h-16 bg-[#64B5F6] opacity-10 rounded-full"></div>
                     
-                    <div class="relative z-10 flex flex-col md:flex-row items-center p-6 md:p-10">
+                    <div class="relative z-10 flex flex-col md:flex-row items-center p-6 md:p-10 bg-white shadow-lg rounded-xl">
                         <div class="md:w-full mb-8 md:mb-0 md:pr-8">
                             <h1 class="text-3xl md:text-4xl font-bold mb-4 text-gray-800 leading-tight">
                                 <span class="bg-clip-text text-transparent bg-gradient-to-r from-[#4A90E2] to-[#81D4FA]">
@@ -68,23 +73,128 @@ window.IndexPage = {
                 
                 <!-- Example Stories Section -->
                 <div class="mb-16">
-                    <h2 class="text-2xl font-bold mb-8 text-center relative">
+                    <!-- Título com background estendido -->
+                    <div v-if="examples && examples.length > 0" class="relative mb-12">
+                        <!-- Background estendido do título - vai até metade do primeiro exemplo -->
+                        <div class="absolute top-0 left-0 right-0 h-[170px] bg-[#F0F9FF] shadow-md border border-[#BBDEFB] rounded-t-2xl"></div>
+                        
+                        <!-- Cabeçalho com título -->
+                        <div class="relative z-10 p-6">
+                            <h2 class="text-2xl font-bold text-center relative py-2">
+                                <i class="fa-solid fa-book-open text-[#4A90E2] mr-2"></i>
+                                <span class="inline-block bg-clip-text text-transparent bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] mb-3">
+                                    {{ $t('home.examples') }}
+                                </span>
+                                <div class="absolute left-0 right-0 bottom-0 h-1 bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] rounded-full"></div>
+                            </h2>
+                        </div>
+                    </div>
+                    
+                    <!-- Título quando não há exemplos -->
+                    <h2 v-if="!examples || examples.length === 0" class="text-2xl font-bold mb-8 text-center relative">
                         <span class="inline-block bg-clip-text text-transparent bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] mb-3">
                             {{ $t('home.examples') }}
                         </span>
                         <div class="absolute left-0 right-0 bottom-0 h-1 bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] rounded-full"></div>
                     </h2>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
-                        <div v-for="(example, index) in examples" :key="index" 
+                    <!-- Grid com todos os exemplos -->
+                    <div v-if="examples && examples.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
+                        <!-- Primeiro exemplo (com background abaixo dele) -->
+                        <div v-if="examples.length > 0" class="relative md:col-span-2 lg:col-span-1">
+                            <!-- Card normalmente é aqui -->
+                            <div class="bg-white rounded-3xl shadow-lg overflow-hidden transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-4 border-[#2871CC]">
+                                <!-- Story Cover Image -->
+                                <div class="relative h-48 overflow-hidden">
+                                    <img :src="getOptimizedImageUrl(examples[0].coverImage || examples[0].image, 600, 300)" 
+                                         :alt="examples[0].title" 
+                                         @load="logImageLoaded(examples[0].title, examples[0].coverImage || examples[0].image)"
+                                         @error="logImageError(examples[0].title, examples[0].coverImage || examples[0].image)"
+                                         class="w-full h-full object-cover transition-transform duration-500 hover:scale-110" />
+                                    
+                                    <!-- Decorative Elements -->
+                                    <div class="absolute top-2 left-2 w-12 h-12 rounded-full bg-white bg-opacity-70 flex items-center justify-center text-[#2871CC]">
+                                        <i class="fa-solid fa-book-open text-xl"></i>
+                                    </div>
+                                    
+                                    <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent h-24 opacity-70"></div>
+                                    <h3 class="absolute bottom-4 left-4 right-4 text-white font-bold text-xl line-clamp-2">{{ examples[0].title }}</h3>
+                                </div>
+                                
+                                <div class="p-5">
+                                    <!-- Narrator Info -->
+                                    <div class="flex items-center mb-5">
+                                        <div class="w-12 h-12 rounded-full overflow-hidden border-2 mr-3 border-[#4A90E2]">
+                                            <img :src="getOptimizedImageUrl(examples[0].voiceAvatar, 64, 64)" 
+                                                :alt="examples[0].voice" 
+                                                @load="logImageLoaded(examples[0].voice, examples[0].voiceAvatar)"
+                                                @error="logImageError(examples[0].voice, examples[0].voiceAvatar)"
+                                                class="w-full h-full object-cover" />
+                                        </div>
+                                        <div>
+                                            <p class="text-gray-600 text-sm">{{ $t('home.narratedBy') }}</p>
+                                            <p class="font-medium">{{ examples[0].voice }}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Story Details -->
+                                    <div class="mb-4 bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                                        <div class="flex flex-wrap gap-2 mb-2">
+                                            <div v-if="examples[0].childName" class="bg-gray-200 rounded-full px-3 py-1 text-sm flex items-center">
+                                                <i class="fa-solid fa-child text-gray-600 mr-1"></i>
+                                                <span>{{ examples[0].childName }}</span>
+                                            </div>
+                                            <div v-if="examples[0].themes" class="rounded-full px-3 py-1 text-sm flex items-center text-white bg-[#4A90E2]">
+                                                <i class="fa-solid fa-lightbulb mr-1"></i>
+                                                <span class="truncate max-w-[150px]">{{ examples[0].themes }}</span>
+                                            </div>
+                                        </div>
+                                        <p v-if="examples[0].description" class="text-sm text-gray-600 line-clamp-2">{{ examples[0].description }}</p>
+                                    </div>
+                                    
+                                    <!-- Audio Player -->
+                                    <div class="flex items-center gap-3 w-full mb-4">
+                                        <button @click="toggleAudio(examples[0])" 
+                                                class="bg-[#2871CC] hover:bg-[#3D82D6] text-white p-3 rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0 transition-colors duration-200 shadow-md">
+                                            <i :class="examples[0].isPlaying ? 'fa-solid fa-pause text-lg' : 'fa-solid fa-play text-lg'"></i>
+                                        </button>
+                                        <div class="flex-1 h-4 bg-gray-200 rounded-full relative">
+                                            <div class="absolute inset-0 h-4 rounded-full bg-[#2871CC]" 
+                                                :style="{ width: examples[0].progress }">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Action Buttons -->
+                                    <div class="grid grid-cols-1 gap-3 mt-4">
+                                        <router-link :to="{ path: '/create', query: { themes: examples[0].themes, voiceId: examples[0].voiceId } }" 
+                                                class="bg-white text-[#2871CC] hover:bg-[#EEF6FD] border-[#2871CC] shadow-[0_0_15px_rgba(40,113,204,0.15)] rounded-full py-3 px-4 flex items-center justify-center font-medium border-2 transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-1">
+                                            <i class="fa-solid fa-magic mr-2"></i>
+                                            {{ $t('home.createFromThis') }}
+                                        </router-link>
+                                    </div>
+                                    
+                                    <audio 
+                                        id="audio-0" 
+                                        :src="getOptimizedAudioUrl(examples[0].audio)" 
+                                        @timeupdate="updateProgress($event, examples[0])" 
+                                        @ended="audioEnded(examples[0])" 
+                                        @canplaythrough="logAudioLoaded(examples[0].title, examples[0].audio)"
+                                        @error="logAudioError(examples[0].title, examples[0].audio, $event.error)"
+                                        style="display: none;"></audio>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Demais exemplos -->
+                        <div v-for="(example, index) in examples.slice(1)" :key="index + 1" 
                              class="bg-white rounded-3xl shadow-lg overflow-hidden transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-4"
                              :class="[
-                                index % 4 === 0 ? 'border-[#2871CC]' : '',
-                                index % 4 === 1 ? 'border-[#4A90E2]' : '',
-                                index % 4 === 2 ? 'border-[#64B5F6]' : '',
-                                index % 4 === 3 ? 'border-[#81D4FA]' : ''
+                                (index + 1) % 4 === 0 ? 'border-[#2871CC]' : '',
+                                (index + 1) % 4 === 1 ? 'border-[#4A90E2]' : '',
+                                (index + 1) % 4 === 2 ? 'border-[#64B5F6]' : '',
+                                (index + 1) % 4 === 3 ? 'border-[#81D4FA]' : ''
                              ]">
-                            
                             <!-- Story Cover Image -->
                             <div class="relative h-48 overflow-hidden">
                                 <img :src="getOptimizedImageUrl(example.coverImage || example.image, 600, 300)" 
@@ -96,10 +206,10 @@ window.IndexPage = {
                                 <!-- Decorative Elements -->
                                 <div class="absolute top-2 left-2 w-12 h-12 rounded-full bg-white bg-opacity-70 flex items-center justify-center"
                                      :class="[
-                                        index % 4 === 0 ? 'text-[#2871CC]' : '',
-                                        index % 4 === 1 ? 'text-[#4A90E2]' : '',
-                                        index % 4 === 2 ? 'text-[#64B5F6]' : '',
-                                        index % 4 === 3 ? 'text-[#81D4FA]' : ''
+                                        (index + 1) % 4 === 0 ? 'text-[#2871CC]' : '',
+                                        (index + 1) % 4 === 1 ? 'text-[#4A90E2]' : '',
+                                        (index + 1) % 4 === 2 ? 'text-[#64B5F6]' : '',
+                                        (index + 1) % 4 === 3 ? 'text-[#81D4FA]' : ''
                                      ]">
                                     <i class="fa-solid fa-book-open text-xl"></i>
                                 </div>
@@ -113,10 +223,10 @@ window.IndexPage = {
                                 <div class="flex items-center mb-5">
                                     <div class="w-12 h-12 rounded-full overflow-hidden border-2 mr-3"
                                          :class="[
-                                            index % 4 === 0 ? 'border-[#4A90E2]' : '',
-                                            index % 4 === 1 ? 'border-[#64B5F6]' : '',
-                                            index % 4 === 2 ? 'border-[#90CAF9]' : '',
-                                            index % 4 === 3 ? 'border-[#81D4FA]' : ''
+                                            (index + 1) % 4 === 0 ? 'border-[#4A90E2]' : '',
+                                            (index + 1) % 4 === 1 ? 'border-[#64B5F6]' : '',
+                                            (index + 1) % 4 === 2 ? 'border-[#90CAF9]' : '',
+                                            (index + 1) % 4 === 3 ? 'border-[#81D4FA]' : ''
                                          ]">
                                         <img :src="getOptimizedImageUrl(example.voiceAvatar, 64, 64)" 
                                              :alt="example.voice" 
@@ -139,10 +249,10 @@ window.IndexPage = {
                                         </div>
                                         <div v-if="example.themes" class="rounded-full px-3 py-1 text-sm flex items-center text-white"
                                              :class="[
-                                                index % 4 === 0 ? 'bg-[#4A90E2]' : '',
-                                                index % 4 === 1 ? 'bg-[#64B5F6]' : '',
-                                                index % 4 === 2 ? 'bg-[#90CAF9]' : '',
-                                                index % 4 === 3 ? 'bg-[#81D4FA]' : ''
+                                                (index + 1) % 4 === 0 ? 'bg-[#4A90E2]' : '',
+                                                (index + 1) % 4 === 1 ? 'bg-[#64B5F6]' : '',
+                                                (index + 1) % 4 === 2 ? 'bg-[#90CAF9]' : '',
+                                                (index + 1) % 4 === 3 ? 'bg-[#81D4FA]' : ''
                                              ]">
                                             <i class="fa-solid fa-lightbulb mr-1"></i>
                                             <span class="truncate max-w-[150px]">{{ example.themes }}</span>
@@ -155,10 +265,10 @@ window.IndexPage = {
                                 <div class="flex items-center gap-3 w-full mb-4">
                                     <button @click="toggleAudio(example)" 
                                             :class="[
-                                                index % 4 === 0 ? 'bg-[#2871CC] hover:bg-[#3D82D6]' : '',
-                                                index % 4 === 1 ? 'bg-[#4A90E2] hover:bg-[#5FA0E9]' : '',
-                                                index % 4 === 2 ? 'bg-[#64B5F6] hover:bg-[#7BC4FF]' : '',
-                                                index % 4 === 3 ? 'bg-[#81D4FA] hover:bg-[#99E0FF]' : ''
+                                                (index + 1) % 4 === 0 ? 'bg-[#2871CC] hover:bg-[#3D82D6]' : '',
+                                                (index + 1) % 4 === 1 ? 'bg-[#4A90E2] hover:bg-[#5FA0E9]' : '',
+                                                (index + 1) % 4 === 2 ? 'bg-[#64B5F6] hover:bg-[#7BC4FF]' : '',
+                                                (index + 1) % 4 === 3 ? 'bg-[#81D4FA] hover:bg-[#99E0FF]' : ''
                                             ]"
                                             class="text-white p-3 rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0 transition-colors duration-200 shadow-md">
                                         <i :class="example.isPlaying ? 'fa-solid fa-pause text-lg' : 'fa-solid fa-play text-lg'"></i>
@@ -167,10 +277,10 @@ window.IndexPage = {
                                         <div class="absolute inset-0 h-4 rounded-full" 
                                              :style="{ width: example.progress }"
                                              :class="[
-                                                index % 4 === 0 ? 'bg-[#2871CC]' : '',
-                                                index % 4 === 1 ? 'bg-[#4A90E2]' : '',
-                                                index % 4 === 2 ? 'bg-[#64B5F6]' : '',
-                                                index % 4 === 3 ? 'bg-[#81D4FA]' : ''
+                                                (index + 1) % 4 === 0 ? 'bg-[#2871CC]' : '',
+                                                (index + 1) % 4 === 1 ? 'bg-[#4A90E2]' : '',
+                                                (index + 1) % 4 === 2 ? 'bg-[#64B5F6]' : '',
+                                                (index + 1) % 4 === 3 ? 'bg-[#81D4FA]' : ''
                                              ]"></div>
                                     </div>
                                 </div>
@@ -179,19 +289,19 @@ window.IndexPage = {
                                 <div class="grid grid-cols-1 gap-3 mt-4">
                                     <router-link :to="{ path: '/create', query: { themes: example.themes, voiceId: example.voiceId } }" 
                                             :class="[
-                                                index % 4 === 0 ? 'bg-white text-[#2871CC] hover:bg-[#EEF6FD] border-[#2871CC]' : '',
-                                                index % 4 === 1 ? 'bg-white text-[#4A90E2] hover:bg-[#EEF6FD] border-[#4A90E2]' : '',
-                                                index % 4 === 2 ? 'bg-white text-[#64B5F6] hover:bg-[#EEF6FD] border-[#64B5F6]' : '',
-                                                index % 4 === 3 ? 'bg-white text-[#81D4FA] hover:bg-[#EEF6FD] border-[#81D4FA]' : ''
+                                                (index + 1) % 4 === 0 ? 'bg-white text-[#2871CC] hover:bg-[#EEF6FD] border-[#2871CC] shadow-[0_0_15px_rgba(40,113,204,0.15)]' : '',
+                                                (index + 1) % 4 === 1 ? 'bg-white text-[#4A90E2] hover:bg-[#EEF6FD] border-[#4A90E2] shadow-[0_0_15px_rgba(74,144,226,0.15)]' : '',
+                                                (index + 1) % 4 === 2 ? 'bg-white text-[#64B5F6] hover:bg-[#EEF6FD] border-[#64B5F6] shadow-[0_0_15px_rgba(100,181,246,0.15)]' : '',
+                                                (index + 1) % 4 === 3 ? 'bg-white text-[#81D4FA] hover:bg-[#EEF6FD] border-[#81D4FA] shadow-[0_0_15px_rgba(129,212,250,0.15)]' : ''
                                             ]"
-                                            class="rounded-full py-3 px-4 flex items-center justify-center font-medium border-2 transition-colors duration-200 shadow-md">
+                                            class="rounded-full py-3 px-4 flex items-center justify-center font-medium border-2 transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-1">
                                         <i class="fa-solid fa-magic mr-2"></i>
                                         {{ $t('home.createFromThis') }}
                                     </router-link>
                                 </div>
                                 
                                 <audio 
-                                    :id="'audio-' + index" 
+                                    :id="'audio-' + (index + 1)" 
                                     :src="getOptimizedAudioUrl(example.audio)" 
                                     @timeupdate="updateProgress($event, example)" 
                                     @ended="audioEnded(example)" 
@@ -203,7 +313,7 @@ window.IndexPage = {
                     </div>
                     
                     <!-- Empty State -->
-                    <div v-if="examples.length === 0" class="bg-white rounded-3xl p-8 text-center shadow-lg border-4 border-dashed border-[#64B5F6]">
+                    <div v-if="!examples || examples.length === 0" class="bg-white rounded-3xl p-8 text-center shadow-lg border-4 border-dashed border-[#64B5F6]">
                         <div class="w-24 h-24 mx-auto mb-4 bg-[#F0F9FF] rounded-full flex items-center justify-center">
                             <i class="fa-solid fa-book text-[#4A90E2] text-4xl"></i>
                         </div>
