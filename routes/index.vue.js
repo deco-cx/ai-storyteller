@@ -75,8 +75,8 @@ window.IndexPage = {
                 <div class="mb-16">
                     <!-- Título com background estendido -->
                     <div v-if="examples && examples.length > 0" class="relative mb-12">
-                        <!-- Background estendido do título - vai até metade do primeiro exemplo -->
-                        <div class="absolute top-0 left-0 right-0 h-[170px] bg-[#F0F9FF] shadow-md border border-[#BBDEFB] rounded-t-2xl"></div>
+                        <!-- Background estendido do título - vai até metade do primeiro exemplo (apenas mobile) -->
+                        <div class="absolute top-0 left-0 right-0 h-[170px] bg-[#F0F9FF] shadow-md border border-[#BBDEFB] rounded-t-2xl md:hidden"></div>
                         
                         <!-- Cabeçalho com título -->
                         <div class="relative z-10 p-6">
