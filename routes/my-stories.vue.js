@@ -23,13 +23,9 @@ window.MyStoriesPage = {
 
             <!-- Main Content -->
             <main class="max-w-6xl mx-auto px-6 py-12">
-                <!-- Header with Title and New Story Button -->
+                <!-- Header with Title -->
                 <div class="flex justify-between items-center mb-8">
                     <h2 class="text-3xl font-semibold text-[#00B7EA]">{{ $t('myStories.pageTitle') }}</h2>
-                    <button @click="goToNewStory" class="bg-gradient-to-b from-[#38BDF8] to-[#0284C7] text-white px-5 py-2.5 rounded-full hover:from-[#0284C7] hover:to-[#0284C7] border border-[#0369A1] font-medium flex items-center gap-2">
-                        <i class="fa-solid fa-plus"></i>
-                        {{ $t('myStories.newStoryButton') }}
-                    </button>
                 </div>
                 
                 <!-- Search Bar (only show if there are stories) -->
