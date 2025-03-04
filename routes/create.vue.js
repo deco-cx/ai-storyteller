@@ -24,7 +24,7 @@ window.CreatePage = {
       voices: [],
       selectedVoice: null,
       isPreviewPlaying: null,
-      previewAudioElement: null,
+      preloadedAudios: {},
       BASE_FS_URL: "https://fs.webdraw.com",
       currentLanguage: window.i18n.getLanguage(),
       interestSuggestions: []
@@ -114,6 +114,9 @@ window.CreatePage = {
           this.audioProgress = 0;
         });
       }
+      
+      // Preload voice preview audios
+      this.preloadVoiceAudios();
     });
     
     // Listen for language change events
@@ -260,50 +263,51 @@ window.CreatePage = {
       // Remove the automatic voice selection when playing preview
       // this.selectVoice(voice);
       
+      // Get the audio element for this voice
+      const audioElement = document.getElementById(`preview-audio-${voice.id}`);
+      if (!audioElement) {
+        console.error(`Audio element for voice ${voice.name} not found`);
+        return;
+      }
+      
       if (this.isPreviewPlaying === voice.id) {
         // User clicked the same voice that's currently playing - pause it
-        this.previewAudioElement.pause();
+        audioElement.pause();
         this.isPreviewPlaying = null;
         return;
       }
       
       // If another voice preview is playing, stop it first
       if (this.isPreviewPlaying) {
-        this.previewAudioElement.pause();
+        const previousAudio = document.getElementById(`preview-audio-${this.isPreviewPlaying}`);
+        if (previousAudio) {
+          previousAudio.pause();
+        }
         this.isPreviewPlaying = null;
       }
       
       if (voice.previewAudio) {
         voice.isLoading = true;
         
-        const tryPlayAudio = () => {
-          const fileName = voice.previewAudio.split('/').pop();
-          let audioUrl = `/assets/audio/preview/${fileName}`;
-          console.log(`Trying to play audio from: ${audioUrl}`);
-          
-          this.previewAudioElement.src = audioUrl;
-          this.previewAudioElement.oncanplaythrough = () => {
+        // Ensure source is set
+        if (!audioElement.querySelector('source').src) {
+          const source = audioElement.querySelector('source');
+          source.src = this.getPreviewAudioUrl(voice);
+          audioElement.load();
+        }
+        
+        // Try to play the audio
+        audioElement.play()
+          .then(() => {
             voice.isLoading = false;
-            this.previewAudioElement.play()
-              .then(() => {
-                this.isPreviewPlaying = voice.id;
-                console.log(`Successfully playing audio: ${audioUrl}`);
-              })
-              .catch(playError => {
-                console.error(`Error playing audio for ${voice.name}:`, playError);
-                voice.isLoading = false;
-              });
-          };
-          
-          this.previewAudioElement.onerror = () => {
-            console.error(`Error loading audio from ${audioUrl}`);
+            this.isPreviewPlaying = voice.id;
+            console.log(`Successfully playing audio for ${voice.name}`);
+          })
+          .catch(playError => {
+            console.error(`Error playing audio for ${voice.name}:`, playError);
             voice.isLoading = false;
             alert(`Could not play audio preview for ${voice.name}. The audio file may be missing.`);
-          };
-        };
-        
-        // Play the audio
-        tryPlayAudio();
+          });
       }
     },
     async generateStory() {
@@ -1117,7 +1121,89 @@ window.CreatePage = {
           ];
         }
       }
-    }
+    },
+    preloadVoiceAudios() {
+      console.log("Starting voice preview audio preloading...");
+      if (!this.voices || this.voices.length === 0) {
+        console.log("No voices to preload audio for");
+        return;
+      }
+      
+      this.voices.forEach(voice => {
+        if (!voice.previewAudio) {
+          console.log(`Voice ${voice.name}: No preview audio to preload`);
+          return;
+        }
+        
+        try {
+          // Get audio URL for this voice
+          const audioUrl = this.getPreviewAudioUrl(voice);
+          
+          // Skip if already preloaded
+          if (this.preloadedAudios[audioUrl]) {
+            console.log(`Audio for "${voice.name}" already preloaded`);
+            return;
+          }
+          
+          // Get the audio element
+          const audioElement = document.getElementById(`preview-audio-${voice.id}`);
+          if (!audioElement) {
+            console.warn(`Audio element for voice ${voice.name} not found`);
+            return;
+          }
+          
+          // Set preload attribute to auto
+          audioElement.preload = "auto";
+          
+          // Log preload start
+          console.log(`Started preloading audio for voice "${voice.name}": ${audioUrl}`);
+          
+          // Mark as being loaded
+          voice.isLoading = true;
+          
+          // Load the audio
+          audioElement.load();
+        } catch (error) {
+          console.error(`Exception while trying to preload audio for "${voice.name}":`, error);
+          voice.isLoading = false;
+        }
+      });
+    },
+    
+    getPreviewAudioUrl(voice) {
+      if (!voice.previewAudio) return null;
+      
+      const fileName = voice.previewAudio.split('/').pop();
+      const audioPath = `/assets/audio/preview/${fileName}`;
+      
+      // Always use absolute URLs
+      // For localhost, use the staging environment as the origin
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return `https://staging-ai-storyteller.webdraw.app${audioPath}`;
+      }
+      
+      // For production, use the current site's origin
+      return `${window.location.origin}${audioPath}`;
+    },
+    
+    previewAudioReady(voice) {
+      console.log(`Preview audio for "${voice.name}" loaded and ready to play`);
+      voice.isLoading = false;
+      
+      // Mark as preloaded
+      const audioUrl = this.getPreviewAudioUrl(voice);
+      this.preloadedAudios[audioUrl] = true;
+    },
+    
+    previewAudioError(event, voice) {
+      console.error(`Error loading preview audio for "${voice.name}":`, event);
+      voice.isLoading = false;
+    },
+    
+    previewAudioEnded(voice) {
+      console.log(`Preview audio for "${voice.name}" playback completed`);
+      this.isPreviewPlaying = null;
+    },
   },
   template: `
     <div class="min-h-screen bg-gradient-to-b from-[#E1F5FE] to-[#BBDEFB] pb-16">
@@ -1355,6 +1441,31 @@ window.CreatePage = {
         <source v-if="audioSource" :src="audioSource" type="audio/mpeg" />
         {{ $t('ui.audioNotSupported') }}
       </audio>
+
+      <!-- Add audio elements for voice previews -->
+      <div style="display: none;">
+        <audio 
+          v-for="voice in voices" 
+          :key="'preview-' + voice.id"
+          :id="'preview-audio-' + voice.id"
+          preload="none"
+          @ended="previewAudioEnded(voice)"
+          @canplaythrough="previewAudioReady(voice)"
+          @error="previewAudioError($event, voice)"
+        >
+          <source v-if="voice.previewAudio" :src="getPreviewAudioUrl(voice)" type="audio/mpeg">
+        </audio>
+      </div>
+
+      <!-- Form Buttons -->
+      <div class="mt-10 flex justify-end space-x-4">
+        <button @click="goBack" class="px-4 py-2 bg-gray-200 text-gray-500 rounded-md">
+          {{ $t('ui.cancel') }}
+        </button>
+        <button @click="generateStory" class="px-4 py-2 bg-gradient-to-b from-[#4A90E2] to-[#2871CC] text-white rounded-md">
+          {{ $t('create.createButton') }}
+        </button>
+      </div>
     </div>
   `
 }; 
