@@ -16,10 +16,10 @@ window.IndexPage = {
                         <router-link to="/" class="px-3 py-2 rounded-lg bg-[#4A90E2] text-white font-medium text-sm sm:text-base flex-grow-0">
                             {{ $t('ui.home') }}
                         </router-link>
-                        <router-link to="/create" class="px-3 py-2 rounded-lg text-[#4A90E2] hover:bg-[#F0F9FF] text-sm sm:text-base flex-grow-0">
+                        <router-link v-if="user" to="/create" class="px-3 py-2 rounded-lg text-[#4A90E2] hover:bg-[#F0F9FF] text-sm sm:text-base flex-grow-0">
                             {{ $t('ui.create') }}
                         </router-link>
-                        <router-link to="/my-stories" class="px-3 py-2 rounded-lg text-[#4A90E2] hover:bg-[#F0F9FF] text-sm sm:text-base flex-grow-0">
+                        <router-link v-if="user" to="/my-stories" class="px-3 py-2 rounded-lg text-[#4A90E2] hover:bg-[#F0F9FF] text-sm sm:text-base flex-grow-0">
                             {{ $t('ui.myStories') }}
                         </router-link>
                         <router-link v-if="isAdmin" to="/_admin" class="px-3 py-2 rounded-lg text-[#4A90E2] hover:bg-[#F0F9FF] text-sm sm:text-base flex-grow-0">
@@ -52,7 +52,7 @@ window.IndexPage = {
                             <p class="text-gray-600 mb-6 text-lg">{{ $t('home.tagline') }}</p>
                             
                             <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
-                                <router-link to="/create" class="bg-[#4A90E2] hover:bg-[#5FA0E9] text-white py-3 px-6 rounded-full font-medium transition-colors duration-200 shadow-md flex items-center justify-center">
+                                <router-link v-if="user" to="/create" class="bg-[#4A90E2] hover:bg-[#5FA0E9] text-white py-3 px-6 rounded-full font-medium transition-colors duration-200 shadow-md flex items-center justify-center">
                                     <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>
                                     {{ $t('home.createButton') }}
                                 </router-link>
