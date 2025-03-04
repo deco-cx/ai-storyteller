@@ -147,7 +147,7 @@
         "voiceId": "NOpBlnGInO9m6vDvFkFC",
         "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Luis&accessories[]&clothingColor=9ddadb&face=cheeky,smile,calm&facialHair=full3&facialHairProbability=100&head=noHair2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=ffdfbf",
         "image": "/assets/image/ex2.png",
-        "audio": "/assets/audio/sample/audio-grandpa2.mp3",
+        "audio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-grandpa2.mp3",
         "isPlaying": false,
         "progress": "0%"
       },
@@ -159,7 +159,7 @@
         "voiceId": "S9EY1qVDizdxKWghP5FL",
         "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Kimberly&accessories=glasses&clothingColor=e78276&face=cheeky,smile,smileBig,calm&facialHair[]&head=grayBun&headContrastColor=e8e1e1&skinColor=ae5d29&backgroundColor=ffd5dc,ffdfbf",
         "image": "/assets/image/ex1.webp",
-        "audio": "/assets/audio/sample/audio-grandma.mp3",
+        "audio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-grandma.mp3",
         "isPlaying": false,
         "progress": "0%"
       },
@@ -171,7 +171,7 @@
         "voiceId": "ZqvIIuD5aI9JFejebHiH",
         "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Chase&accessories[]&clothingColor=e279c7&face=cheeky,smile,calm&facialHair[]&facialHairProbability=0&head=long,bun2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=d1d4f9",
         "image": "/assets/image/ex3.webp",
-        "audio": "/assets/audio/sample/audio-aunt.mp3",
+        "audio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-aunt.mp3",
         "isPlaying": false,
         "progress": "0%"
       },
@@ -183,7 +183,7 @@
         "voiceId": "IKne3meq5aSn9XLyUdCD",
         "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Eden&accessories=glasses&clothingColor=78e185,ffcf77&face=cheeky,smile,smileBig,calm&facialHair=full&facialHairProbability=100&head=grayShort&headContrastColor=2c1b18&skinColor=ae5d29&backgroundColor=b6e3f4",
         "image": "/assets/image/ex4.webp",
-        "audio": "/assets/audio/sample/audio-grandpa.mp3",
+        "audio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-grandpa.mp3",
         "isPlaying": false,
         "progress": "0%"
       }
@@ -192,25 +192,25 @@
       { 
         "id": "IKne3meq5aSn9XLyUdCD", 
         "name": "Uncle Joe", 
-        "previewAudio": "/assets/audio/preview/uncle_2.mp3", 
+        "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/uncle_2.mp3", 
         "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Eden&accessories=glasses&clothingColor=78e185,ffcf77&face=cheeky,smile,smileBig,calm&facialHair=full&facialHairProbability=100&head=grayShort&headContrastColor=2c1b18&skinColor=ae5d29&backgroundColor=b6e3f4"
       },
       { 
         "id": "NOpBlnGInO9m6vDvFkFC", 
         "name": "Grandpa Solomon", 
-        "previewAudio": "/assets/audio/preview/grandpa_1.mp3", 
+        "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/grandpa_1.mp3", 
         "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Luis&accessories[]&clothingColor=9ddadb&face=cheeky,smile,calm&facialHair=full3&facialHairProbability=100&head=noHair2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=ffdfbf"
       },
       { 
         "id": "ZqvIIuD5aI9JFejebHiH", 
         "name": "Aunt Dora", 
-        "previewAudio": "/assets/audio/preview/aunt_1.mp3", 
+        "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/aunt_1.mp3", 
         "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Chase&accessories[]&clothingColor=e279c7&face=cheeky,smile,calm&facialHair[]&facialHairProbability=0&head=long,bun2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=d1d4f9"
       },
       { 
         "id": "S9EY1qVDizdxKWghP5FL", 
         "name": "Grandma Beatriz", 
-        "previewAudio": "/assets/audio/preview/grandma_1.mp3", 
+        "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/grandma_1.mp3", 
         "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Kimberly&accessories=glasses&clothingColor=e78276&face=cheeky,smile,smileBig,calm&facialHair[]&head=grayBun&headContrastColor=e8e1e1&skinColor=ae5d29&backgroundColor=ffd5dc,ffdfbf"
       }
     ],
@@ -388,7 +388,7 @@
         "voiceId": "NOpBlnGInO9m6vDvFkFC",
         "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Luis&accessories[]&clothingColor=9ddadb&face=cheeky,smile,calm&facialHair=full3&facialHairProbability=100&head=noHair2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=ffdfbf",
         "image": "/assets/image/ex2.png",
-        "audio": "/assets/audio/sample/audio-grandpa-pt2.mp3",
+        "audio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-grandpa-pt2.mp3",
         "isPlaying": false,
         "progress": "0%"
       },
@@ -400,7 +400,7 @@
         "voiceId": "S9EY1qVDizdxKWghP5FL",
         "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Kimberly&accessories=glasses&clothingColor=e78276&face=cheeky,smile,smileBig,calm&facialHair[]&head=grayBun&headContrastColor=e8e1e1&skinColor=ae5d29&backgroundColor=ffd5dc,ffdfbf",
         "image": "/assets/image/ex1.webp",
-        "audio": "/assets/audio/sample/audio-grandma-pt.mp3",
+        "audio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-grandma-pt.mp3",
         "isPlaying": false,
         "progress": "0%"
       },
@@ -412,7 +412,7 @@
         "voiceId": "ZqvIIuD5aI9JFejebHiH",
         "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Chase&accessories[]&clothingColor=e279c7&face=cheeky,smile,calm&facialHair[]&facialHairProbability=0&head=long,bun2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=d1d4f9",
         "image": "/assets/image/ex3.webp",
-        "audio": "/assets/audio/sample/audio-aunt-pt.mp3",
+        "audio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-aunt-pt.mp3",
         "isPlaying": false,
         "progress": "0%"
       },
@@ -424,7 +424,7 @@
         "voiceId": "IKne3meq5aSn9XLyUdCD",
         "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Eden&accessories=glasses&clothingColor=78e185,ffcf77&face=cheeky,smile,smileBig,calm&facialHair=full&facialHairProbability=100&head=grayShort&headContrastColor=2c1b18&skinColor=ae5d29&backgroundColor=b6e3f4",
         "image": "/assets/image/ex4.webp",
-        "audio": "/assets/audio/sample/audio-grandpa-pt.mp3",
+        "audio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-grandpa-pt.mp3",
         "isPlaying": false,
         "progress": "0%"
       }
@@ -433,25 +433,25 @@
       { 
         "id": "IKne3meq5aSn9XLyUdCD", 
         "name": "Tio José", 
-        "previewAudio": "/assets/audio/preview/uncle_2pt.mp3", 
+        "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/uncle_2pt.mp3", 
         "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Eden&accessories=glasses&clothingColor=78e185,ffcf77&face=cheeky,smile,smileBig,calm&facialHair=full&facialHairProbability=100&head=grayShort&headContrastColor=2c1b18&skinColor=ae5d29&backgroundColor=b6e3f4"
       },
       { 
         "id": "NOpBlnGInO9m6vDvFkFC", 
         "name": "Vô Pedro", 
-        "previewAudio": "/assets/audio/preview/grandpa_1pt.mp3", 
+        "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/grandpa_1pt.mp3", 
         "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Luis&accessories[]&clothingColor=9ddadb&face=cheeky,smile,calm&facialHair=full3&facialHairProbability=100&head=noHair2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=ffdfbf"
       },
       { 
         "id": "ZqvIIuD5aI9JFejebHiH", 
         "name": "Tia Dora", 
-        "previewAudio": "/assets/audio/preview/aunt_1pt.mp3", 
+        "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/aunt_1pt.mp3", 
         "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Chase&accessories[]&clothingColor=e279c7&face=cheeky,smile,calm&facialHair[]&facialHairProbability=0&head=long,bun2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=d1d4f9"
       },
       { 
         "id": "S9EY1qVDizdxKWghP5FL", 
         "name": "Vó Eunice", 
-        "previewAudio": "/assets/audio/preview/grandma_1pt.mp3", 
+        "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/grandma_1pt.mp3", 
         "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Kimberly&accessories=glasses&clothingColor=e78276&face=cheeky,smile,smileBig,calm&facialHair[]&head=grayBun&headContrastColor=e8e1e1&skinColor=ae5d29&backgroundColor=ffd5dc,ffdfbf"
       }
     ],

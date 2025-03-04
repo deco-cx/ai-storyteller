@@ -1171,6 +1171,7 @@ window.CreatePage = {
     },
     
     getPreviewAudioUrl(voice) {
+      return voice.previewAudio;
       if (!voice.previewAudio) return null;
       
       const fileName = voice.previewAudio.split('/').pop();
