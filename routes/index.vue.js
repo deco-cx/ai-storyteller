@@ -324,7 +324,7 @@ window.IndexPage = {
                 
                 <!-- Features Section -->
                 <div class="mt-16 space-y-8">
-                    <h2 class="text-2xl font-bold mb-8 text-center relative">
+                    <h2 class="text-2xl font-bold mb-8 text-center relative bg-white p-4 rounded-xl shadow-sm">
                         <span class="inline-block bg-clip-text text-transparent bg-gradient-to-r from-[#4A90E2] via-[#64B5F6] to-[#81D4FA] mb-3">
                             {{ $t('home.featuresTitle') }}
                         </span>
@@ -439,7 +439,8 @@ window.IndexPage = {
             isAdmin: false,
             refreshKey: 0, // Add a refresh key to force component re-render
             _loggedImages: {}, // Track already logged images
-            _loggedAudios: {} // Track already logged audios
+            _loggedAudios: {}, // Track already logged audios
+            preloadedAudios: {} // Track preloaded audio files
         }
     },
     async mounted() {
@@ -496,15 +497,21 @@ window.IndexPage = {
                     console.log(`Example ${index}: "${example.title}" - Audio: ${example.audio || 'MISSING'}`);
                 });
                 
+                // Preload all audio files
+                this.preloadAudios();
+                
             } else if (window.i18n.translations && window.i18n.translations.en && window.i18n.translations.en.examples) {
                 // Fallback to English if current language doesn't have examples
                 this.examples = window.i18n.translations.en.examples;
                 
                 // Debug: Log examples to check for missing audio properties
-                console.log("Examples loaded (fallback to English):", this.examples.length);
+                console.log("Using English examples fallback:", this.examples.length);
                 this.examples.forEach((example, index) => {
                     console.log(`Example ${index}: "${example.title}" - Audio: ${example.audio || 'MISSING'}`);
                 });
+                
+                // Preload all audio files
+                this.preloadAudios();
                 
             } else {
                 console.error("No examples found in translations");
@@ -692,8 +699,13 @@ window.IndexPage = {
                     };
                 });
                 
+                // Reset tracking objects when examples change
                 this._loggedImages = {};
                 this._loggedAudios = {};
+                
+                // Preload audio files after examples are updated
+                this.preloadAudios();
+                
             } catch (error) {
                 console.error("Error updating examples after translations loaded:", error);
             }
@@ -789,11 +801,24 @@ window.IndexPage = {
             
             // Play this audio
             try {
-                // Make sure the audio source is set correctly
-                const optimizedUrl = this.getOptimizedAudioUrl(example.audio);
-                if (audioElement.src !== optimizedUrl) {
-                    audioElement.src = optimizedUrl;
+                // Check if we need to try different URL formats based on preloaded status
+                let audioUrl = this.getOptimizedAudioUrl(example.audio);
+                const directPath = example.audio.startsWith('/') ? example.audio : '/' + example.audio;
+                const fullPath = window.location.origin + directPath;
+                
+                // Use URL that was successfully preloaded, if available
+                if (this.preloadedAudios[audioUrl]) {
+                    console.log(`Using preloaded optimized URL for "${example.title}"`);
+                } else if (this.preloadedAudios[directPath]) {
+                    console.log(`Using preloaded direct path for "${example.title}"`);
+                    audioUrl = directPath;
+                } else if (this.preloadedAudios[fullPath]) {
+                    console.log(`Using preloaded full path for "${example.title}"`);
+                    audioUrl = fullPath;
                 }
+                
+                // Set the source and play
+                audioElement.src = audioUrl;
                 
                 // Try to play the audio
                 audioElement.play()
@@ -802,35 +827,56 @@ window.IndexPage = {
                         console.log(`Playing audio: "${example.title}"`);
                     })
                     .catch(error => {
-                        console.error(`Error playing audio: "${example.title}"`);
+                        console.error(`Error playing audio: "${example.title}"`, error);
                         
-                        // Try with a direct path if it fails
-                        const directPath = example.audio.startsWith('/') ? example.audio : '/' + example.audio;
-                        audioElement.src = directPath;
-                        
-                        audioElement.play()
-                            .then(() => {
-                                example.isPlaying = true;
-                                console.log(`Playing audio (direct path): "${example.title}"`);
-                            })
-                            .catch(directError => {
-                                // Try one more approach - use the full path
-                                const fullPath = window.location.origin + directPath;
-                                audioElement.src = fullPath;
-                                
-                                audioElement.play()
-                                    .then(() => {
-                                        example.isPlaying = true;
-                                        console.log(`Playing audio (full path): "${example.title}"`);
-                                    })
-                                    .catch(fullPathError => {
+                        // If we haven't tried the direct path yet, try it now
+                        if (audioUrl !== directPath) {
+                            audioElement.src = directPath;
+                            
+                            audioElement.play()
+                                .then(() => {
+                                    example.isPlaying = true;
+                                    console.log(`Playing audio (direct path): "${example.title}"`);
+                                })
+                                .catch(directError => {
+                                    // If we haven't tried the full path yet, try it now
+                                    if (audioUrl !== fullPath && directPath !== fullPath) {
+                                        audioElement.src = fullPath;
+                                        
+                                        audioElement.play()
+                                            .then(() => {
+                                                example.isPlaying = true;
+                                                console.log(`Playing audio (full path): "${example.title}"`);
+                                            })
+                                            .catch(fullPathError => {
+                                                console.error(`Could not play audio: "${example.title}"`);
+                                                alert(`Could not play audio for "${example.title}". The audio file may be missing or inaccessible.`);
+                                            });
+                                    } else {
                                         console.error(`Could not play audio: "${example.title}"`);
                                         alert(`Could not play audio for "${example.title}". The audio file may be missing or inaccessible.`);
-                                    });
-                            });
+                                    }
+                                });
+                        } else if (audioUrl !== fullPath) {
+                            // Try full path directly if we already tried direct path
+                            audioElement.src = fullPath;
+                            
+                            audioElement.play()
+                                .then(() => {
+                                    example.isPlaying = true;
+                                    console.log(`Playing audio (full path): "${example.title}"`);
+                                })
+                                .catch(fullPathError => {
+                                    console.error(`Could not play audio: "${example.title}"`);
+                                    alert(`Could not play audio for "${example.title}". The audio file may be missing or inaccessible.`);
+                                });
+                        } else {
+                            console.error(`Could not play audio: "${example.title}"`);
+                            alert(`Could not play audio for "${example.title}". The audio file may be missing or inaccessible.`);
+                        }
                     });
             } catch (error) {
-                console.error(`Error attempting to play audio: "${example.title}"`);
+                console.error(`Error attempting to play audio: "${example.title}"`, error);
             }
         },
         
@@ -858,6 +904,84 @@ window.IndexPage = {
             console.error(`Failed to load audio: "${title}"`, {
                 source: originalSrc,
                 error: error ? error.message : 'Unknown error'
+            });
+        },
+        preloadAudios() {
+            console.log("Starting audio preloading...");
+            if (!this.examples || this.examples.length === 0) {
+                console.log("No examples to preload audio for");
+                return;
+            }
+            
+            this.examples.forEach((example, index) => {
+                if (!example.audio) {
+                    console.log(`Example ${index}: "${example.title}" - No audio to preload`);
+                    return;
+                }
+                
+                try {
+                    // Get optimized URL
+                    const optimizedUrl = this.getOptimizedAudioUrl(example.audio);
+                    
+                    // Skip if already preloaded
+                    if (this.preloadedAudios[optimizedUrl]) {
+                        console.log(`Audio for "${example.title}" already preloaded`);
+                        return;
+                    }
+                    
+                    // Create a new Audio element for preloading
+                    const audioLoader = new Audio();
+                    
+                    // Set up event listeners
+                    audioLoader.addEventListener('canplaythrough', () => {
+                        console.log(`Audio preloaded successfully: "${example.title}"`);
+                        this.preloadedAudios[optimizedUrl] = true;
+                    });
+                    
+                    audioLoader.addEventListener('error', (error) => {
+                        console.error(`Error preloading audio for "${example.title}":`, error);
+                        
+                        // Try with direct path if optimized path fails
+                        const directPath = example.audio.startsWith('/') ? example.audio : '/' + example.audio;
+                        const directLoader = new Audio();
+                        
+                        directLoader.addEventListener('canplaythrough', () => {
+                            console.log(`Audio preloaded successfully (direct path): "${example.title}"`);
+                            this.preloadedAudios[directPath] = true;
+                        });
+                        
+                        directLoader.addEventListener('error', (directError) => {
+                            console.error(`Error preloading audio (direct path) for "${example.title}":`, directError);
+                            
+                            // Try with full path as last resort
+                            const fullPath = window.location.origin + directPath;
+                            const fullPathLoader = new Audio();
+                            
+                            fullPathLoader.addEventListener('canplaythrough', () => {
+                                console.log(`Audio preloaded successfully (full path): "${example.title}"`);
+                                this.preloadedAudios[fullPath] = true;
+                            });
+                            
+                            fullPathLoader.addEventListener('error', (fullPathError) => {
+                                console.error(`Failed to preload audio for "${example.title}" after all attempts`);
+                            });
+                            
+                            fullPathLoader.src = fullPath;
+                            fullPathLoader.load();
+                        });
+                        
+                        directLoader.src = directPath;
+                        directLoader.load();
+                    });
+                    
+                    // Start loading
+                    audioLoader.src = optimizedUrl;
+                    audioLoader.load();
+                    
+                    console.log(`Started preloading audio for "${example.title}": ${optimizedUrl}`);
+                } catch (error) {
+                    console.error(`Exception while trying to preload audio for "${example.title}":`, error);
+                }
             });
         }
     },
