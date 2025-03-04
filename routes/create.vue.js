@@ -1459,7 +1459,7 @@ window.CreatePage = {
       </div>
 
       <!-- Form Buttons -->
-      <div class="mt-10 flex justify-end space-x-4">
+      <div v-if="screen !== 'loading'" class="mt-10 flex justify-end space-x-4">
         <button @click="goBack" class="px-4 py-2 bg-gray-200 text-gray-500 rounded-md">
           {{ $t('ui.cancel') }}
         </button>
