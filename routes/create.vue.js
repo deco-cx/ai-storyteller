@@ -366,12 +366,21 @@ window.CreatePage = {
           plot: object.plot
         });
         console.log("Using image prompt:", imagePrompt);
-        const imagePromise = sdk.ai.generateImage({
-          model: "openai:dall-e-3",
-                n: 1,
-                size: "1792x1024",
-          prompt: imagePrompt
-        });
+
+        // Iniciar ambas as tarefas em paralelo, mas capturar erros de imagem
+        let imagePromise;
+        try {
+          imagePromise = sdk.ai.generateImage({
+            model: "openai:dall-e-3",
+            n: 1,
+            size: "1792x1024",
+            prompt: imagePrompt
+          });
+        } catch (error) {
+          console.error("Error starting image generation:", error);
+          // Continuamos com a geração da história mesmo se a imagem falhar
+          imagePromise = Promise.resolve({ error: "Failed to initialize image generation" });
+        }
         
         this.taskStatus.story = "loading";
         console.log("Starting story generation...");
@@ -400,45 +409,65 @@ window.CreatePage = {
         console.log("Story generation complete:", this.storyData.story);
         this.taskStatus.story = "done";
         
-        const imageResult = await imagePromise;
-        console.log("Raw image generation result:", JSON.stringify(imageResult));
-        
-        if (imageResult.url) {
-          this.storyImage = imageResult.url;
-        } else if (imageResult.filepath) {
-          this.storyImage = imageResult.filepath;
-        } else if (imageResult.images && imageResult.images.length > 0) {
-          this.storyImage = imageResult.images[0];
-        } else {
-          console.warn("Unexpected image result format:", imageResult);
-          this.storyImage = null;
-        }
-        
-        if (this.storyImage && !this.storyImage.startsWith('http')) {
-          this.storyImage = `https://fs.webdraw.com${this.storyImage.startsWith('/') ? '' : '/'}${this.storyImage}`;
-        }
-        
-        console.log("Final image URL:", this.storyImage);
-        
-        // Set permissions for the image file immediately
+        // Tente obter o resultado da imagem, mas lide com falhas graciosamente
         try {
-          if (imageResult.filepath) {
-            await this.setFilePermissions(imageResult.filepath);
-            console.log("Set permissions for image file:", imageResult.filepath);
-          } else if (imageResult.images && imageResult.images.length > 0) {
-            await this.setFilePermissions(imageResult.images[0]);
-            console.log("Set permissions for image file:", imageResult.images[0]);
+          const imageResult = await imagePromise;
+          console.log("Raw image generation result:", JSON.stringify(imageResult));
+          
+          if (imageResult.error) {
+            throw new Error(imageResult.error);
           }
-        } catch (permError) {
-          console.warn("Error setting permissions for image file:", permError);
+          
+          if (imageResult.url) {
+            this.storyImage = imageResult.url;
+          } else if (imageResult.filepath) {
+            this.storyImage = imageResult.filepath;
+          } else if (imageResult.images && imageResult.images.length > 0) {
+            this.storyImage = imageResult.images[0];
+          } else {
+            console.warn("Unexpected image result format:", imageResult);
+            this.storyImage = null;
+          }
+          
+          if (this.storyImage && !this.storyImage.startsWith('http')) {
+            this.storyImage = `https://fs.webdraw.com${this.storyImage.startsWith('/') ? '' : '/'}${this.storyImage}`;
+          }
+          
+          console.log("Final image URL:", this.storyImage);
+          
+          // Set permissions for the image file immediately
+          try {
+            if (imageResult.filepath) {
+              await this.setFilePermissions(imageResult.filepath);
+              console.log("Set permissions for image file:", imageResult.filepath);
+            } else if (imageResult.images && imageResult.images.length > 0) {
+              await this.setFilePermissions(imageResult.images[0]);
+              console.log("Set permissions for image file:", imageResult.images[0]);
+            }
+          } catch (permError) {
+            console.warn("Error setting permissions for image file:", permError);
+          }
+          
+        } catch (imageError) {
+          console.error("Error generating story image:", imageError);
+          // Use uma imagem aleatória de backup
+          this.storyImage = this.getRandomFallbackImage();
+          // Adiciona uma mensagem para o usuário informando sobre o problema
+          this.$nextTick(() => {
+            if (this.$refs.imageErrorMessage) {
+              this.$refs.imageErrorMessage.textContent = this.$t('errors.imageGenerationFailed');
+              this.$refs.imageErrorMessage.style.display = 'block';
+            }
+          });
         }
         
         this.taskStatus.image = "done";
         
         this.taskStatus.audio = "loading";
         console.log("Starting audio generation...");
-        const audioText = this.storyData.story;
-        
+        //const audioText = this.storyData.story;
+        const audioText = `${this.storyData.title}. ${this.storyData.story}`;
+
         const chosenVoice = this.selectedVoice || this.voices[0];
         
         const audioResponse = await sdk.ai.generateAudio({
@@ -450,7 +479,7 @@ window.CreatePage = {
               model_id: "eleven_turbo_v2_5",
               optimize_streaming_latency: 0,
               voice_settings: {
-                speed: 0.9,
+                speed: 1.0,
                 similarity_boost: 0.85,
                 stability: 0.75,
                 style: 0,
@@ -839,6 +868,21 @@ window.CreatePage = {
       return name.replace(/[^a-zA-Z0-9_\-\s]/g, '_').substring(0, 100);
     },
     
+    getRandomFallbackImage() {
+      // Lista de imagens de fallback disponíveis
+      const fallbackImages = [
+        '/assets/image/bg.png',
+        '/assets/image/ex1.webp',
+        '/assets/image/ex2.png',
+        '/assets/image/ex3.webp',
+        '/assets/image/ex4.webp'
+      ];
+      
+      // Seleciona uma imagem aleatória
+      const randomIndex = Math.floor(Math.random() * fallbackImages.length);
+      return fallbackImages[randomIndex];
+    },
+    
     generateExcerpt(story) {
       if (!story) return '';
       const plainText = story.replace(/<[^>]*>/g, '');
@@ -1083,8 +1127,25 @@ window.CreatePage = {
     getOptimizedImageUrl(url, width, height) {
       if (!url || url.startsWith('data:')) return url;
       
-      // Use the webdraw.com image optimization service
-      return `https://webdraw.com/image-optimize?src=${encodeURIComponent(url)}&width=${width}&height=${height}&fit=cover`;
+      // If the URL already starts with /assets/image, just return it directly
+      if (url.startsWith('/assets/image') || url.startsWith('assets/image')) {
+        return url.startsWith('/') ? url : `/${url}`;
+      }
+      
+      // For local paths, use direct path
+      let processedUrl = url;
+      
+      // If the URL is not absolute and doesn't start with a slash, add a slash
+      if (!url.startsWith('http') && !url.startsWith('/')) {
+        processedUrl = '/' + url;
+      }
+      
+      // Return the direct URL without optimization service
+      if (!processedUrl.startsWith('http')) {
+        return `${window.location.origin}${processedUrl}`;
+      }
+      
+      return processedUrl;
     },
     // Get interest suggestions for the current language
     updateInterestSuggestions() {
@@ -1252,13 +1313,13 @@ window.CreatePage = {
                        task === 'image' ? $t('create.generatingImage') : 
                        $t('create.generatingAudio') }}
                   </span>
-                  <span v-if="task === 'story' && streamingText" class="text-sm text-gray-600 italic truncate max-w-md p-2 bg-[#F0F9FF] rounded-lg border border-[#E1F5FE]">
+                  <span v-if="task === 'story' && streamingText" class="max-md:hidden text-sm text-gray-600 italic truncate max-w-md p-2 bg-[#F0F9FF] rounded-lg border border-[#E1F5FE]">
                     "...{{ streamingText.slice(-50) }}"
                   </span>
-                  <span v-else-if="task === 'plot' && storyData && storyData.title" class="text-sm text-gray-600 italic truncate max-w-md p-2 bg-[#F0F9FF] rounded-lg border border-[#E1F5FE]">
+                  <span v-else-if="task === 'plot' && storyData && storyData.title" class="max-md:hidden text-sm text-gray-600 italic truncate max-w-md p-2 bg-[#F0F9FF] rounded-lg border border-[#E1F5FE]">
                     "{{ storyData.title }}"
                   </span>
-                  <span v-else-if="task === 'image' && taskStatus.image === 'done'" class="text-sm text-gray-600 italic p-2 bg-[#F0F9FF] rounded-lg border border-[#E1F5FE]">
+                  <span v-else-if="task === 'image' && taskStatus.image === 'done'" class="max-md:hidden text-sm text-gray-600 italic p-2 bg-[#F0F9FF] rounded-lg border border-[#E1F5FE]">
                     "{{ $t('create.imageCreated') }}"
                   </span>
                 </div>
@@ -1383,6 +1444,18 @@ window.CreatePage = {
         <div class="bg-white rounded-3xl shadow-lg overflow-hidden border-4 border-[#4A90E2] p-8 transform transition-all duration-300 hover:shadow-xl">
           <div class="space-y-6 mb-6">
             <img v-if="storyImage" :src="getOptimizedImageUrl(storyImage, 800, 400)" alt="Magic Illustration" class="w-full rounded-xl shadow-lg" />
+            <div ref="imageErrorMessage" class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mt-2 hidden">
+              <div class="flex">
+                <div class="flex-shrink-0">
+                  <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.667-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+                <div class="ml-3">
+                  <p class="text-sm text-yellow-700"></p>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="audio-controls mb-8 space-y-4" v-if="audioSource">
@@ -1456,16 +1529,6 @@ window.CreatePage = {
         >
           <source v-if="voice.previewAudio" :src="getPreviewAudioUrl(voice)" type="audio/mpeg">
         </audio>
-      </div>
-
-      <!-- Form Buttons -->
-      <div v-if="screen !== 'loading'" class="mt-10 flex justify-end space-x-4">
-        <button @click="goBack" class="px-4 py-2 bg-gray-200 text-gray-500 rounded-md">
-          {{ $t('ui.cancel') }}
-        </button>
-        <button @click="generateStory" class="px-4 py-2 bg-gradient-to-b from-[#4A90E2] to-[#2871CC] text-white rounded-md">
-          {{ $t('create.createButton') }}
-        </button>
       </div>
     </div>
   `

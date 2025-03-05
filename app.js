@@ -137,8 +137,7 @@ const router = createRouter({
 const app = createApp({
     data() {
         return {
-            currentLanguage: currentLanguage,
-            isLoading: !window.translationsLoaded
+            currentLanguage: currentLanguage
         };
     },
     mounted() {
@@ -156,28 +155,16 @@ const app = createApp({
             }, 0);
         });
         
-        // Listen for translations loaded event
+        // Listen for translations loaded event but only for notification
         window.eventBus.on('translations-loaded', () => {
-            this.isLoading = false;
+            // Just notify that translations are loaded
+            console.log("Translations loaded in app");
         });
-        
-        // If translations are already loaded, update the loading state
-        if (window.translationsLoaded) {
-            this.isLoading = false;
-        }
     },
     template: `
         <div>
-            <!-- Loading Screen -->
-            <div v-if="isLoading" class="fixed inset-0 bg-[#FFF9F6] flex items-center justify-center z-50">
-                <div class="text-center">
-                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#00B7EA] mb-4"></div>
-                    <p class="text-xl text-[#00B7EA] font-medium">Loading...</p>
-                </div>
-            </div>
-            
             <!-- Main App Content -->
-            <router-view v-show="!isLoading" :key="currentLanguage"></router-view>
+            <router-view :key="currentLanguage"></router-view>
         </div>
     `
 });

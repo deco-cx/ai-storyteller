@@ -156,7 +156,13 @@ window.IndexPage = {
                                     <div class="flex items-center gap-3 w-full mb-4">
                                         <button @click="toggleAudio(examples[0])" 
                                                 class="bg-[#2871CC] hover:bg-[#3D82D6] text-white p-3 rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0 transition-colors duration-200 shadow-md">
-                                            <i :class="examples[0].isPlaying ? 'fa-solid fa-pause text-lg' : 'fa-solid fa-play text-lg'"></i>
+                                            <!-- Spinner de carregamento -->
+                                            <svg v-if="examples[0].loading" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <!-- Ícones de play/pause -->
+                                            <i v-else :class="examples[0].isPlaying ? 'fa-solid fa-pause text-lg' : 'fa-solid fa-play text-lg'"></i>
                                         </button>
                                         <div class="flex-1 h-4 bg-gray-200 rounded-full relative">
                                             <div class="absolute inset-0 h-4 rounded-full bg-[#2871CC]" 
@@ -271,7 +277,13 @@ window.IndexPage = {
                                                 (index + 1) % 4 === 3 ? 'bg-[#81D4FA] hover:bg-[#99E0FF]' : ''
                                             ]"
                                             class="text-white p-3 rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0 transition-colors duration-200 shadow-md">
-                                        <i :class="example.isPlaying ? 'fa-solid fa-pause text-lg' : 'fa-solid fa-play text-lg'"></i>
+                                        <!-- Spinner de carregamento -->
+                                        <svg v-if="example.loading" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        <!-- Ícones de play/pause -->
+                                        <i v-else :class="example.isPlaying ? 'fa-solid fa-pause text-lg' : 'fa-solid fa-play text-lg'"></i>
                                     </button>
                                     <div class="flex-1 h-4 bg-gray-200 rounded-full relative">
                                         <div class="absolute inset-0 h-4 rounded-full" 
@@ -519,13 +531,18 @@ window.IndexPage = {
             }
             
             // Ensure all examples have the required properties
-            this.examples = this.examples.map(example => {
+            this.examples = this.examples.map((example, index) => {
+                // Manter as imagens originais de cada exemplo em vez de atribuir com base no índice
                 return {
                     ...example,
                     isPlaying: false,
+                    loading: false,
                     progress: '0%',
                     // Ensure audio property exists
-                    audio: example.audio || null
+                    audio: example.audio || null,
+                    // Não modificar as imagens, apenas garantir que existam
+                    image: example.image || `/assets/image/ex${index + 1}${index === 1 ? '.png' : '.webp'}`,
+                    coverImage: example.coverImage || example.image || `/assets/image/ex${index + 1}${index === 1 ? '.png' : '.webp'}`
                 };
             });
             
@@ -689,13 +706,18 @@ window.IndexPage = {
                 }
                 
                 // Ensure all examples have the required properties
-                this.examples = this.examples.map(example => {
+                this.examples = this.examples.map((example, index) => {
+                    // Manter as imagens originais de cada exemplo em vez de atribuir com base no índice
                     return {
                         ...example,
                         isPlaying: false,
+                        loading: false,
                         progress: '0%',
                         // Ensure audio property exists
-                        audio: example.audio || null
+                        audio: example.audio || null,
+                        // Não modificar as imagens, apenas garantir que existam
+                        image: example.image || `/assets/image/ex${index + 1}${index === 1 ? '.png' : '.webp'}`,
+                        coverImage: example.coverImage || example.image || `/assets/image/ex${index + 1}${index === 1 ? '.png' : '.webp'}`
                     };
                 });
                 
@@ -717,7 +739,19 @@ window.IndexPage = {
         getOptimizedImageUrl(url, width, height) {
             if (!url || url.startsWith('data:')) return url;
             
-            // Ensure the URL has the correct format
+            // If the URL already starts with /assets/image, just return it directly
+            if (url.startsWith('/assets/image') || url.startsWith('assets/image')) {
+                return url.startsWith('/') ? url : `/${url}`;
+            }
+            
+            // If the URL contains a filename that matches our example images, use direct path
+            const filename = url.split('/').pop();
+            if (filename && (filename.startsWith('ex1') || filename.startsWith('ex2') || 
+                           filename.startsWith('ex3') || filename.startsWith('ex4'))) {
+                return `/assets/image/${filename}`;
+            }
+            
+            // For other URLs, keep the original behavior but with fallback
             let processedUrl = url;
             
             // If the URL is not absolute and doesn't start with a slash, add a slash
@@ -725,25 +759,12 @@ window.IndexPage = {
                 processedUrl = '/' + url;
             }
             
-            // For local development, use ai-storytest.webdraw.app as the base URL
-            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                // If it's a local file path, prefix with the test site URL
-                if (!processedUrl.startsWith('http')) {
-                    processedUrl = `https://ai-storytest.webdraw.app${processedUrl}`;
-                }
-                // Use the webdraw.com image optimization service for testing
-                return `https://webdraw.com/image-optimize?src=${encodeURIComponent(processedUrl)}&width=${width}&height=${height}&fit=cover`;
-            }
-            
-            // For production, if it's a local file path (including /assets/...), add the current site's origin
+            // Return the direct URL without optimization service
             if (!processedUrl.startsWith('http')) {
-                // This will correctly handle paths like "/assets/image/ex2.png"
-                processedUrl = `${window.location.origin}${processedUrl}`;
+                return `${window.location.origin}${processedUrl}`;
             }
             
-            // Use the webdraw.com image optimization service for production
-            const finalUrl = `https://webdraw.com/image-optimize?src=${encodeURIComponent(processedUrl)}&width=${width}&height=${height}&fit=cover`;
-            return finalUrl;
+            return processedUrl;
         },
         getOptimizedAudioUrl(url) {
             // If the URL is empty, a data URL, or null, return it as is
@@ -769,6 +790,12 @@ window.IndexPage = {
             return '/' + url;
         },
         toggleAudio(example) {
+            // Prevenir cliques múltiplos durante o carregamento
+            if (example.loading) {
+                console.log(`Ignoring click while audio is loading for "${example.title}"`);
+                return;
+            }
+            
             // Find the audio element
             const audioId = 'audio-' + this.examples.indexOf(example);
             const audioElement = document.getElementById(audioId);
@@ -781,6 +808,13 @@ window.IndexPage = {
             // If this example is already playing, pause it
             if (example.isPlaying) {
                 audioElement.pause();
+                
+                // Pausar também o elemento de áudio temporário, se existir
+                if (example.tempAudio) {
+                    example.tempAudio.pause();
+                    // Não excluímos a referência para poder continuar de onde parou
+                }
+                
                 example.isPlaying = false;
                 return;
             }
@@ -797,29 +831,75 @@ window.IndexPage = {
                 }
             });
             
+            // Ativar o indicador de carregamento
+            example.loading = true;
+            
             // Play this audio
             try {
                 // Use the audio URL directly - example audio paths in translations.json are absolute
                 const audioUrl = example.audio;
                 
-                // Set crossOrigin attribute if needed
-                if (audioUrl.startsWith('http') && !audioUrl.includes(window.location.hostname)) {
-                    audioElement.crossOrigin = "anonymous";
+                // Exibir feedback visual de carregamento
+                example.loading = true;
+                
+                // Verificar em todas as fontes disponíveis de áudio pré-carregado
+                // 1. Verificar áudios pré-carregados globalmente (durante carregamento inicial)
+                const globalPreloadedAudio = window._preloadedAudios && window._preloadedAudios[audioUrl];
+                // 2. Verificar áudios pré-carregados pelo componente
+                const componentPreloadedAudio = this.preloadedAudios[audioUrl];
+                
+                // Escolher a melhor fonte disponível
+                let bestAudioSource = null;
+                if (globalPreloadedAudio && globalPreloadedAudio.loaded && globalPreloadedAudio.element) {
+                    console.log(`Using globally preloaded audio for "${example.title}"`);
+                    bestAudioSource = globalPreloadedAudio;
+                } else if (componentPreloadedAudio && componentPreloadedAudio.loaded && componentPreloadedAudio.element) {
+                    console.log(`Using component preloaded audio for "${example.title}"`);
+                    bestAudioSource = componentPreloadedAudio;
                 }
                 
-                // Set the source
-                audioElement.src = audioUrl;
-                
-                // Try to play the audio
-                audioElement.play()
-                    .then(() => {
-                        example.isPlaying = true;
-                        console.log(`Playing audio: "${example.title}"`);
-                    })
-                    .catch(error => {
-                        console.error(`Error playing audio: "${example.title}"`, error);
-                        alert(`Could not play audio for "${example.title}". The audio file may be missing or inaccessible.`);
-                    });
+                // Verificar se o elemento pré-carregado está disponível e funcional
+                if (bestAudioSource) {
+                    // Pausar o elemento pré-carregado e copiar seu conteúdo para o elemento de UI
+                    bestAudioSource.element.pause();
+                    audioElement.src = audioUrl;
+                    
+                    // Tentar reproduzir o áudio de UI com os mesmos dados do pré-carregado
+                    audioElement.currentTime = 0;
+                    audioElement.play()
+                        .then(() => {
+                            example.isPlaying = true;
+                            console.log(`Playing audio from preloaded source: "${example.title}"`);
+                            example.loading = false;
+                        })
+                        .catch(error => {
+                            console.error(`Error playing preloaded audio: "${example.title}"`, error);
+                            this.handleAudioError(example, audioElement, audioUrl, error);
+                        });
+                } else {
+                    // Nenhuma fonte pré-carregada disponível, carregando diretamente
+                    console.log(`No preloaded audio available for "${example.title}", loading directly`);
+                    
+                    // Set crossOrigin attribute if needed
+                    if (audioUrl.startsWith('http') && !audioUrl.includes(window.location.hostname)) {
+                        audioElement.crossOrigin = "anonymous";
+                    }
+                    
+                    // Set the source
+                    audioElement.src = audioUrl;
+                    
+                    // Try to play the audio
+                    audioElement.play()
+                        .then(() => {
+                            example.isPlaying = true;
+                            example.loading = false;
+                            console.log(`Playing audio: "${example.title}"`);
+                        })
+                        .catch(error => {
+                            console.error(`Error playing audio: "${example.title}"`, error);
+                            this.handleAudioError(example, audioElement, audioUrl, error);
+                        });
+                }
             } catch (error) {
                 console.error(`Error attempting to play audio: "${example.title}"`, error);
             }
@@ -852,11 +932,18 @@ window.IndexPage = {
             });
         },
         preloadAudios() {
-            console.log("Starting audio preloading...");
+            console.log("Starting audio preloading in component...");
             if (!this.examples || this.examples.length === 0) {
                 console.log("No examples to preload audio for");
                 return;
             }
+            
+            // Verificar se existem áudios pré-carregados durante o carregamento inicial
+            const globalPreloadedAudios = window._preloadedAudios || {};
+            console.log("Checking for globally preloaded audios:", Object.keys(globalPreloadedAudios).length);
+            
+            // Criar um array para armazenar promessas de carregamento
+            const loadPromises = [];
             
             this.examples.forEach((example, index) => {
                 if (!example.audio) {
@@ -868,7 +955,17 @@ window.IndexPage = {
                     // Use original audio URL as is - all example audio paths in translations.json are absolute
                     const audioUrl = example.audio;
                     
-                    // Skip if already preloaded
+                    // Verificar se o áudio já foi pré-carregado durante o carregamento inicial da página
+                    if (globalPreloadedAudios[audioUrl] && globalPreloadedAudios[audioUrl].loaded) {
+                        console.log(`Using globally preloaded audio for "${example.title}"`);
+                        this.preloadedAudios[audioUrl] = {
+                            loaded: true,
+                            element: globalPreloadedAudios[audioUrl].element
+                        };
+                        return;
+                    }
+                    
+                    // Skip if already preloaded in the component
                     if (this.preloadedAudios[audioUrl]) {
                         console.log(`Audio for "${example.title}" already preloaded`);
                         return;
@@ -877,15 +974,44 @@ window.IndexPage = {
                     // Create a new Audio element for preloading
                     const audioLoader = new Audio();
                     
-                    // Set up event listeners
-                    audioLoader.addEventListener('canplaythrough', () => {
-                        console.log(`Audio preloaded successfully: "${example.title}"`);
-                        this.preloadedAudios[audioUrl] = true;
+                    // Criar uma promessa para o carregamento deste áudio
+                    const loadPromise = new Promise((resolve, reject) => {
+                        // Set up event listeners
+                        audioLoader.addEventListener('canplaythrough', () => {
+                            console.log(`Audio preloaded successfully: "${example.title}"`);
+                            this.preloadedAudios[audioUrl] = {
+                                loaded: true,
+                                element: audioLoader
+                            };
+                            resolve(audioUrl);
+                        }, { once: true });
+                        
+                        audioLoader.addEventListener('error', (error) => {
+                            console.error(`Error preloading audio for "${example.title}":`, error);
+                            // Ainda armazenamos o elemento, mas marcamos como falha
+                            this.preloadedAudios[audioUrl] = {
+                                loaded: false,
+                                element: null,
+                                error: error
+                            };
+                            reject(error);
+                        }, { once: true });
+                        
+                        // Timeout para evitar bloqueio indefinido
+                        setTimeout(() => {
+                            if (!this.preloadedAudios[audioUrl]?.loaded) {
+                                console.warn(`Timeout preloading audio for "${example.title}"`);
+                                this.preloadedAudios[audioUrl] = {
+                                    loaded: false,
+                                    element: audioLoader,
+                                    error: 'timeout'
+                                };
+                                resolve(audioUrl); // Resolvemos de qualquer forma para não bloquear outros
+                            }
+                        }, 10000); // 10 segundos de timeout
                     });
                     
-                    audioLoader.addEventListener('error', (error) => {
-                        console.error(`Error preloading audio for "${example.title}":`, error);
-                    });
+                    loadPromises.push(loadPromise);
                     
                     // Set crossOrigin if it's from a different domain
                     if (audioUrl.startsWith('http') && !audioUrl.includes(window.location.hostname)) {
@@ -901,6 +1027,59 @@ window.IndexPage = {
                     console.error(`Exception while trying to preload audio for "${example.title}":`, error);
                 }
             });
+            
+            // Aguardar que todos os áudios sejam carregados (ou falhem)
+            Promise.allSettled(loadPromises).then((results) => {
+                console.log("All audio preloading attempts completed:", 
+                    results.filter(r => r.status === 'fulfilled').length, "successful,",
+                    results.filter(r => r.status === 'rejected').length, "failed");
+            });
+        },
+        handleAudioError(example, audioElement, audioUrl, error) {
+            example.loading = false;
+            
+            // Se for um erro de interrupção, apenas mostramos o feedback e não fazemos mais nada
+            if (error && error.name === 'AbortError') {
+                console.log(`Audio playback was interrupted for "${example.title}" - likely due to multiple clicks`);
+                return;
+            }
+            
+            // Tentar uma segunda alternativa usando um elemento de áudio temporário
+            console.log(`Trying alternative playback method for "${example.title}"`);
+            
+            try {
+                const tempAudio = new Audio(audioUrl);
+                tempAudio.play()
+                    .then(() => {
+                        // Se conseguir reproduzir, usamos este elemento
+                        console.log(`Playing audio via alternative method: "${example.title}"`);
+                        example.isPlaying = true;
+                        
+                        // Adicionar evento para atualizar o progresso
+                        tempAudio.addEventListener('timeupdate', (event) => {
+                            if (tempAudio && !isNaN(tempAudio.duration)) {
+                                const percentage = (tempAudio.currentTime / tempAudio.duration) * 100;
+                                example.progress = percentage + '%';
+                            }
+                        });
+                        
+                        // Adicionar evento para quando o áudio terminar
+                        tempAudio.addEventListener('ended', () => {
+                            example.isPlaying = false;
+                            example.progress = '0%';
+                        });
+                        
+                        // Armazenar a referência para poder pausar depois
+                        example.tempAudio = tempAudio;
+                    })
+                    .catch(fallbackError => {
+                        console.error(`Alternative playback also failed for "${example.title}"`, fallbackError);
+                        example.isPlaying = false;
+                    });
+            } catch (finalError) {
+                console.error(`All audio playback attempts failed for "${example.title}"`, finalError);
+                example.isPlaying = false;
+            }
         }
     },
     beforeUnmount() {
@@ -924,14 +1103,36 @@ window.IndexPage = {
         // Stop any playing audio
         this.examples.forEach(example => {
             if (example.isPlaying) {
+                // Parar áudio no elemento padrão
                 const audioId = 'audio-' + this.examples.indexOf(example);
                 const audioElement = document.getElementById(audioId);
                 if (audioElement) {
                     audioElement.pause();
-                    example.isPlaying = false;
                 }
+                
+                // Parar áudio no elemento temporário, se existir
+                if (example.tempAudio) {
+                    example.tempAudio.pause();
+                    example.tempAudio = null;
+                }
+                
+                example.isPlaying = false;
+            }
+            
+            // Limpar status visual
+            example.loading = false;
+            example.progress = '0%';
+        });
+        
+        // Limpar referências a áudios pré-carregados
+        Object.values(this.preloadedAudios).forEach(audio => {
+            if (audio && audio.element) {
+                audio.element.pause();
+                audio.element.src = '';
+                audio.element = null;
             }
         });
+        this.preloadedAudios = {};
     },
     computed: {
         // Add any computed properties if needed

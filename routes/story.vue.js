@@ -152,15 +152,29 @@ window.StoryPage = {
             story: null,
             isPlaying: false,
             audioProgress: 0,
-            fileUrl: null,
-            storyIndex: null,
-            BASE_FS_URL: "https://fs.webdraw.com",
+            exampleAddedMessage: null,
             isAdmin: false,
+            
+            // Check if we're running in the SDK environment
+            sdkAvailable: sdk && typeof sdk.fs?.read === 'function',
+            BASE_FS_URL: "https://fs.webdraw.com", // Base URL for file system access
+            translationsFileExists: false,
             addingAsExample: false,
-            exampleAddedMessage: '',
-            adminCheckInterval: null,
-            sdkAvailable: false,
-            translationsFileExists: false
+            adminCheckInterval: null
+        }
+    },
+    computed: {
+        fileUrl() {
+            // Get the file parameter from the route query
+            return this.$route.query.file || null;
+        },
+        storyIndex() {
+            // Get the index parameter from the route query
+            return this.$route.query.index !== undefined ? this.$route.query.index : null;
+        },
+        storyId() {
+            // Get the optional ID parameter for additional matching
+            return this.$route.query.id || null;
         }
     },
     watch: {
@@ -356,7 +370,45 @@ window.StoryPage = {
                             if (isNaN(index) || index < 0 || index >= data.generations.length) {
                                 throw new Error(this.$t('story.invalidIndex'));
                             }
-                            storyData = data.generations[index];
+                            
+                            // Get the story by index
+                            const candidateStory = data.generations[index];
+                            
+                            // If we have a storyId, verify the index points to the correct story
+                            if (this.storyId) {
+                                console.log("Verifying story ID:", this.storyId);
+                                // Create the same format ID as in the my-stories component
+                                const storyTitle = candidateStory.title || "untitled";
+                                const storyTimestamp = candidateStory.createdAt || 0;
+                                const candidateId = `${storyTitle}-${storyTimestamp}`;
+                                
+                                // If IDs don't match, try to find the correct story by ID
+                                if (candidateId !== this.storyId) {
+                                    console.warn("Story ID mismatch! Index might be incorrect");
+                                    
+                                    // Try to find the story by ID in the generations array
+                                    const correctStory = data.generations.find(story => {
+                                        const title = story.title || "untitled";
+                                        const timestamp = story.createdAt || 0;
+                                        const id = `${title}-${timestamp}`;
+                                        return id === this.storyId;
+                                    });
+                                    
+                                    if (correctStory) {
+                                        console.log("Found correct story by ID");
+                                        storyData = correctStory;
+                                    } else {
+                                        console.log("Could not find story by ID, using index anyway");
+                                        storyData = candidateStory;
+                                    }
+                                } else {
+                                    console.log("Story ID verification successful");
+                                    storyData = candidateStory;
+                                }
+                            } else {
+                                // No ID provided, just use the index
+                                storyData = candidateStory;
+                            }
                         } else {
                             // Direct story JSON file
                             console.log("Loading story from individual JSON file");
@@ -392,7 +444,45 @@ window.StoryPage = {
                         if (isNaN(index) || index < 0 || index >= data.generations.length) {
                             throw new Error(this.$t('story.invalidIndex'));
                         }
-                        storyData = data.generations[index];
+                        
+                        // Get the story by index
+                        const candidateStory = data.generations[index];
+                        
+                        // If we have a storyId, verify the index points to the correct story
+                        if (this.storyId) {
+                            console.log("Verifying story ID:", this.storyId);
+                            // Create the same format ID as in the my-stories component
+                            const storyTitle = candidateStory.title || "untitled";
+                            const storyTimestamp = candidateStory.createdAt || 0;
+                            const candidateId = `${storyTitle}-${storyTimestamp}`;
+                            
+                            // If IDs don't match, try to find the correct story by ID
+                            if (candidateId !== this.storyId) {
+                                console.warn("Story ID mismatch! Index might be incorrect");
+                                
+                                // Try to find the story by ID in the generations array
+                                const correctStory = data.generations.find(story => {
+                                    const title = story.title || "untitled";
+                                    const timestamp = story.createdAt || 0;
+                                    const id = `${title}-${timestamp}`;
+                                    return id === this.storyId;
+                                });
+                                
+                                if (correctStory) {
+                                    console.log("Found correct story by ID");
+                                    storyData = correctStory;
+                                } else {
+                                    console.log("Could not find story by ID, using index anyway");
+                                    storyData = candidateStory;
+                                }
+                            } else {
+                                console.log("Story ID verification successful");
+                                storyData = candidateStory;
+                            }
+                        } else {
+                            // No ID provided, just use the index
+                            storyData = candidateStory;
+                        }
                     } else {
                         // Direct story JSON file
                         console.log("Loading story from individual JSON file");
@@ -402,12 +492,18 @@ window.StoryPage = {
                 
                 // Process the story data
                 this.story = {
-                    ...storyData,
-                    // Ensure all required fields exist
-                    title: storyData.title || this.$t('story.untitledStory'),
-                    story: this.formatStoryText(storyData.story || (storyData.chapters ? storyData.chapters.map(ch => ch.story).join("\n\n") : this.$t('story.noStoryContent'))),
-                    coverUrl: storyData.coverUrl || "https://webdraw.com/image-optimize?src=https%3A%2F%2Fai-storyteller.webdraw.app%2F.webdraw%2Fassets%2Ficon-b8a9e1bd-cf34-46f5-8f72-a98c365e9b09.png&width=200&height=200&fit=cover",
-                    audioUrl: storyData.audioUrl || null
+                    id: storyData.id || null,
+                    title: storyData.title || "",
+                    content: storyData.content || "",
+                    story: storyData.story || "",
+                    audioUrl: storyData.audioUrl || null,
+                    coverUrl: storyData.coverUrl || "/assets/image/bg.png",
+                    createdAt: storyData.createdAt || new Date().toISOString(),
+                    updatedAt: storyData.updatedAt || new Date().toISOString(),
+                    isNew: storyData.isNew || false,
+                    childName: storyData.childName || "",
+                    themes: storyData.themes || storyData.interests || "",
+                    voice: storyData.voice || ""
                 };
                 
                 // Fix URLs for coverUrl and audioUrl if they're relative paths
@@ -730,8 +826,25 @@ window.StoryPage = {
         getOptimizedImageUrl(url, width, height) {
             if (!url || url.startsWith('data:')) return url;
             
-            // Use the webdraw.com image optimization service
-            return `https://webdraw.com/image-optimize?src=${encodeURIComponent(url)}&width=${width}&height=${height}&fit=cover`;
+            // If the URL already starts with /assets/image, just return it directly
+            if (url.startsWith('/assets/image') || url.startsWith('assets/image')) {
+                return url.startsWith('/') ? url : `/${url}`;
+            }
+            
+            // For local paths, use direct path
+            let processedUrl = url;
+            
+            // If the URL is not absolute and doesn't start with a slash, add a slash
+            if (!url.startsWith('http') && !url.startsWith('/')) {
+                processedUrl = '/' + url;
+            }
+            
+            // Return the direct URL without optimization service
+            if (!processedUrl.startsWith('http')) {
+                return `${window.location.origin}${processedUrl}`;
+            }
+            
+            return processedUrl;
         }
     }
-}; 
+};

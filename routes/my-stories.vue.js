@@ -748,24 +748,43 @@ window.MyStoriesPage = {
                     query: { file: story._filePath }
                 });
             } else {
-                console.log("Story does not have a direct file path, using index approach");
+                console.log("Story does not have a direct file path");
                 
-                // For legacy stories stored in generations.json, use the index approach
-                // Store the index in localStorage for backward compatibility
+                // Store the story object in localStorage
                 localStorage.setItem("currentStory", JSON.stringify(story));
                 
-                // Find the index of the story in the generations array
-                const index = this.generations.indexOf(story);
-                console.log("Story index in generations array:", index);
+                // Create a unique story identifier using title and timestamp to avoid confusion
+                const storyTitle = story.title || "untitled";
+                const storyTimestamp = story.createdAt || Date.now();
+                const storyId = `${storyTitle}-${storyTimestamp}`;
                 
-                // Navigate to the story page with generations.json and index parameter using Vue Router
-                this.$router.push({
-                    path: '/story',
-                    query: { 
-                        file: "~/AI Storyteller/generations.json",
-                        index: index 
-                    }
-                });
+                // Find the exact story in the array by comparing titles and timestamps
+                const matchingStories = this.generations.filter(s => 
+                    s.title === story.title && 
+                    s.createdAt === story.createdAt
+                );
+                
+                // If we found exactly one match, use its index
+                if (matchingStories.length === 1) {
+                    const index = this.generations.indexOf(matchingStories[0]);
+                    console.log(`Found exact story match at index ${index}`);
+                    
+                    // Navigate to the story page with the index as a parameter
+                    this.$router.push({
+                        path: '/story',
+                        query: { 
+                            file: "~/AI Storyteller/generations.json",
+                            index: index,
+                            id: storyId // Add an additional identifier to help verify
+                        }
+                    });
+                } else {
+                    // If we couldn't find an exact match, fall back to the direct story data
+                    console.log("Could not find exact story match, using localStorage data");
+                    this.$router.push({
+                        path: '/story'
+                    });
+                }
             }
         },
         deleteStory(index) {
@@ -1078,8 +1097,25 @@ window.MyStoriesPage = {
         getOptimizedImageUrl(url, width, height) {
             if (!url || url.startsWith('data:')) return url;
             
-            // Use the webdraw.com image optimization service
-            return `https://webdraw.com/image-optimize?src=${encodeURIComponent(url)}&width=${width}&height=${height}&fit=cover`;
+            // If the URL already starts with /assets/image, just return it directly
+            if (url.startsWith('/assets/image') || url.startsWith('assets/image')) {
+                return url.startsWith('/') ? url : `/${url}`;
+            }
+            
+            // For local paths, use direct path
+            let processedUrl = url;
+            
+            // If the URL is not absolute and doesn't start with a slash, add a slash
+            if (!url.startsWith('http') && !url.startsWith('/')) {
+                processedUrl = '/' + url;
+            }
+            
+            // Return the direct URL without optimization service
+            if (!processedUrl.startsWith('http')) {
+                return `${window.location.origin}${processedUrl}`;
+            }
+            
+            return processedUrl;
         }
     }
 }; 
