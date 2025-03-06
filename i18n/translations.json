@@ -43,7 +43,8 @@
       "noExamples": "No example stories yet",
       "checkBackSoon": "Check back soon for example stories!",
       "createFromThis": "Create from this",
-      "narratorDescription": "Select from our charming narrators to bring the story to life with their unique voices."
+      "narratorDescription": "Select from our charming narrators to bring the story to life with their unique voices.",
+      "tryItNow": "Try it now for free. Takes 30 seconds!"
     },
     "login": {
       "title": "Login",
@@ -62,6 +63,7 @@
       "myStoriesButton": "My stories",
       "signInToCreate": "Sign in to create a story",
       "freeStories": "3 stories for free",
+      "tryItNow": "Try it now for free. Takes 30 seconds!",
       "examples": "Examples",
       "result": "Result",
       "listenAgain": "Listen Again",
@@ -103,7 +105,7 @@
       "voiceSelected": "Voice selected: {name}",
       "voiceRequired": "Please select a voice to continue",
       "createButton": "Create new story!",
-      "generatingTitle": "Creating Your Story",
+      "generatingTitle": "Creating Your Story...",
       "generatingPlot": "Creating Plot",
       "generatingStory": "Writing Story",
       "generatingImage": "Creating Illustration",
@@ -189,28 +191,28 @@
       }
     ],
     "voices": [
-      { 
-        "id": "IKne3meq5aSn9XLyUdCD", 
-        "name": "Uncle Joe", 
-        "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/uncle_2.mp3", 
+      {
+        "id": "IKne3meq5aSn9XLyUdCD",
+        "name": "Uncle Joe",
+        "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/uncle_2.mp3",
         "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Eden&accessories=glasses&clothingColor=78e185,ffcf77&face=cheeky,smile,smileBig,calm&facialHair=full&facialHairProbability=100&head=grayShort&headContrastColor=2c1b18&skinColor=ae5d29&backgroundColor=b6e3f4"
       },
-      { 
-        "id": "NOpBlnGInO9m6vDvFkFC", 
-        "name": "Grandpa Solomon", 
-        "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/grandpa_1.mp3", 
+      {
+        "id": "NOpBlnGInO9m6vDvFkFC",
+        "name": "Grandpa Solomon",
+        "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/grandpa_1.mp3",
         "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Luis&accessories[]&clothingColor=9ddadb&face=cheeky,smile,calm&facialHair=full3&facialHairProbability=100&head=noHair2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=ffdfbf"
       },
-      { 
-        "id": "ZqvIIuD5aI9JFejebHiH", 
-        "name": "Aunt Dora", 
-        "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/aunt_1.mp3", 
+      {
+        "id": "ZqvIIuD5aI9JFejebHiH",
+        "name": "Aunt Dora",
+        "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/aunt_1.mp3",
         "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Chase&accessories[]&clothingColor=e279c7&face=cheeky,smile,calm&facialHair[]&facialHairProbability=0&head=long,bun2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=d1d4f9"
       },
-      { 
-        "id": "S9EY1qVDizdxKWghP5FL", 
-        "name": "Grandma Beatriz", 
-        "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/grandma_1.mp3", 
+      {
+        "id": "S9EY1qVDizdxKWghP5FL",
+        "name": "Grandma Beatriz",
+        "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/grandma_1.mp3",
         "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Kimberly&accessories=glasses&clothingColor=e78276&face=cheeky,smile,smileBig,calm&facialHair[]&head=grayBun&headContrastColor=e8e1e1&skinColor=ae5d29&backgroundColor=ffd5dc,ffdfbf"
       }
     ],
@@ -284,7 +286,8 @@
       "noExamples": "Ainda não há histórias de exemplo",
       "checkBackSoon": "Volte em breve para ver histórias de exemplo!",
       "createFromThis": "Criar a partir deste",
-      "narratorDescription": "Selecione entre nossos encantadores narradores para dar vida à história com suas vozes únicas."
+      "narratorDescription": "Selecione entre nossos encantadores narradores para dar vida à história com suas vozes únicas.",
+      "tryItNow": "Tente agora gratuitamente. Leva 30 segundos!"
     },
     "login": {
       "title": "Entrar",
@@ -303,6 +306,7 @@
       "myStoriesButton": "Minhas histórias",
       "signInToCreate": "Faça login para criar uma história",
       "freeStories": "3 histórias grátis",
+      "tryItNow": "Teste agora gratuitamente. Leva 30 segundos!",
       "examples": "Exemplos",
       "result": "Resultado",
       "listenAgain": "Ouvir Novamente",
@@ -344,7 +348,7 @@
       "voiceSelected": "Voz selecionada: {name}",
       "voiceRequired": "Por favor, selecione uma voz para continuar",
       "createButton": "Criar nova história!",
-      "generatingTitle": "Criando Sua História",
+      "generatingTitle": "Criando Sua História...",
       "generatingPlot": "Criando Enredo",
       "generatingStory": "Escrevendo História",
       "generatingImage": "Criando Ilustração",
@@ -430,28 +434,28 @@
       }
     ],
     "voices": [
-      { 
-        "id": "IKne3meq5aSn9XLyUdCD", 
-        "name": "Tio José", 
-        "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/uncle_2pt.mp3", 
+      {
+        "id": "IKne3meq5aSn9XLyUdCD",
+        "name": "Tio José",
+        "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/uncle_2pt.mp3",
         "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Eden&accessories=glasses&clothingColor=78e185,ffcf77&face=cheeky,smile,smileBig,calm&facialHair=full&facialHairProbability=100&head=grayShort&headContrastColor=2c1b18&skinColor=ae5d29&backgroundColor=b6e3f4"
       },
-      { 
-        "id": "NOpBlnGInO9m6vDvFkFC", 
-        "name": "Vô Pedro", 
-        "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/grandpa_1pt.mp3", 
+      {
+        "id": "NOpBlnGInO9m6vDvFkFC",
+        "name": "Vô Pedro",
+        "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/grandpa_1pt.mp3",
         "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Luis&accessories[]&clothingColor=9ddadb&face=cheeky,smile,calm&facialHair=full3&facialHairProbability=100&head=noHair2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=ffdfbf"
       },
-      { 
-        "id": "ZqvIIuD5aI9JFejebHiH", 
-        "name": "Tia Dora", 
-        "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/aunt_1pt.mp3", 
+      {
+        "id": "ZqvIIuD5aI9JFejebHiH",
+        "name": "Tia Dora",
+        "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/aunt_1pt.mp3",
         "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Chase&accessories[]&clothingColor=e279c7&face=cheeky,smile,calm&facialHair[]&facialHairProbability=0&head=long,bun2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=d1d4f9"
       },
-      { 
-        "id": "S9EY1qVDizdxKWghP5FL", 
-        "name": "Vó Eunice", 
-        "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/grandma_1pt.mp3", 
+      {
+        "id": "S9EY1qVDizdxKWghP5FL",
+        "name": "Vó Eunice",
+        "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/grandma_1pt.mp3",
         "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Kimberly&accessories=glasses&clothingColor=e78276&face=cheeky,smile,smileBig,calm&facialHair[]&head=grayBun&headContrastColor=e8e1e1&skinColor=ae5d29&backgroundColor=ffd5dc,ffdfbf"
       }
     ],
@@ -481,4 +485,4 @@
       "generateImage": "Crie uma ilustração alegre e amigável para crianças para uma história infantil intitulada \"{title}\". Use cores brilhantes e suaves e um estilo caloroso e envolvente. A imagem deve retratar uma cena principal da história de uma forma mágica, inspiradora e apropriada para crianças pequenas."
     }
   }
-} 
+}

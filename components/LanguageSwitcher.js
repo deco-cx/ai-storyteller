@@ -3,11 +3,11 @@ export default {
     template: `
         <div class="language-switcher">
             <div class="relative inline-flex items-center">
-                <i class="fa-solid fa-globe text-[#0EA5E9] absolute left-3 z-10 pointer-events-none"></i>
+                <i class="fa-solid fa-globe text-[#8B5CF6] absolute left-3 z-10 pointer-events-none"></i>
                 <select 
                     v-model="currentLanguage"
                     @change="changeLanguage"
-                    class="appearance-none pl-9 pr-8 py-2 rounded-full bg-[#E0F2FE] hover:bg-[#F0F9FF] border border-[#7DD3FC] text-sm text-[#0284C7] font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#38BDF8] focus:border-[#38BDF8]"
+                    class="appearance-none pl-9 pr-8 py-2 rounded-full bg-[#EDE9FE] hover:bg-[#F5F3FF] border border-[#A78BFA] text-sm text-[#6D28D9] font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] focus:border-[#8B5CF6]"
                 >
                     <option 
                         v-for="lang in languages" 
@@ -17,7 +17,7 @@ export default {
                         {{ lang.name }}
                     </option>
                 </select>
-                <i class="fa-solid fa-chevron-down text-xs text-[#0284C7] absolute right-3 pointer-events-none"></i>
+                <i class="fa-solid fa-chevron-down text-xs text-[#6D28D9] absolute right-3 pointer-events-none"></i>
             </div>
         </div>
     `,

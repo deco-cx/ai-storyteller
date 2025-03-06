@@ -994,13 +994,22 @@ window.CreatePage = {
           await this.setFilePermissions(filename);
           
           console.log("Story saved successfully!");
+          
+          // Redirect to the story page
+          this.$router.push({
+            path: "/story",
+            query: { 
+              file: filename,
+            }
+          });
+          
+          return true;
         } catch (writeError) {
           console.error("DEBUG: Error during write operation:", writeError);
           console.error("DEBUG: Error details:", writeError.message, writeError.stack);
           throw writeError;
         }
         
-        return true;
       } catch (error) {
         console.error("Error saving story:", error);
         console.error("DEBUG: Error details:", error.message, error.stack);
@@ -1268,34 +1277,27 @@ window.CreatePage = {
     },
   },
   template: `
-    <div class="min-h-screen bg-gradient-to-b from-[#E1F5FE] to-[#BBDEFB] pb-16">
-      <nav class="bg-white shadow-md py-3 px-4 sm:px-6">
-        <div class="flex justify-center sm:justify-start flex-wrap gap-2">
-          <router-link to="/" class="px-3 py-2 rounded-lg text-[#4A90E2] hover:bg-[#F0F9FF] text-sm sm:text-base flex-grow-0">
-            {{ $t('ui.home') }}
-          </router-link>
-          <router-link to="/create" class="px-3 py-2 rounded-lg bg-[#4A90E2] text-white font-medium text-sm sm:text-base flex-grow-0">
-            {{ $t('ui.new') }}
-          </router-link>
-          <router-link to="/my-stories" class="px-3 py-2 rounded-lg text-[#4A90E2] hover:bg-[#F0F9FF] text-sm sm:text-base flex-grow-0">
-            {{ $t('ui.myStories') }}
-          </router-link>
+    <div class="min-h-screen bg-white pb-16">
+      <nav class="py-3 px-8 flex items-center relative max-w-3xl mx-auto">
+        <router-link to="/" class="absolute left-8">
+          <i class="fas fa-arrow-left text-slate-700"></i>
+        </router-link>
+        <div class="flex items-center gap-2 mx-auto p-2">
+          <img src="/assets/image/logo.png" alt="AI Storyteller" class="h-6 w-6" />
+          <span class="font-medium text-slate-800">AI Storyteller</span>
         </div>
       </nav>
 
-      <div v-if="screen === 'form' || screen === 'loading'" class="max-w-3xl mx-auto w-full px-4 pt-6 pb-16">
+      <div v-if="screen === 'form' || screen === 'loading'" class="max-w-3xl mx-auto w-full">
         <template v-if="screen === 'loading'">
-          <div class="bg-white rounded-3xl shadow-lg overflow-hidden border-4 border-[#4A90E2] p-8 transform transition-all duration-300 hover:shadow-xl mb-8">
-            <h2 class="text-2xl font-bold mb-8 text-center relative">
-              <span class="inline-block bg-clip-text text-transparent bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] mb-3">
-                {{ $t('create.generatingTitle') }}
-              </span>
-              <div class="absolute left-0 right-0 bottom-0 h-1 bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] rounded-full"></div>
+          <div class="p-8 transform transition-all duration mb-8">
+            <h2 class="font-bold mb-8 relative inline-block mb-3 text-slate-700">
+              {{ $t('create.generatingTitle') }}
             </h2>
             <div class="space-y-6">
               <div class="flex items-center gap-4" v-for="(status, task) in taskStatus" :key="task">
-                <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow">
-                  <svg v-if="status === 'loading'" class="w-8 h-8 animate-spin text-[#4A90E2]" viewBox="0 0 24 24">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 border border-gray-50">
+                  <svg v-if="status === 'loading'" class="w-8 h-8 animate-spin text-slate-700" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
@@ -1307,19 +1309,19 @@ window.CreatePage = {
                   </svg>
                 </div>
                 <div class="flex-1 flex items-center justify-between gap-2">
-                  <span class="text-lg font-medium text-[#4A90E2] capitalize whitespace-nowrap">
+                  <span class="text-lg font-medium text-slate-700 capitalize whitespace-nowrap">
                     {{ task === 'plot' ? $t('create.generatingPlot') : 
                        task === 'story' ? $t('create.generatingStory') : 
                        task === 'image' ? $t('create.generatingImage') : 
                        $t('create.generatingAudio') }}
                   </span>
-                  <span v-if="task === 'story' && streamingText" class="max-md:hidden text-sm text-gray-600 italic truncate max-w-md p-2 bg-[#F0F9FF] rounded-lg border border-[#E1F5FE]">
+                  <span v-if="task === 'story' && streamingText" class="hidden text-sm text-gray-600 italic truncate max-w-md p-2 bg-[#F0F9FF] rounded-lg border   [#E1F5FE]">
                     "...{{ streamingText.slice(-50) }}"
                   </span>
-                  <span v-else-if="task === 'plot' && storyData && storyData.title" class="max-md:hidden text-sm text-gray-600 italic truncate max-w-md p-2 bg-[#F0F9FF] rounded-lg border border-[#E1F5FE]">
+                  <span v-else-if="task === 'plot' && storyData && storyData.title" class="hidden text-sm text-gray-600 italic truncate max-w-md p-2 bg-[#F0F9FF] rounded-lg border border-[#E1F5FE]">
                     "{{ storyData.title }}"
                   </span>
-                  <span v-else-if="task === 'image' && taskStatus.image === 'done'" class="max-md:hidden text-sm text-gray-600 italic p-2 bg-[#F0F9FF] rounded-lg border border-[#E1F5FE]">
+                  <span v-else-if="task === 'image' && taskStatus.image === 'done'" class="hidden text-sm text-gray-600 italic p-2 bg-[#F0F9FF] rounded-lg border border-[#E1F5FE]">
                     "{{ $t('create.imageCreated') }}"
                   </span>
                 </div>
@@ -1329,27 +1331,18 @@ window.CreatePage = {
         </template>
 
         <template v-else>
-          <div class="bg-white rounded-3xl shadow-lg overflow-hidden border-4 border-[#4A90E2] p-8 transform transition-all duration-300 hover:shadow-xl">
-            <h2 class="text-2xl font-bold mb-8 text-center relative">
-              <span class="inline-block bg-clip-text text-transparent bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] mb-3">
-                {{ $t('create.title') }}
-              </span>
-              <div class="absolute left-0 right-0 bottom-0 h-1 bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] rounded-full"></div>
-            </h2>
+          <div class="p-8">
             <div class="space-y-8">
               <div class="space-y-3">
-                <label class="block text-lg font-medium text-[#4A90E2]">{{ $t('create.nameLabel') }}:</label>
-                <input type="text" :placeholder="$t('create.namePlaceholder')" v-model="childName" :disabled="screen === 'loading'" class="w-full px-6 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#4A90E2] focus:border-[#4A90E2] bg-white text-lg" />
+                <label class="block text-lg font-medium text-slate-700">{{ $t('create.nameLabel') }}:</label>
+                <input type="text" :placeholder="$t('create.namePlaceholder')" v-model="childName" :disabled="screen === 'loading'" class="w-full px-6 py-3 border border-gray-200 rounded-full focus:ring-2 focus:ring-[#4A90E2] focus:border-[#4A90E2] bg-white text-lg" />
               </div>
-
               <div class="space-y-3">
-                <label class="block text-lg font-medium text-[#4A90E2]">{{ $t('create.interestsLabel') }}</label>
-                <div class="relative border border-gray-200 rounded-xl">
-                  <textarea :placeholder="$t('create.interestsPlaceholder')" v-model="interests" rows="2" :disabled="screen === 'loading'" class="w-full px-6 py-3 border-0 rounded-xl focus:ring-2 focus:ring-[#4A90E2] resize-none text-lg"></textarea>
-                  <button type="button" @click="randomTheme" class="absolute right-4 bottom-4 bg-[#4A90E2] hover:bg-[#5FA0E9] text-white px-3 py-2 rounded-full text-xs flex items-center gap-1 shadow-md transition-colors duration-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-                    </svg>
+                <label class="block text-lg font-medium text-slate-700">{{ $t('create.interestsLabel') }}</label>
+                <div class="relative border border-gray-200 rounded-3xl">
+                  <textarea :placeholder="$t('create.interestsPlaceholder')" v-model="interests" rows="4" :disabled="screen === 'loading'" class="w-full px-6 py-3 border-0 rounded-3xl focus:ring-2 focus:ring-[#4A90E2] resize-none text-lg min-h-[100px]"></textarea>
+                  <button type="button" @click="randomTheme" class="absolute right-4 bottom-4 bg-[#4A90E2] hover:bg-[#5FA0E9] text-white px-3 py-2 rounded-full text-xs flex items-center gap-2 shadow-md transition-colors duration-200">
+                    <i class="fas fa-dice-five"></i>
                     {{ $t('create.randomTheme') }}
                   </button>
                 </div>
@@ -1368,51 +1361,53 @@ window.CreatePage = {
               </div>
 
               <div class="space-y-3">
-                <label class="block text-lg font-medium text-[#4A90E2]">
+                <label class="block text-lg font-medium text-slate-700">
                   {{ $t('create.voiceLabel') }}
                   <span class="text-red-500">*</span>
                 </label>
-                <div class="border border-gray-200 rounded-xl overflow-hidden">
+                <div class="rounded-3xl overflow-hidden p-2 border border-[#DDDDDD]">
                   <div 
-                    v-for="voice in voices" 
+                    v-for="(voice, index) in voices" 
                     :key="voice.id"
-                    class="p-3 border-b border-gray-100 flex items-center justify-between hover:bg-[#F0F9FF] transition-colors duration-200"
-                    :class="{ 'bg-[#E1F5FE] border-l-4 border-l-[#4A90E2]': selectedVoice && selectedVoice.id === voice.id }"
+                    class="mb-4 last:mb-0"
                   >
                     <div 
-                      class="flex items-center gap-4 flex-1 cursor-pointer"
+                      class="rounded-2xl bg-white p-2 flex items-center justify-between duration-200 cursor-pointer"
+                      :class="{
+                        'bg-teal-100': selectedVoice && selectedVoice.id === voice.id && index === 0,
+                        'bg-amber-100': selectedVoice && selectedVoice.id === voice.id && index === 1,
+                        'bg-purple-100': selectedVoice && selectedVoice.id === voice.id && index === 2,
+                        'bg-blue-100': selectedVoice && selectedVoice.id === voice.id && index > 2
+                      }"
                       @click="selectVoice(voice)"
                     >
-                      <div class="flex-shrink-0 relative">
-                        <img :src="voice.avatar" :alt="voice.name" class="w-10 h-10 rounded-full" />
-                        <div 
-                          v-if="selectedVoice && selectedVoice.id === voice.id" 
-                          class="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center border-2 border-white"
-                        >
-                          <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                          </svg>
+                      <div class="flex items-center gap-4 flex-1">
+                        <div class="flex-shrink-0">
+                          <img :src="voice.avatar" :alt="voice.name" class="w-12 h-12 rounded-full" />
+                        </div>
+                        <div>
+                          <span class="text-lg font-medium text-slate-700">{{ voice.name }}</span>
                         </div>
                       </div>
-                      <div>
-                        <span class="text-lg font-medium">{{ voice.name }}</span>
-                        <div class="text-xs text-gray-500">{{ $t('create.clickToSelect') }}</div>
-                      </div>
+                      <button 
+                        @click.stop="playVoicePreview(voice)"
+                        :class="{
+                          'bg-teal-500 hover:bg-teal-600': index === 0,
+                          'bg-amber-500 hover:bg-amber-600': index === 1,
+                          'bg-purple-500 hover:bg-purple-600': index === 2,
+                          'bg-[#4A90E2] hover:bg-[#5FA0E9]': index > 2
+                        }"
+                        class="w-10 h-10 rounded-full flex items-center justify-center text-white transition-colors duration-200 flex-shrink-0"
+                        :title="isPreviewPlaying === voice.id ? $t('create.pausePreview') : $t('create.playPreview')"
+                      >
+                        <i v-if="!voice.isLoading" :class="[
+                          'fas',
+                          isPreviewPlaying === voice.id ? 'fa-pause' : 'fa-play',
+                          'text-lg'
+                        ]"></i>
+                        <i v-else class="fas fa-spinner fa-spin text-lg"></i>
+                      </button>
                     </div>
-                    <button 
-                      @click.stop="playVoicePreview(voice)"
-                      class="w-10 h-10 bg-[#4A90E2] hover:bg-[#5FA0E9] rounded-full flex items-center justify-center text-white transition-colors duration-200 flex-shrink-0 ml-2 shadow-md"
-                      :title="isPreviewPlaying === voice.id ? $t('create.pausePreview') : $t('create.playPreview')"
-                    >
-                      <svg v-if="!voice.isLoading" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path v-if="isPreviewPlaying !== voice.id" fill-rule="evenodd" clip-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
-                        <path v-if="isPreviewPlaying" fill-rule="evenodd" clip-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" />
-                      </svg>
-                      <svg v-else class="animate-spin w-5 h-5" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                    </button>
                   </div>
                 </div>
                 <div v-if="!selectedVoice" class="mt-2 p-2 bg-red-50 rounded-lg text-sm text-red-500 flex items-center gap-2">
@@ -1421,7 +1416,7 @@ window.CreatePage = {
                   </svg>
                   {{ $t('create.voiceRequired') }}
                 </div>
-                <div v-else class="mt-2 p-2 bg-[#E1F5FE] rounded-lg text-sm text-[#4A90E2] flex items-center gap-2">
+                <div v-else class="mt-2 p-2 bg-[#E1F5FE] rounded-lg text-sm text-slate-700 flex items-center gap-2">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -1429,7 +1424,7 @@ window.CreatePage = {
                 </div>
               </div>
 
-              <button @click="generateStory" :disabled="screen === 'loading'" class="w-full px-8 py-4 bg-gradient-to-b from-[#4A90E2] to-[#2871CC] text-white rounded-full flex items-center justify-center gap-3 hover:from-[#5FA0E9] hover:to-[#4A90E2] transition-all duration-200 text-xl font-medium mt-8 border border-[#2871CC] shadow-md">
+              <button @click="generateStory" :disabled="screen === 'loading'" class="flex justify-center items-center gap-2 py-3 px-6 w-full md:w-auto md:min-w-[250px] h-12 bg-gradient-to-b from-purple-300 to-purple-500 border border-purple-700 rounded-full cursor-pointer shadow-md hover:translate-y-[-2px] transition-transform duration-200 font-['Onest'] font-medium text-lg text-white">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
                 </svg>
@@ -1441,7 +1436,7 @@ window.CreatePage = {
       </div>
 
       <div v-if="screen === 'result'" class="max-w-3xl mx-auto pt-6 pb-16 px-4">
-        <div class="bg-white rounded-3xl shadow-lg overflow-hidden border-4 border-[#4A90E2] p-8 transform transition-all duration-300 hover:shadow-xl">
+        <div class="p-8">
           <div class="space-y-6 mb-6">
             <img v-if="storyImage" :src="getOptimizedImageUrl(storyImage, 800, 400)" alt="Magic Illustration" class="w-full rounded-xl shadow-lg" />
             <div ref="imageErrorMessage" class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mt-2 hidden">
@@ -1476,7 +1471,7 @@ window.CreatePage = {
                 </div>
                 <span v-if="audioLoading" class="text-xs text-gray-500 animate-pulse">{{ $t('ui.loading') || 'Loading...' }}</span>
               </div>
-              <a @click="downloadAudio" class="p-2 text-[#4A90E2] hover:text-[#2871CC] cursor-pointer" :title="$t('ui.download')" :class="{ 'opacity-50 cursor-not-allowed': audioLoading }" :disabled="audioLoading">
+              <a @click="downloadAudio" class="p-2 text-slate-700 hover:text-[#2871CC] cursor-pointer" :title="$t('ui.download')" :class="{ 'opacity-50 cursor-not-allowed': audioLoading }" :disabled="audioLoading">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
@@ -1484,14 +1479,13 @@ window.CreatePage = {
             </div>
           </div>
 
-          <div v-if="storyData" class="prose-lg text-gray-700 space-y-4">
+          <div v-if="storyData" class="prose-base text-slate-700 space-y-4">
             <h2 class="text-2xl font-bold mb-6 text-center relative">
               <span class="inline-block bg-clip-text text-transparent bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] mb-3">
                 {{ storyData.title }}
               </span>
-              <div class="absolute left-0 right-0 bottom-0 h-1 bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] rounded-full"></div>
             </h2>
-            <div class="space-y-6 whitespace-pre-line" v-html="storyData.story"></div>
+            <div class="space-y-6 whitespace-pre-line text-left" v-html="storyData.story"></div>
           </div>
 
           <div class="mt-8 text-center">

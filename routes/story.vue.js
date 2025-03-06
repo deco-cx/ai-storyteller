@@ -3,19 +3,15 @@ import i18n from "../i18n/index.js";
 
 window.StoryPage = {
     template: `
-        <div v-if="sdkAvailable" class="min-h-screen bg-gradient-to-b from-[#E1F5FE] to-[#BBDEFB] pb-16">
+        <div v-if="sdkAvailable" class="min-h-screen pb-16 bg-[#F4F4F5]">
             <!-- Navigation -->
-            <nav class="bg-white shadow-md py-4 px-4 sm:px-6 flex items-center justify-between">
-                <div class="flex items-center space-x-1 sm:space-x-4 overflow-x-auto whitespace-nowrap">
-                    <router-link to="/" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#4A90E2] hover:bg-[#F0F9FF] text-sm sm:text-base">
-                        {{ $t('ui.home') }}
-                    </router-link>
-                    <router-link to="/create" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#4A90E2] hover:bg-[#F0F9FF] text-sm sm:text-base">
-                        {{ $t('ui.new') }}
-                    </router-link>
-                    <router-link to="/my-stories" class="px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-[#4A90E2] hover:bg-[#F0F9FF] text-sm sm:text-base">
-                        {{ $t('ui.myStories') }}
-                    </router-link>
+            <nav class="py-3 px-8 flex items-center relative max-w-3xl mx-auto">
+                <router-link to="/" class="absolute left-8">
+                <i class="fas fa-arrow-left text-slate-700"></i>
+                </router-link>
+                <div class="flex items-center gap-2 mx-auto p-2">
+                <img src="/assets/image/logo.png" alt="AI Storyteller" class="h-6 w-6" />
+                <span class="font-medium text-slate-800">AI Storyteller</span>
                 </div>
             </nav>
 
@@ -37,33 +33,65 @@ window.StoryPage = {
             </div>
 
             <!-- Story Display -->
-            <main v-else class="max-w-4xl mx-auto px-6 py-12">
-                <div class="bg-[#E1F5FE] border border-[#BBDEFB] rounded-xl p-8">
-                    <h1 class="text-3xl font-semibold text-[#4A90E2] mb-8 text-center">{{ formatTitle(story.title) }}</h1>
-                    
+            <main v-else class="max-w-4xl mx-auto">
+                <div class="px-6 md:p-8">                    
                     <!-- Story Content -->
-                    <div class="bg-[#F0F9FF] border border-[#BBDEFB] rounded-xl p-6 mb-8">
-                        <img :src="getOptimizedImageUrl(story.coverUrl, 800, 400)" 
-                             :alt="story.title" 
-                             class="w-full h-64 object-cover rounded-lg mb-6" />
-                        
+                    <div class="mb-8">
+                        <div class="flex flex-col items-center mb-8">
+                            <!-- Book Cover -->
+                            <div class="relative w-full max-w-xs aspect-[98/111.1] rounded-lg mb-6 overflow-hidden shadow-[0_1px_2px_0_rgba(22,109,149,0.2),0_3px_3px_0_rgba(22,109,149,0.17),0_7px_4px_0_rgba(22,109,149,0.1),0_12px_5px_0_rgba(22,109,149,0.03)]">
+                                <img 
+                                    :src="getOptimizedImageUrl(story.coverUrl, 800, 400)" 
+                                    :alt="story.title" 
+                                    class="w-full h-full object-cover absolute inset-0"
+                                >
+                                <div class="absolute inset-0 bg-[url('/assets/image/book-texture.svg')] bg-cover bg-no-repeat opacity-30 mix-blend-multiply pointer-events-none"></div>
+                            </div>
+                            
+                            <!-- Author and Title -->
+                            <div class="text-center w-full">
+                                <h1 class="text-2xl font-semibold text-[#334155] mb-4">{{ formatTitle(story.title) }}</h1>
+                            </div>
+                        </div>
+
                         <!-- Audio Player -->
-                        <div class="flex items-center gap-4 mb-6">
-                            <button @click="toggleAudio" class="bg-[#4A90E2] text-white p-3 rounded-full w-12 h-12 flex items-center justify-center hover:bg-[#5FA0E9] transition-colors">
-                                <i :class="isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'"></i>
-                            </button>
-                            <div class="flex-1 h-10 bg-[#E1F5FE] rounded-full relative cursor-pointer" @click="seekAudio($event)">
-                                <div class="absolute inset-0 flex items-center px-2">
-                                    <div class="h-2 bg-[#4A90E2] rounded-full" :style="{ width: audioProgress + '%' }"></div>
+                        <div class="flex flex-col gap-2 mb-6">
+                            <!-- Progress Bar -->
+                            <div class="w-full relative">
+                                <div class="w-full h-1 bg-[#CBD5E1] rounded-full cursor-pointer" @click="seekAudio($event)">
+                                    <div class="h-1 bg-[#C084FC] rounded-full" :style="{ width: audioProgress + '%' }"></div>
                                 </div>
                             </div>
-                            <audio ref="audioPlayer" :src="story.audioUrl" @timeupdate="updateProgress" @ended="audioEnded"></audio>
+                            
+                            <!-- Time Display -->
+                            <div class="flex justify-between w-full">
+                                <span class="text-xs text-[#64748B] opacity-50">{{ formatTime(currentTime) }}</span>
+                                <span class="text-xs text-[#64748B] opacity-50">{{ formatTime(duration) }}</span>
+                            </div>
+                            
+                            <!-- Controls -->
+                            <div class="flex justify-center items-center gap-4 mt-4">
+                                <button @click="shareStory" class="w-10 h-10 rounded-full bg-[#14B8A6] flex items-center justify-center">
+                                    <i class="fas fa-share-alt text-[#F3FBFF]"></i>
+                                </button>
+                                
+                                <button @click="toggleAudio" class="w-16 h-16 rounded-full bg-[#C084FC] border border-[#D8B4FE] shadow-md flex items-center justify-center p-4">
+                                    <i :class="isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'" class="text-[#F3FBFF] text-xl"></i>
+                                </button>
+                                
+                                <button @click="scrollToText" class="w-10 h-10 rounded-full bg-[#F59E0B] flex items-center justify-center">
+                                    <i class="fas fa-file-alt text-[#F3FBFF]"></i>
+                                </button>
+                            </div>
+                            
+                            <audio ref="audioPlayer" :src="story.audioUrl" @timeupdate="updateProgress" @ended="audioEnded" @loadedmetadata="onAudioLoaded"></audio>
                         </div>
                         
                         <!-- Story Text -->
-                        <div class="mt-4">
-                            <label class="block text-sm font-medium text-[#4A90E2] mb-2">{{ $t('ui.storyText') }}</label>
-                            <div class="w-full bg-white border border-gray-200 rounded-lg p-4 text-gray-700 max-h-96 overflow-y-auto">
+                        <div class="border border-b border-gray-200 w-full my-8"/>
+                        <!-- Story Text Container -->
+                        <div class="mt-6 story-text-container">
+                            <div class="w-full text-slate-600 text-sm">
                                 <div v-if="hasHtmlContent(story.story)" v-html="story.story" class="prose prose-sky max-w-none"></div>
                                 <div v-else class="whitespace-pre-wrap">{{ story.story }}</div>
                             </div>
@@ -72,15 +100,11 @@ window.StoryPage = {
 
                     <!-- Action Buttons -->
                     <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-                        <a :href="story.audioUrl" download class="bg-[#4A90E2] text-white px-6 py-3 rounded-full hover:bg-[#5FA0E9] font-medium flex items-center justify-center gap-2">
+                        <a :href="story.audioUrl" download class="bg-gradient-to-b from-purple-300 to-purple-500 border border-purple-700 text-white px-6 py-3 rounded-full shadow-md hover:translate-y-[-2px] transition-transform duration-200 font-medium flex items-center justify-center gap-2">
                             <i class="fa-solid fa-download"></i>
                             {{ $t('ui.downloadAudio') }}
                         </a>
-                        <button @click="shareStory" class="border border-[#4A90E2] text-[#4A90E2] px-6 py-3 rounded-full hover:bg-[#F0F9FF] font-medium flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-share-nodes"></i>
-                            {{ $t('ui.shareStory') }}
-                        </button>
-                        <router-link to="/create" class="border border-[#4A90E2] text-[#4A90E2] px-6 py-3 rounded-full hover:bg-[#F0F9FF] font-medium flex items-center justify-center gap-2">
+                        <router-link to="/create" class="border border-purple-700 text-purple-700 px-6 py-3 rounded-full hover:bg-purple-50 shadow-md hover:translate-y-[-2px] transition-transform duration-200 font-medium flex items-center justify-center gap-2">
                             <i class="fa-solid fa-plus"></i>
                             {{ $t('ui.createNewStory') }}
                         </router-link>
@@ -103,30 +127,33 @@ window.StoryPage = {
                     </div>
                     
                     <!-- Story Settings (Collapsible) -->
-                    <details class="bg-[#F0F9FF] border border-[#BBDEFB] rounded-xl p-4">
-                        <summary class="text-[#4A90E2] font-medium cursor-pointer hover:text-[#00B7EA] flex items-center">
-                            <i class="fa-solid fa-gear mr-2"></i>
-                            {{ $t('ui.storySettings') }}
+                    <details class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm mb-8 group">
+                        <summary class="text-slate-700 font-medium cursor-pointer flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fa-solid fa-gear mr-2 text-purple-500"></i>
+                                {{ $t('ui.storySettings') }}
+                            </div>
+                            <i class="fa-solid fa-chevron-down text-slate-400 group-open:rotate-180 transition-transform duration-300"></i>
                         </summary>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                        <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-gray-100">
                             <div v-if="story.childName" class="space-y-2">
-                                <label class="block text-sm font-medium text-[#4A90E2]">{{ $t('ui.childName') }}</label>
-                                <div class="bg-white border border-gray-200 rounded-full px-4 py-2 text-lg text-gray-600">
+                                <label class="block text-sm font-medium text-slate-500">{{ $t('ui.childName') }}</label>
+                                <div class="bg-slate-50 rounded-full px-4 py-2 text-slate-700">
                                     {{ story.childName }}
                                 </div>
                             </div>
                             
                             <div v-if="story.themes || story.interests" class="space-y-2">
-                                <label class="block text-sm font-medium text-[#4A90E2]">{{ $t('ui.themes') }}</label>
-                                <div class="bg-white border border-gray-200 rounded-full px-4 py-2 text-lg text-gray-600">
+                                <label class="block text-sm font-medium text-slate-500">{{ $t('ui.themes') }}</label>
+                                <div class="bg-slate-50 rounded-full px-4 py-2 text-slate-700">
                                     {{ story.themes || story.interests }}
                                 </div>
                             </div>
 
                             <div v-if="story.voice" class="space-y-2">
-                                <label class="block text-sm font-medium text-[#4A90E2]">{{ $t('ui.voice') }}</label>
-                                <div class="bg-white border border-gray-200 rounded-full p-2 text-lg text-gray-600 flex items-center gap-2">
-                                    <img v-if="story.voice.avatar" :src="story.voice.avatar" class="w-8 h-8 rounded-full" />
+                                <label class="block text-sm font-medium text-slate-500">{{ $t('ui.voice') }}</label>
+                                <div class="bg-slate-50 rounded-full p-2 text-slate-700 flex items-center gap-2">
+                                    <img v-if="typeof story.voice === 'object' && story.voice.avatar" :src="story.voice.avatar" class="w-8 h-8 rounded-full" />
                                     <span>{{ typeof story.voice === 'object' ? story.voice.name : story.voice }}</span>
                                 </div>
                             </div>
@@ -152,6 +179,8 @@ window.StoryPage = {
             story: null,
             isPlaying: false,
             audioProgress: 0,
+            currentTime: 0,
+            duration: 0,
             exampleAddedMessage: null,
             isAdmin: false,
             
@@ -337,6 +366,8 @@ window.StoryPage = {
             this.story = null;
             this.isPlaying = false;
             this.audioProgress = 0;
+            this.currentTime = 0;
+            this.duration = 0;
             
             if (!this.fileUrl) {
                 this.error = this.$t('story.noStorySpecified');
@@ -609,10 +640,20 @@ window.StoryPage = {
             const player = this.$refs.audioPlayer;
             const percentage = (player.currentTime / player.duration) * 100;
             this.audioProgress = percentage;
+            this.currentTime = player.currentTime;
+            this.duration = player.duration;
         },
         audioEnded() {
             this.isPlaying = false;
             this.audioProgress = 0;
+            this.currentTime = 0;
+            this.duration = 0;
+        },
+        onAudioLoaded() {
+            // This method is called when the audio metadata is loaded
+            // You can use it to initialize the currentTime and duration
+            this.currentTime = 0;
+            this.duration = this.$refs.audioPlayer.duration;
         },
         seekAudio(event) {
             if (!this.$refs.audioPlayer) return;
@@ -623,6 +664,7 @@ window.StoryPage = {
             
             player.currentTime = clickPosition * player.duration;
             this.audioProgress = clickPosition * 100;
+            this.currentTime = player.currentTime;
         },
         shareStory() {
             // Create a shareable link to this story
@@ -845,6 +887,27 @@ window.StoryPage = {
             }
             
             return processedUrl;
+        },
+        
+        // Format time in MM:SS format
+        formatTime(seconds) {
+            if (!seconds || isNaN(seconds)) return "00:00";
+            
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = Math.floor(seconds % 60);
+            
+            const formattedMinutes = String(minutes).padStart(2, '0');
+            const formattedSeconds = String(remainingSeconds).padStart(2, '0');
+            
+            return `${formattedMinutes}:${formattedSeconds}`;
+        },
+        
+        // Scroll to the story text section
+        scrollToText() {
+            const storyTextElement = document.querySelector('.story-text-container');
+            if (storyTextElement) {
+                storyTextElement.scrollIntoView({ behavior: 'smooth' });
+            }
         }
     }
 };
