@@ -60,254 +60,126 @@ window.IndexPage = {
                         </div>
                     </div>
                 <!-- Example Stories Section -->
-                <div class="mb-16">
-                    <!-- Título com background estendido -->
-                    <div v-if="examples && examples.length > 0" class="relative mb-12">
-                        <!-- Background estendido do título - vai até metade do primeiro exemplo (apenas mobile) -->
-                        <div class="absolute top-0 left-0 right-0 h-[170px] bg-[#F0F9FF] shadow-md border border-[#BBDEFB] rounded-t-2xl md:hidden"></div>
-                        
-                        <!-- Cabeçalho com título -->
-                        <div class="relative z-10 p-6">
-                            <h2 class="text-2xl font-bold text-center relative py-2">
-                                <i class="fa-solid fa-book-open text-[#4A90E2] mr-2"></i>
-                                <span class="inline-block text-[#4A90E2] mb-3">
-                                    {{ $t('home.examples') }}
-                                </span>
-                                <div class="absolute left-0 right-0 bottom-0 h-1 bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] rounded-full"></div>
-                            </h2>
-                        </div>
-                    </div>
-                    
-                    <!-- Título quando não há exemplos -->
-                    <h2 v-if="!examples || examples.length === 0" class="text-2xl font-bold mb-8 text-center relative">
-                        <span class="inline-block text-[#4A90E2] mb-3">
-                            {{ $t('home.examples') }}
-                        </span>
-                        <div class="absolute left-0 right-0 bottom-0 h-1 bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] rounded-full"></div>
-                    </h2>
-                    
+                <div>                    
                     <!-- Grid com todos os exemplos -->
                     <div v-if="examples && examples.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
-                        <!-- Primeiro exemplo (com background abaixo dele) -->
-                        <div v-if="examples.length > 0" class="relative md:col-span-2 lg:col-span-1">
-                            <!-- Card normalmente é aqui -->
-                            <div class="bg-white rounded-3xl shadow-lg overflow-hidden transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-4 border-[#2871CC]">
-                                <!-- Story Cover Image -->
-                                <div class="relative h-48 overflow-hidden">
-                                    <img :src="getOptimizedImageUrl(examples[0].coverImage || examples[0].image, 600, 300)" 
-                                         :alt="examples[0].title" 
-                                         @load="logImageLoaded(examples[0].title, examples[0].coverImage || examples[0].image)"
-                                         @error="logImageError(examples[0].title, examples[0].coverImage || examples[0].image)"
-                                         class="w-full h-full object-cover transition-transform duration-500 hover:scale-110" />
-                                    
-                                    <!-- Decorative Elements -->
-                                    <div class="absolute top-2 left-2 w-12 h-12 rounded-full bg-white bg-opacity-70 flex items-center justify-center text-[#2871CC]">
-                                        <i class="fa-solid fa-book-open text-xl"></i>
-                                    </div>
-                                    
-                                    <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent h-24 opacity-70"></div>
-                                    <h3 class="absolute bottom-4 left-4 right-4 text-white font-bold text-xl line-clamp-2">{{ examples[0].title }}</h3>
-                                </div>
-                                
-                                <div class="p-5">
-                                    <!-- Narrator Info -->
-                                    <div class="flex items-center mb-5">
-                                        <div class="w-12 h-12 rounded-full overflow-hidden border-2 mr-3 border-[#4A90E2]">
-                                            <img :src="getOptimizedImageUrl(examples[0].voiceAvatar, 64, 64)" 
-                                                :alt="examples[0].voice" 
-                                                @load="logImageLoaded(examples[0].voice, examples[0].voiceAvatar)"
-                                                @error="logImageError(examples[0].voice, examples[0].voiceAvatar)"
-                                                class="w-full h-full object-cover" />
-                                        </div>
-                                        <div>
-                                            <p class="text-gray-600 text-sm">{{ $t('home.narratedBy') }}</p>
-                                            <p class="font-medium">{{ examples[0].voice }}</p>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Story Details -->
-                                    <div class="mb-4 bg-gray-50 rounded-2xl p-4 border border-gray-100">
-                                        <div class="flex flex-wrap gap-2 mb-2">
-                                            <div v-if="examples[0].childName" class="bg-gray-200 rounded-full px-3 py-1 text-sm flex items-center">
-                                                <i class="fa-solid fa-child text-gray-600 mr-1"></i>
-                                                <span>{{ examples[0].childName }}</span>
-                                            </div>
-                                            <div v-if="examples[0].themes" class="rounded-full px-3 py-1 text-sm flex items-center text-white bg-[#4A90E2]">
-                                                <i class="fa-solid fa-lightbulb mr-1"></i>
-                                                <span class="truncate max-w-[150px]">{{ examples[0].themes }}</span>
-                                            </div>
-                                        </div>
-                                        <p v-if="examples[0].description" class="text-sm text-gray-600 line-clamp-2">{{ examples[0].description }}</p>
-                                    </div>
-                                    
-                                    <!-- Audio Player -->
-                                    <div class="flex items-center gap-3 w-full mb-4">
-                                        <button @click="toggleAudio(examples[0])" 
-                                                class="bg-[#2871CC] hover:bg-[#3D82D6] text-white p-3 rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0 transition-colors duration-200 shadow-md">
-                                            <!-- Spinner de carregamento -->
-                                            <svg v-if="examples[0].loading" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                            <!-- Ícones de play/pause -->
-                                            <i v-else :class="examples[0].isPlaying ? 'fa-solid fa-pause text-lg' : 'fa-solid fa-play text-lg'"></i>
-                                        </button>
-                                        <div class="flex-1 h-4 bg-gray-200 rounded-full relative">
-                                            <div class="absolute inset-0 h-4 rounded-full bg-[#2871CC]" 
-                                                :style="{ width: examples[0].progress }">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Action Buttons -->
-                                    <div class="grid grid-cols-1 gap-3 mt-4">
-                                        <router-link :to="{ path: '/create', query: { themes: examples[0].themes, voiceId: examples[0].voiceId } }" 
-                                                class="bg-white text-[#2871CC] hover:bg-[#EEF6FD] border-[#2871CC] shadow-[0_0_15px_rgba(40,113,204,0.15)] rounded-full py-3 px-4 flex items-center justify-center font-medium border-2 transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-1">
-                                            <i class="fa-solid fa-magic mr-2"></i>
-                                            {{ $t('home.createFromThis') }}
-                                        </router-link>
-                                    </div>
-                                    
-                                    <audio 
-                                        id="audio-0" 
-                                        :src="getOptimizedAudioUrl(examples[0].audio)" 
-                                        @timeupdate="updateProgress($event, examples[0])" 
-                                        @ended="audioEnded(examples[0])" 
-                                        @canplaythrough="logAudioLoaded(examples[0].title, examples[0].audio)"
-                                        @error="logAudioError(examples[0].title, examples[0].audio, $event.error)"
-                                        style="display: none;"></audio>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Demais exemplos -->
-                        <div v-for="(example, index) in examples.slice(1)" :key="index + 1" 
-                             class="bg-white rounded-3xl shadow-lg overflow-hidden transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-4"
+                        <!-- Cards de exemplo -->
+                        <div v-for="(example, index) in examples" :key="index" 
+                             class="rounded-3xl transform transition-all duration-300 hover:-translate-y-2 shadow-md relative"
                              :class="[
-                                (index + 1) % 4 === 0 ? 'border-[#2871CC]' : '',
-                                (index + 1) % 4 === 1 ? 'border-[#4A90E2]' : '',
-                                (index + 1) % 4 === 2 ? 'border-[#64B5F6]' : '',
-                                (index + 1) % 4 === 3 ? 'border-[#81D4FA]' : ''
+                                index % 4 === 0 ? 'bg-gradient-to-b from-teal-200 to-teal-400 border border-teal-700' : '',
+                                index % 4 === 1 ? 'bg-gradient-to-b from-purple-200 to-purple-400 border border-purple-700' : '',
+                                index % 4 === 2 ? 'bg-gradient-to-b from-yellow-200 to-yellow-400 border border-yellow-700' : '',
+                                index % 4 === 3 ? 'bg-gradient-to-b from-blue-200 to-blue-400 border border-blue-700' : ''
                              ]">
-                            <!-- Story Cover Image -->
-                            <div class="relative h-48 overflow-hidden">
-                                <img :src="getOptimizedImageUrl(example.coverImage || example.image, 600, 300)" 
-                                     :alt="example.title" 
-                                     @load="logImageLoaded(example.title, example.coverImage || example.image)"
-                                     @error="logImageError(example.title, example.coverImage || example.image)"
-                                     class="w-full h-full object-cover transition-transform duration-500 hover:scale-110" />
-                                
-                                <!-- Decorative Elements -->
-                                <div class="absolute top-2 left-2 w-12 h-12 rounded-full bg-white bg-opacity-70 flex items-center justify-center"
-                                     :class="[
-                                        (index + 1) % 4 === 0 ? 'text-[#2871CC]' : '',
-                                        (index + 1) % 4 === 1 ? 'text-[#4A90E2]' : '',
-                                        (index + 1) % 4 === 2 ? 'text-[#64B5F6]' : '',
-                                        (index + 1) % 4 === 3 ? 'text-[#81D4FA]' : ''
-                                     ]">
-                                    <i class="fa-solid fa-book-open text-xl"></i>
-                                </div>
-                                
-                                <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent h-24 opacity-70"></div>
-                                <h3 class="absolute bottom-4 left-4 right-4 text-white font-bold text-xl line-clamp-2">{{ example.title }}</h3>
-                            </div>
-                            
-                            <div class="p-5">
-                                <!-- Narrator Info -->
-                                <div class="flex items-center mb-5">
-                                    <div class="w-12 h-12 rounded-full overflow-hidden border-2 mr-3"
-                                         :class="[
-                                            (index + 1) % 4 === 0 ? 'border-[#4A90E2]' : '',
-                                            (index + 1) % 4 === 1 ? 'border-[#64B5F6]' : '',
-                                            (index + 1) % 4 === 2 ? 'border-[#90CAF9]' : '',
-                                            (index + 1) % 4 === 3 ? 'border-[#81D4FA]' : ''
-                                         ]">
-                                        <img :src="getOptimizedImageUrl(example.voiceAvatar, 64, 64)" 
-                                             :alt="example.voice" 
-                                             @load="logImageLoaded(example.voice, example.voiceAvatar)"
-                                             @error="logImageError(example.voice, example.voiceAvatar)"
-                                             class="w-full h-full object-cover" />
-                                    </div>
-                                    <div>
-                                        <p class="text-gray-600 text-sm">{{ $t('home.narratedBy') }}</p>
-                                        <p class="font-medium">{{ example.voice }}</p>
-                                    </div>
-                                </div>
-                                
-                                <!-- Story Details -->
-                                <div class="mb-4 bg-gray-50 rounded-2xl p-4 border border-gray-100">
-                                    <div class="flex flex-wrap gap-2 mb-2">
-                                        <div v-if="example.childName" class="bg-gray-200 rounded-full px-3 py-1 text-sm flex items-center">
-                                            <i class="fa-solid fa-child text-gray-600 mr-1"></i>
-                                            <span>{{ example.childName }}</span>
-                                        </div>
-                                        <div v-if="example.themes" class="rounded-full px-3 py-1 text-sm flex items-center text-white"
+                            <div class="pt-24 p-4 pb-2">
+                                <!-- Story Info & Details -->
+                                <div class="flex flex-col gap-4 mb-4 mt-8">
+                                    <!-- Child's Name Tag -->
+                                    <div class="flex flex-col gap-1">
+                                        <div class="font-bold text-sm"
                                              :class="[
-                                                (index + 1) % 4 === 0 ? 'bg-[#4A90E2]' : '',
-                                                (index + 1) % 4 === 1 ? 'bg-[#64B5F6]' : '',
-                                                (index + 1) % 4 === 2 ? 'bg-[#90CAF9]' : '',
-                                                (index + 1) % 4 === 3 ? 'bg-[#81D4FA]' : ''
+                                                 index % 4 === 0 ? 'text-teal-900' : '',
+                                                 index % 4 === 1 ? 'text-purple-900' : '',
+                                                 index % 4 === 2 ? 'text-yellow-900' : '',
+                                                 index % 4 === 3 ? 'text-blue-900' : ''
+                                             ]">{{ $t('ui.childName') }}</div>
+                                        <div class="text-sm"
+                                             :class="[
+                                                 index % 4 === 0 ? 'text-teal-800' : '',
+                                                 index % 4 === 1 ? 'text-purple-800' : '',
+                                                 index % 4 === 2 ? 'text-yellow-800' : '',
+                                                 index % 4 === 3 ? 'text-blue-800' : ''
+                                             ]">{{ example.childName || 'Pablo' }}</div>
+                                    </div>
+                                    
+                                    <!-- Themes Tag -->
+                                    <div class="flex flex-col gap-1">
+                                        <div class="font-bold text-sm"
+                                             :class="[
+                                                 index % 4 === 0 ? 'text-teal-900' : '',
+                                                 index % 4 === 1 ? 'text-purple-900' : '',
+                                                 index % 4 === 2 ? 'text-yellow-900' : '',
+                                                 index % 4 === 3 ? 'text-blue-900' : ''
+                                             ]">{{ $t('ui.themes') }}</div>
+                                        <div class="text-sm"
+                                             :class="[
+                                                 index % 4 === 0 ? 'text-teal-800' : '',
+                                                 index % 4 === 1 ? 'text-purple-800' : '',
+                                                 index % 4 === 2 ? 'text-yellow-800' : '',
+                                                 index % 4 === 3 ? 'text-blue-800' : ''
+                                             ]">{{ example.themes || 'Knights, Desert and Telling the Truth' }}</div>
+                                    </div>
+                                    
+                                    <!-- Narrated By Tag -->
+                                    <div class="flex flex-col gap-1">
+                                        <div class="font-bold text-sm"
+                                             :class="[
+                                                 index % 4 === 0 ? 'text-teal-900' : '',
+                                                 index % 4 === 1 ? 'text-purple-900' : '',
+                                                 index % 4 === 2 ? 'text-yellow-900' : '',
+                                                 index % 4 === 3 ? 'text-blue-900' : ''
+                                             ]">{{ $t('home.narratedBy') }}</div>
+                                        <div class="flex items-center gap-1"
+                                             :class="[
+                                                 index % 4 === 0 ? 'text-teal-800' : '',
+                                                 index % 4 === 1 ? 'text-purple-800' : '',
+                                                 index % 4 === 2 ? 'text-yellow-800' : '',
+                                                 index % 4 === 3 ? 'text-blue-800' : ''
                                              ]">
-                                            <i class="fa-solid fa-lightbulb mr-1"></i>
-                                            <span class="truncate max-w-[150px]">{{ example.themes }}</span>
+                                            <div class="w-5 h-5 overflow-hidden rounded-full">
+                                                <img :src="getOptimizedImageUrl(example.voiceAvatar, 32, 32)" 
+                                                    :alt="example.voice" 
+                                                    class="w-full h-full object-cover" />
+                                            </div>
+                                            <span class="text-sm">{{ example.voice }}</span>
                                         </div>
                                     </div>
-                                    <p v-if="example.description" class="text-sm text-gray-600 line-clamp-2">{{ example.description }}</p>
                                 </div>
                                 
-                                <!-- Audio Player -->
-                                <div class="flex items-center gap-3 w-full mb-4">
+                                <!-- Story Title and Play Button -->
+                                <div class="absolute top-5 right-4 flex items-center gap-4 pl-40">
+                                    <h3 class="font-bold text-lg leading-tight"
+                                         :class="[
+                                             index % 4 === 0 ? 'text-teal-900' : '',
+                                             index % 4 === 1 ? 'text-purple-900' : '',
+                                             index % 4 === 2 ? 'text-yellow-900' : '',
+                                             index % 4 === 3 ? 'text-blue-900' : ''
+                                         ]">{{ example.title }}</h3>
                                     <button @click="toggleAudio(example)" 
+                                            class="rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0 transition-all duration-200 text-white shadow-md"
                                             :class="[
-                                                (index + 1) % 4 === 0 ? 'bg-[#2871CC] hover:bg-[#3D82D6]' : '',
-                                                (index + 1) % 4 === 1 ? 'bg-[#4A90E2] hover:bg-[#5FA0E9]' : '',
-                                                (index + 1) % 4 === 2 ? 'bg-[#64B5F6] hover:bg-[#7BC4FF]' : '',
-                                                (index + 1) % 4 === 3 ? 'bg-[#81D4FA] hover:bg-[#99E0FF]' : ''
-                                            ]"
-                                            class="text-white p-3 rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0 transition-colors duration-200 shadow-md">
-                                        <!-- Spinner de carregamento -->
-                                        <svg v-if="example.loading" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        <!-- Ícones de play/pause -->
-                                        <i v-else :class="example.isPlaying ? 'fa-solid fa-pause text-lg' : 'fa-solid fa-play text-lg'"></i>
+                                                index % 4 === 0 ? 'bg-teal-800' : '',
+                                                index % 4 === 1 ? 'bg-purple-800' : '',
+                                                index % 4 === 2 ? 'bg-yellow-800' : '',
+                                                index % 4 === 3 ? 'bg-blue-800' : ''
+                                            ]">
+                                        <i v-if="example.loading" class="fa-solid fa-spinner fa-spin"></i>
+                                        <i v-else :class="[example.isPlaying ? 'fa-solid fa-stop' : 'fa-solid fa-play']"></i>
                                     </button>
-                                    <div class="flex-1 h-4 bg-gray-200 rounded-full relative">
-                                        <div class="absolute inset-0 h-4 rounded-full" 
-                                             :style="{ width: example.progress }"
-                                             :class="[
-                                                (index + 1) % 4 === 0 ? 'bg-[#2871CC]' : '',
-                                                (index + 1) % 4 === 1 ? 'bg-[#4A90E2]' : '',
-                                                (index + 1) % 4 === 2 ? 'bg-[#64B5F6]' : '',
-                                                (index + 1) % 4 === 3 ? 'bg-[#81D4FA]' : ''
-                                             ]"></div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Action Buttons -->
-                                <div class="grid grid-cols-1 gap-3 mt-4">
-                                    <router-link :to="{ path: '/create', query: { themes: example.themes, voiceId: example.voiceId } }" 
-                                            :class="[
-                                                (index + 1) % 4 === 0 ? 'bg-white text-[#2871CC] hover:bg-[#EEF6FD] border-[#2871CC] shadow-[0_0_15px_rgba(40,113,204,0.15)]' : '',
-                                                (index + 1) % 4 === 1 ? 'bg-white text-[#4A90E2] hover:bg-[#EEF6FD] border-[#4A90E2] shadow-[0_0_15px_rgba(74,144,226,0.15)]' : '',
-                                                (index + 1) % 4 === 2 ? 'bg-white text-[#64B5F6] hover:bg-[#EEF6FD] border-[#64B5F6] shadow-[0_0_15px_rgba(100,181,246,0.15)]' : '',
-                                                (index + 1) % 4 === 3 ? 'bg-white text-[#81D4FA] hover:bg-[#EEF6FD] border-[#81D4FA] shadow-[0_0_15px_rgba(129,212,250,0.15)]' : ''
-                                            ]"
-                                            class="rounded-full py-3 px-4 flex items-center justify-center font-medium border-2 transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-1">
-                                        <i class="fa-solid fa-magic mr-2"></i>
-                                        {{ $t('home.createFromThis') }}
-                                    </router-link>
                                 </div>
                                 
                                 <audio 
-                                    :id="'audio-' + (index + 1)" 
+                                    :id="'audio-' + index" 
                                     :src="getOptimizedAudioUrl(example.audio)" 
                                     @timeupdate="updateProgress($event, example)" 
                                     @ended="audioEnded(example)" 
-                                    @canplaythrough="logAudioLoaded(example.title, example.audio)"
-                                    @error="logAudioError(example.title, example.audio, $event.error)"
-                                    style="display: none;"></audio>
+                                    @canplaythrough="logAudioLoaded(example.title, example.audio)" 
+                                    @error="logAudioError(example.title, example.audio, $event)" 
+                                    preload="none"></audio>
+                            </div>
+                            
+                            <!-- Story Image (positioned absolutely) -->
+                            <div class="absolute -top-3 left-4 w-32 h-32 rounded-2xl overflow-hidden shadow-lg border"
+                                 :class="[
+                                     index % 4 === 0 ? 'border-teal-900' : '',
+                                     index % 4 === 1 ? 'border-purple-900' : '',
+                                     index % 4 === 2 ? 'border-yellow-900' : '',
+                                     index % 4 === 3 ? 'border-blue-900' : ''
+                                 ]">
+                                <img :src="getOptimizedImageUrl(example.coverImage || example.image, 200, 200)" 
+                                     :alt="example.title" 
+                                     class="w-full h-full object-cover" />
                             </div>
                         </div>
                     </div>
@@ -319,113 +191,6 @@ window.IndexPage = {
                         </div>
                         <h3 class="text-xl font-bold text-gray-700 mb-2">{{ $t('home.noExamples') }}</h3>
                         <p class="text-gray-600">{{ $t('home.checkBackSoon') }}</p>
-                    </div>
-                </div>
-                
-                <!-- Features Section -->
-                <div class="mt-16 space-y-8">
-                    <h2 class="text-2xl font-bold mb-8 text-center relative bg-white p-4 rounded-xl shadow-sm">
-                        <span class="inline-block bg-clip-text text-transparent bg-gradient-to-r from-[#4A90E2] via-[#64B5F6] to-[#81D4FA] mb-3">
-                            {{ $t('home.featuresTitle') }}
-                        </span>
-                        <div class="absolute left-0 right-0 bottom-0 h-1 bg-gradient-to-r from-[#4A90E2] via-[#64B5F6] to-[#81D4FA] rounded-full"></div>
-                    </h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-white border-4 border-[#4A90E2] rounded-3xl p-6 shadow-lg transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                            <div class="w-16 h-16 mx-auto mb-4 bg-[#F0F9FF] rounded-full flex items-center justify-center">
-                                <i class="fa-solid fa-child text-[#4A90E2] text-2xl"></i>
-                            </div>
-                            <h3 class="text-xl font-semibold text-[#4A90E2] mb-3 text-center">{{ $t('home.feature1Title') }}</h3>
-                            <p class="text-gray-600 text-center">{{ $t('home.feature1Text') }}</p>
-                        </div>
-                        <div class="bg-white border-4 border-[#64B5F6] rounded-3xl p-6 shadow-lg transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                            <div class="w-16 h-16 mx-auto mb-4 bg-[#F0F9FF] rounded-full flex items-center justify-center">
-                                <i class="fa-solid fa-headphones text-[#64B5F6] text-2xl"></i>
-                            </div>
-                            <h3 class="text-xl font-semibold text-[#64B5F6] mb-3 text-center">{{ $t('home.feature2Title') }}</h3>
-                            <p class="text-gray-600 text-center">{{ $t('home.feature2Text') }}</p>
-                        </div>
-                        <div class="bg-white border-4 border-[#81D4FA] rounded-3xl p-6 shadow-lg transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                            <div class="w-16 h-16 mx-auto mb-4 bg-[#F0F9FF] rounded-full flex items-center justify-center">
-                                <i class="fa-solid fa-image text-[#81D4FA] text-2xl"></i>
-                            </div>
-                            <h3 class="text-xl font-semibold text-[#81D4FA] mb-3 text-center">{{ $t('home.feature3Title') }}</h3>
-                            <p class="text-gray-600 text-center">{{ $t('home.feature3Text') }}</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- How It Works Section -->
-                <div class="mt-16 space-y-8">
-                    <h2 class="text-2xl font-bold mb-8 text-center relative bg-white p-4 rounded-xl shadow-sm">
-                        <span class="inline-block text-[#4A90E2] mb-3">
-                            {{ $t('home.howItWorksTitle') }}
-                        </span>
-                        <div class="absolute left-0 right-0 bottom-0 h-1 bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] rounded-full"></div>
-                    </h2>
-                    
-                    <div class="relative">
-                        <!-- Connecting Line -->
-                        <div class="absolute top-24 left-1/2 w-2 bg-gradient-to-b from-[#2871CC] via-[#4A90E2] to-[#81D4FA] h-3/4 -translate-x-1/2 hidden md:block"></div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <!-- Step 1 -->
-                            <div class="bg-white rounded-3xl p-6 shadow-lg border-4 border-[#2871CC] relative z-10">
-                                <div class="absolute -top-5 -left-5 w-10 h-10 bg-[#2871CC] text-white rounded-full flex items-center justify-center font-bold text-xl">1</div>
-                                <div class="flex items-center mb-4">
-                                    <div class="w-16 h-16 bg-[#F0F9FF] rounded-full flex items-center justify-center mr-4">
-                                        <i class="fa-solid fa-user-pen text-[#2871CC] text-2xl"></i>
-                                    </div>
-                                    <h3 class="text-xl font-semibold text-[#2871CC]">{{ $t('home.step1') }}</h3>
-                                </div>
-                                <div class="pl-20">
-                                    <p class="text-gray-600">{{ $t('home.step1Description') }}</p>
-                                </div>
-                            </div>
-                            
-                            <!-- Step 2 -->
-                            <div class="bg-white rounded-3xl p-6 shadow-lg border-4 border-[#4A90E2] relative z-10 md:mt-16">
-                                <div class="absolute -top-5 -left-5 w-10 h-10 bg-[#4A90E2] text-white rounded-full flex items-center justify-center font-bold text-xl">2</div>
-                                <div class="flex items-center mb-4">
-                                    <div class="w-16 h-16 bg-[#F0F9FF] rounded-full flex items-center justify-center mr-4">
-                                        <i class="fa-solid fa-microphone text-[#4A90E2] text-2xl"></i>
-                                    </div>
-                                    <h3 class="text-xl font-semibold text-[#4A90E2]">{{ $t('home.step2') }}</h3>
-                                </div>
-                                <div class="pl-20">
-                                    <p class="text-gray-600">{{ $t('home.narratorDescription') }}</p>
-                                </div>
-                            </div>
-                            
-                            <!-- Step 3 -->
-                            <div class="bg-white rounded-3xl p-6 shadow-lg border-4 border-[#64B5F6] relative z-10">
-                                <div class="absolute -top-5 -left-5 w-10 h-10 bg-[#64B5F6] text-white rounded-full flex items-center justify-center font-bold text-xl">3</div>
-                                <div class="flex items-center mb-4">
-                                    <div class="w-16 h-16 bg-[#F0F9FF] rounded-full flex items-center justify-center mr-4">
-                                        <i class="fa-solid fa-wand-magic-sparkles text-[#64B5F6] text-2xl"></i>
-                                    </div>
-                                    <h3 class="text-xl font-semibold text-[#64B5F6]">{{ $t('home.step3') }}</h3>
-                                </div>
-                                <div class="pl-20">
-                                    <p class="text-gray-600">{{ $t('home.step3Description') }}</p>
-                                </div>
-                            </div>
-                            
-                            <!-- Step 4 -->
-                            <div class="bg-white rounded-3xl p-6 shadow-lg border-4 border-[#81D4FA] relative z-10 md:mt-16">
-                                <div class="absolute -top-5 -left-5 w-10 h-10 bg-[#81D4FA] text-white rounded-full flex items-center justify-center font-bold text-xl">4</div>
-                                <div class="flex items-center mb-4">
-                                    <div class="w-16 h-16 bg-[#F0F9FF] rounded-full flex items-center justify-center mr-4">
-                                        <i class="fa-solid fa-share-nodes text-[#81D4FA] text-2xl"></i>
-                                    </div>
-                                    <h3 class="text-xl font-semibold text-[#81D4FA]">{{ $t('home.step4') }}</h3>
-                                </div>
-                                <div class="pl-20">
-                                    <p class="text-gray-600">{{ $t('home.step4Description') }}</p>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </main>

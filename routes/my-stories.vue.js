@@ -5,34 +5,29 @@ window.MyStoriesPage = {
         <div class="min-h-screen bg-white pb-16 font-['Onest']">
             <!-- Navigation -->
             <div>
-                <!-- Navigation Menu -->
-                <nav class="bg-white shadow-md py-3 px-4 sm:px-6">
-                    <div class="flex justify-center sm:justify-start flex-wrap gap-2">
-                        <router-link to="/" class="px-3 py-2 rounded-lg text-[#4A90E2] hover:bg-[#F0F9FF] text-sm sm:text-base flex-grow-0">
-                            {{ $t('ui.home') }}
-                        </router-link>
-                        <router-link to="/create" class="px-3 py-2 rounded-lg text-[#4A90E2] hover:bg-[#F0F9FF] text-sm sm:text-base flex-grow-0">
-                            {{ $t('ui.new') }}
-                        </router-link>
-                        <router-link to="/my-stories" class="px-3 py-2 rounded-lg bg-[#4A90E2] text-white font-medium text-sm sm:text-base flex-grow-0">
-                            {{ $t('ui.myStories') }}
-                        </router-link>
-                    </div>
-                </nav>
+              <nav class="py-3 px-8 flex items-center relative max-w-3xl mx-auto">
+                <router-link to="/" class="absolute left-8">
+                  <i class="fas fa-arrow-left text-slate-700"></i>
+                </router-link>
+                <div class="flex items-center gap-2 mx-auto p-2">
+                  <img src="/assets/image/logo.png" alt="AI Storyteller" class="h-6 w-6" />
+                  <span class="font-medium text-slate-800">AI Storyteller</span>
+                </div>
+              </nav>
             </div>
 
             <!-- Main Content -->
             <main class="max-w-3xl mx-auto w-full px-4 pt-6 pb-16">                
                 <!-- Search Bar (only show if there are stories) -->
                 <div v-if="!loading && generations.length > 0" class="mb-6">
-                    <div class="relative">
+                    <div class="group relative">
                         <input 
                             v-model="searchQuery"
                             type="text" 
                             :placeholder="$t('myStories.searchPlaceholder')"
-                            class="w-full px-4 py-3 rounded-full border border-[#BBDEFB] focus:outline-none focus:ring-2 focus:ring-[#4A90E2] focus:border-[#4A90E2] pl-10 shadow-sm"
+                            class="w-full px-4 py-3 rounded-full border border-[#DDDDDD] focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-300 duration-300 pl-10 shadow-sm"
                         />
-                        <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[#81D4FA]"></i>
+                        <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[#DDD] group-focus-within:text-purple-300"></i>
                         <button 
                             v-if="searchQuery" 
                             @click="searchQuery = ''" 
@@ -69,11 +64,11 @@ window.MyStoriesPage = {
                                 :alt="story.title" 
                                 class="w-full h-full object-cover absolute inset-0"
                             >
-                            <div class="absolute inset-0 bg-[url('/assets/image/book-texture.svg')] bg-cover bg-no-repeat opacity-30 mix-blend-multiply pointer-events-none"></div>
+                            <div class="absolute inset-0 bg-[url('/assets/image/book-texture.svg')] bg-cover bg-no-repeat mix-blend-multiply pointer-events-none"></div>
                             
                             <!-- Play Button (centered on the cover) -->
                             <div class="absolute inset-0 flex items-center justify-center">
-                                <button @click.stop="playStory(story)" class="bg-[#9C6BFF] bg-opacity-90 rounded-full w-10 h-10 flex items-center justify-center text-white hover:bg-opacity-100 transition-all duration-200 transform hover:scale-110 shadow-lg">
+                                <button @click.stop="playStory(story)" class="bg-[#9C6BFF] bg-opacity-90 rounded-full w-10 h-10 flex items-center justify-center text-white hover:bg-opacity-100 transition-all duration-200 transform hover:scale-110">
                                     <i class="fa-solid fa-play text-sm"></i>
                                 </button>
                             </div>
