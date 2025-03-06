@@ -27,6 +27,7 @@
       "copied": "Copied to clipboard!",
       "copyLink": "Copy this link to share the story:",
       "audioNotSupported": "Your browser does not support the audio element.",
+      "errorDownloadingAudio": "There was an error downloading the audio file. Please try again.",
       "home": "Home",
       "new": "New",
       "myStories": "My Stories",
@@ -138,7 +139,8 @@
       "noStorySpecified": "No story file specified. Please provide a valid file URL.",
       "invalidIndex": "Invalid story index",
       "noStoryContent": "No story content available",
-      "untitledStory": "Untitled Story"
+      "untitledStory": "Untitled Story",
+      "errorDownloadingAudio": "There was an error downloading the audio file. Please try again later."
     },
     "examples": [
       {
@@ -270,6 +272,7 @@
       "copied": "Copiado para a área de transferência!",
       "copyLink": "Copie este link para compartilhar a história:",
       "audioNotSupported": "Seu navegador não suporta o elemento de áudio.",
+      "errorDownloadingAudio": "Houve um erro ao baixar o arquivo de áudio. Por favor, tente novamente mais tarde.",
       "home": "Início",
       "new": "Nova",
       "myStories": "Minhas Histórias",
@@ -381,7 +384,8 @@
       "noStorySpecified": "Nenhum arquivo de história especificado. Por favor, forneça uma URL de arquivo válida.",
       "invalidIndex": "Índice de história inválido",
       "noStoryContent": "Nenhum conteúdo de história disponível",
-      "untitledStory": "História sem Título"
+      "untitledStory": "História sem Título",
+      "errorDownloadingAudio": "Houve um erro ao baixar o arquivo de áudio. Por favor, tente novamente mais tarde."
     },
     "examples": [
       {

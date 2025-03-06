@@ -784,14 +784,36 @@ window.CreatePage = {
     },
     downloadAudio() {
       if (this.audioSource && !this.audioLoading) {
-        const a = document.createElement('a');
-        a.href = this.audioSource;
-        a.download = `${this.storyData.title.replace(/\s+/g, '_')}.mp3`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        
-        console.log("Downloading audio from:", this.audioSource);
+        // Create a Blob URL from the audio source if it's not already a Blob URL
+        fetch(this.audioSource)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`Error fetching audio: ${response.status} ${response.statusText}`);
+            }
+            return response.blob();
+          })
+          .then(blob => {
+            // Create a download link and trigger it
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${this.storyData.title.replace(/\s+/g, '_')}.mp3`;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            
+            // Clean up
+            setTimeout(() => {
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            }, 100);
+            
+            console.log("Downloading audio from:", this.audioSource);
+          })
+          .catch(error => {
+            console.error("Error downloading audio:", error);
+            alert(this.$t('ui.errorDownloadingAudio') || "Error downloading audio");
+          });
       }
     },
     goBack() {

@@ -100,7 +100,7 @@ window.StoryPage = {
 
                     <!-- Action Buttons -->
                     <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-                        <a :href="story.audioUrl" download class="bg-gradient-to-b from-purple-300 to-purple-500 border border-purple-700 text-white px-6 py-3 rounded-full shadow-md hover:translate-y-[-2px] transition-transform duration-200 font-medium flex items-center justify-center gap-2">
+                        <a @click.prevent="downloadAudio" class="bg-gradient-to-b from-purple-300 to-purple-500 border border-purple-700 text-white px-6 py-3 rounded-full shadow-md hover:translate-y-[-2px] transition-transform duration-200 font-medium flex items-center justify-center gap-2 cursor-pointer">
                             <i class="fa-solid fa-download"></i>
                             {{ $t('ui.downloadAudio') }}
                         </a>
@@ -907,6 +907,31 @@ window.StoryPage = {
             const storyTextElement = document.querySelector('.story-text-container');
             if (storyTextElement) {
                 storyTextElement.scrollIntoView({ behavior: 'smooth' });
+            }
+        },
+        async downloadAudio() {
+            if (!this.story || !this.story.audioUrl) {
+                console.warn("No audio URL to download");
+                return;
+            }
+
+            try {
+                const response = await fetch(this.story.audioUrl);
+                if (!response.ok) {
+                    throw new Error(`Failed to download audio: ${response.status} ${response.statusText}`);
+                }
+
+                const blob = await response.blob();
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = this.story.title ? this.story.title.replace(/\s+/g, '_') + '.mp3' : 'story.mp3';
+                link.click();
+                URL.revokeObjectURL(link.href);
+
+                console.log("Audio downloaded successfully");
+            } catch (error) {
+                console.error("Error downloading audio:", error);
+                alert(this.$t('story.errorDownloadingAudio'));
             }
         }
     }
