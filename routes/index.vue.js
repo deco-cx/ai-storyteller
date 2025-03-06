@@ -5,7 +5,7 @@ window.IndexPage = {
         <div class="min-h-screen bg-gradient-to-b from-[#E1F5FE] to-[#BBDEFB] pb-16 relative">
             <!-- Background image for mobile only -->
             <div class="absolute inset-0 z-0 md:hidden">
-                <img src="/assets/image/bg.png" alt="Background" class="w-full h-full object-cover fixed" />
+                <img src="/assets/image/bg.webp" alt="Background" class="w-full h-full object-cover fixed" />
             </div>
             
             <!-- Fixed full-height gradient overlay that transitions to white -->
