@@ -24,7 +24,7 @@ window.IndexPage = {
                         </div>
                         
                         <!-- My Stories Button - Styled like CTA button but smaller -->
-                        <router-link v-if="user" to="/my-stories" class="flex justify-center items-center gap-1 py-2 px-4 w-auto min-w-[120px] h-10 bg-gradient-to-b from-purple-300 to-purple-500 border border-purple-700 rounded-full cursor-pointer shadow-md hover:translate-y-[-2px] transition-transform duration-200 font-['Onest'] font-medium text-sm text-white">
+                        <router-link v-if="user" to="/my-stories" @click="trackMyStoriesClick" class="flex justify-center items-center gap-1 py-2 px-4 w-auto min-w-[120px] h-10 bg-gradient-to-b from-purple-300 to-purple-500 border border-purple-700 rounded-full cursor-pointer shadow-md hover:translate-y-[-2px] transition-transform duration-200 font-['Onest'] font-medium text-sm text-white">
                             <span class="flex items-center justify-center">
                                 <i class="fa-solid fa-book"></i>
                             </span>
@@ -50,7 +50,7 @@ window.IndexPage = {
                         
                         <!-- CTA section -->
                         <div class="flex flex-col items-center w-full gap-2">
-                            <button @click="user ? $router.push('/create') : handleLogin()" class="flex justify-center items-center gap-2 py-3 px-6 w-full md:w-auto md:min-w-[250px] h-12 bg-gradient-to-b from-purple-300 to-purple-500 border border-purple-700 rounded-full cursor-pointer shadow-md hover:translate-y-[-2px] transition-transform duration-200 font-['Onest'] font-medium text-lg text-white">
+                            <button @click="trackCreateStoryClick(); user ? $router.push('/create') : handleLogin()" class="flex justify-center items-center gap-2 py-3 px-6 w-full md:w-auto md:min-w-[250px] h-12 bg-gradient-to-b from-purple-300 to-purple-500 border border-purple-700 rounded-full cursor-pointer shadow-md hover:translate-y-[-2px] transition-transform duration-200 font-['Onest'] font-medium text-lg text-white">
                                 <span class="flex items-center justify-center">
                                     <img src="assets/image/book-icon.svg" alt="Book Icon" />
                                 </span>
@@ -1013,6 +1013,22 @@ window.IndexPage = {
           finalError,
         );
         example.isPlaying = false;
+      }
+    },
+    trackMyStoriesClick() {
+      // Track my stories click event with PostHog
+      if (sdk && sdk.posthogEvent) {
+        sdk.posthogEvent("my_stories_clicked", {
+          user: this.user ? this.user.username : 'anonymous'
+        });
+      }
+    },
+    trackCreateStoryClick() {
+      // Track create story button click with PostHog
+      if (sdk && sdk.posthogEvent) {
+        sdk.posthogEvent("create_story_clicked", {
+          user: this.user ? this.user.username : 'anonymous'
+        });
       }
     },
   },

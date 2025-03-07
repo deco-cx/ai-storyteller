@@ -528,7 +528,7 @@ window.StoryPage = {
                     content: storyData.content || "",
                     story: storyData.story || "",
                     audioUrl: storyData.audioUrl || null,
-                    coverUrl: storyData.coverUrl || "/assets/image/bg.png",
+                    coverUrl: storyData.coverUrl || "/assets/image/bg.webp",
                     createdAt: storyData.createdAt || new Date().toISOString(),
                     updatedAt: storyData.updatedAt || new Date().toISOString(),
                     isNew: storyData.isNew || false,
@@ -624,11 +624,18 @@ window.StoryPage = {
             }
         },
         toggleAudio() {
-            if (!this.$refs.audioPlayer) return;
-            
+            if (!this.$refs.audioPlayer) return;            
+                        
             if (this.isPlaying) {
                 this.$refs.audioPlayer.pause();
             } else {
+                // Track play click event with PostHog
+                if (sdk && sdk.posthogEvent) {
+                    sdk.posthogEvent("story_play_clicked", {
+                        story_id: this.storyId,
+                        story_title: this.story.title
+                    });
+                }
                 this.$refs.audioPlayer.play();
             }
             
@@ -669,6 +676,14 @@ window.StoryPage = {
         shareStory() {
             // Create a shareable link to this story
             const currentUrl = window.location.href;
+            
+            // Track share event with PostHog
+            if (sdk && sdk.posthogEvent) {
+                sdk.posthogEvent("story_shared", {
+                    story_id: this.storyId,
+                    story_title: this.story.title,
+                });
+            }
             
             // Try to use the Web Share API if available
             if (navigator.share) {
@@ -927,6 +942,11 @@ window.StoryPage = {
                 link.download = this.story.title ? this.story.title.replace(/\s+/g, '_') + '.mp3' : 'story.mp3';
                 link.click();
                 URL.revokeObjectURL(link.href);
+
+                sdk.posthogEvent("story_audio_downloaded", {
+                    story_id: this.storyId,
+                    story_title: this.story.title
+                });
 
                 console.log("Audio downloaded successfully");
             } catch (error) {
