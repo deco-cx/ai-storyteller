@@ -527,9 +527,13 @@ window.CreatePage = {
           this.audioSource = fullAudioUrl;
           this.audioLoading = true;
           
-          // Do an initial check
+          // Add an initial delay before checking to allow permissions to propagate
+          console.log("Waiting 4 seconds for file permissions to apply before checking...");
+          await new Promise(resolve => setTimeout(resolve, 4000));
+          
+          // Do an initial check with fewer attempts and less logging
           console.log("Checking if audio file is ready...");
-          const isAudioReady = await this.checkAudioReady(fullAudioUrl, 3, 1000);
+          const isAudioReady = await this.checkAudioReady(fullAudioUrl, 2, 3000);
           
           if (isAudioReady) {
             console.log("Audio file is confirmed ready");
@@ -546,10 +550,26 @@ window.CreatePage = {
           let audioReady = false;
           let attempts = 0;
           const maxAttempts = 30;
+          let lastStatus = null;
           
           while (!audioReady && attempts < maxAttempts) {
             attempts++;
-            console.log(`Audio availability check attempt ${attempts}/${maxAttempts}`);
+            // Only log on first attempt or every 5th attempt to reduce console spam
+            if (attempts === 1 || attempts % 5 === 0 || attempts === maxAttempts) {
+              console.log(`Audio availability check attempt ${attempts}/${maxAttempts}`);
+            }
+            
+            // If previous attempt returned 403, only make actual request periodically
+            const shouldSkipRequest = lastStatus === 403 && 
+                                      attempts > 1 && 
+                                      attempts % 5 !== 0 && 
+                                      attempts !== maxAttempts;
+                                      
+            if (shouldSkipRequest) {
+              // Just wait without making a request
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              continue;
+            }
             
             try {
               const response = await fetch(fullAudioUrl, { 
@@ -559,17 +579,25 @@ window.CreatePage = {
                 }
               });
               
+              lastStatus = response.status;
+              
               if (response.ok || response.status === 206) {
                 console.log(`Audio file is accessible! Status: ${response.status}`);
                 audioReady = true;
                 this.taskStatus.audio = "done";
               } else {
-                console.log(`Audio file not accessible yet (status: ${response.status}), waiting...`);
-                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second between attempts
+                // Only log on first attempt or every 5th attempt
+                if (attempts === 1 || attempts % 5 === 0 || attempts === maxAttempts) {
+                  console.log(`Audio file not accessible yet (status: ${response.status}), waiting...`);
+                }
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds between attempts
               }
             } catch (error) {
-              console.warn(`Error checking audio file: ${error.message}`);
-              await new Promise(resolve => setTimeout(resolve, 1000));
+              // Only log on first attempt or every 5th attempt
+              if (attempts === 1 || attempts % 5 === 0 || attempts === maxAttempts) {
+                console.warn(`Error checking audio file: ${error.message}`);
+              }
+              await new Promise(resolve => setTimeout(resolve, 2000));
             }
           }
           
@@ -819,12 +847,30 @@ window.CreatePage = {
     goBack() {
       this.screen = "form";
     },
-    async checkAudioReady(url, maxAttempts = 10, delayMs = 1000) {
+    async checkAudioReady(url, maxAttempts = 10, delayMs = 2000) {
       if (!url) return false;
+      
+      let lastStatus = null;
       
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
         try {
-          console.log(`Checking audio availability (attempt ${attempt + 1}/${maxAttempts})...`);
+          // Only log on first attempt or last attempt
+          if (attempt === 0 || attempt === maxAttempts - 1) {
+            console.log(`Checking audio availability (attempt ${attempt + 1}/${maxAttempts})...`);
+          }
+          
+          // If previous attempt returned 403, only make actual network request on first, third, and last attempts
+          // to reduce console errors while still checking periodically
+          const shouldSkipActualRequest = lastStatus === 403 && 
+                                          attempt > 0 && 
+                                          attempt !== 2 && 
+                                          attempt !== maxAttempts - 1;
+          
+          if (shouldSkipActualRequest) {
+            // Skip actual network request but still wait
+            await new Promise(resolve => setTimeout(resolve, delayMs));
+            continue;
+          }
           
           // Use a GET request with range headers instead of HEAD
           // This requests just the first few bytes of the file
@@ -835,6 +881,8 @@ window.CreatePage = {
             }
           });
           
+          lastStatus = response.status;
+          
           if (response.ok || response.status === 206) { // 206 is Partial Content
             console.log(`Audio file response status: ${response.status}`);
             
@@ -843,10 +891,16 @@ window.CreatePage = {
             return true;
           }
           
-          console.log(`Audio file not ready yet (status: ${response.status}), waiting ${delayMs}ms...`);
+          // Only log on first attempt to reduce console spam
+          if (attempt === 0 || attempt === maxAttempts - 1) {
+            console.log(`Audio file not ready yet (status: ${response.status}), waiting ${delayMs}ms...`);
+          }
           await new Promise(resolve => setTimeout(resolve, delayMs));
         } catch (error) {
-          console.warn(`Error checking audio file: ${error.message}`);
+          // Only log on first attempt to reduce console spam
+          if (attempt === 0 || attempt === maxAttempts - 1) {
+            console.warn(`Error checking audio file: ${error.message}`);
+          }
           await new Promise(resolve => setTimeout(resolve, delayMs));
         }
       }
