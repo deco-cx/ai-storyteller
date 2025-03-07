@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <base href="/">
-    <title>AI Storyteller - Create Amazing Stories</title>
+    <title>AI Storytime: Create Stories with Your Child's Imagination</title>
     <!-- Preloading Audio Files -->
     <!-- English audio files -->
     <link rel="preload" href="https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-grandpa2.mp3" as="audio" type="audio/mpeg" crossorigin>
@@ -38,8 +38,69 @@
     <script src="https://unpkg.com/vue-router@4"></script>
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#ffffff">
-    <meta name="description" content="AI Storyteller - Create Amazing Stories">
+    <meta name="description" content="Turn your child's imagination into stories where they're the hero! AI Storytime creates personalized, narrated tales in seconds. Try it for free!">
     <link rel="manifest" href="manifest.json">
+    
+    <!-- Open Graph / Social Media Meta Tags -->
+    <meta property="og:title" content="AI Storytime: Create Stories with Your Child's Imagination">
+    <meta property="og:description" content="Turn your child's imagination into stories where they're the hero! AI Storytime creates personalized, narrated tales in seconds. Try it for free!">
+    <meta property="og:image" content="/assets/image/seo-img-en.jpg">
+    <meta property="og:type" content="website">
+    
+    <!-- Language-specific SEO script -->
+    <script>
+        // Function to update meta tags based on language
+        function updateMetaTags(lang) {
+            const metaTags = {
+                en: {
+                    title: "AI Storytime: Create Stories with Your Child's Imagination",
+                    description: "Turn your child's imagination into stories where they're the hero! AI Storytime creates personalized, narrated tales in seconds. Try it for free!",
+                    image: "/assets/image/seo-img-en.jpg"
+                },
+                pt: {
+                    title: "AI Storytime: Crie Histórias com a Imaginação do Seu Filho",
+                    description: "Transforme a imaginação do seu filho em histórias onde ele é o protagonista! AI Storytime cria contos personalizados e narrados em segundos. Experimente grátis!",
+                    image: "/assets/image/seo-img-pt.jpg"
+                }
+            };
+            
+            // Get the meta data for the current language
+            const meta = metaTags[lang] || metaTags.en;
+            
+            // Update document title
+            document.title = meta.title;
+            
+            // Update meta description
+            const descriptionMeta = document.querySelector('meta[name="description"]');
+            if (descriptionMeta) descriptionMeta.setAttribute('content', meta.description);
+            
+            // Update Open Graph meta tags
+            const ogTitle = document.querySelector('meta[property="og:title"]');
+            const ogDescription = document.querySelector('meta[property="og:description"]');
+            const ogImage = document.querySelector('meta[property="og:image"]');
+            
+            if (ogTitle) ogTitle.setAttribute('content', meta.title);
+            if (ogDescription) ogDescription.setAttribute('content', meta.description);
+            if (ogImage) ogImage.setAttribute('content', meta.image);
+            
+            // Update html lang attribute
+            document.documentElement.setAttribute('lang', lang);
+        }
+        
+        // Listen for language changes
+        document.addEventListener('language-updated', function(event) {
+            const lang = event.detail;
+            updateMetaTags(lang);
+        });
+        
+        // Initial language setup
+        window.addEventListener('DOMContentLoaded', function() {
+            // Get initial language from localStorage or default to 'en'
+            const initialLang = localStorage.getItem('appLanguage') || 'en';
+            updateMetaTags(initialLang);
+        });
+    </script>
+    
     <style>
         /* Initial loading animation styles */
         .initial-loader {

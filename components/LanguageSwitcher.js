@@ -31,6 +31,11 @@ export default {
         changeLanguage() {
             window.i18n.setLanguage(this.currentLanguage);
             // The i18n system will now handle the notification
+            
+            // Also dispatch a DOM event for the SEO meta tags update
+            document.dispatchEvent(new CustomEvent('language-updated', { 
+                detail: this.currentLanguage 
+            }));
         }
     }
 }; 

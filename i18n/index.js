@@ -42,6 +42,11 @@ const setLanguage = (lang) => {
       window.eventBus.emit('language-changed', lang);
     }
     
+    // Dispatch DOM event for SEO meta tags update
+    document.dispatchEvent(new CustomEvent('language-updated', { 
+      detail: lang 
+    }));
+    
     return true;
   }
   return false;
