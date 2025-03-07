@@ -9,9 +9,8 @@ window.MyStoriesPage = {
                 <router-link to="/" class="absolute left-8">
                   <i class="fas fa-arrow-left text-slate-700"></i>
                 </router-link>
-                <div class="flex items-center gap-2 mx-auto p-2">
-                  <img src="/assets/image/logo.png" alt="AI Storyteller" class="h-6 w-6" />
-                  <span class="font-medium text-slate-800">AI Storyteller</span>
+                <div class="flex items-center mx-auto p-2">
+                  {{ $t('ui.myStories') }}
                 </div>
               </nav>
             </div>

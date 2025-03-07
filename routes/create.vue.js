@@ -1355,12 +1355,11 @@ window.CreatePage = {
   template: `
     <div class="min-h-screen bg-white pb-16">
       <nav class="py-3 px-8 flex items-center relative max-w-3xl mx-auto">
-        <router-link to="/" class="absolute left-8">
+        <router-link to="/">
           <i class="fas fa-arrow-left text-slate-700"></i>
         </router-link>
-        <div class="flex items-center gap-2 mx-auto p-2">
-          <img src="/assets/image/logo.png" alt="AI Storyteller" class="h-6 w-6" />
-          <span class="font-medium text-slate-800">AI Storyteller</span>
+        <div class="flex items-center mx-auto p-2">
+          {{ $t('ui.createNewStory') }}
         </div>
       </nav>
 

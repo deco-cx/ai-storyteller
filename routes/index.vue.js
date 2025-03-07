@@ -36,15 +36,7 @@ window.IndexPage = {
             
             <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-8 relative z-10">
                 <!-- Hero Section -->
-                <div class="relative z-10 flex flex-col items-center gap-6 max-w-[342px] md:max-w-[500px] mx-auto py-2 px-6 mb-16">
-                        <!-- Logo and title -->
-                        <div class="flex items-center gap-1">
-                            <div class="flex justify-center items-center w-6 h-6 rounded-md">
-                                <img src="assets/image/logo.png" alt="AI Storyteller Logo" class="w-full h-full" />
-                            </div>
-                            <h2 class="font-['Onest'] font-medium text-sm leading-none tracking-tight text-slate-800 m-0">AI Storyteller</h2>
-                        </div>
-                        
+                <div class="relative z-10 flex flex-col items-center gap-6 max-w-[342px] md:max-w-[500px] mx-auto py-2 px-6 mb-16">                      
                         <!-- Main heading -->
                         <h1 class="font-['Onest'] font-medium text-3xl md:text-4xl leading-[0.93] tracking-tight text-slate-700 text-center m-0">{{ $t('home.welcome') }}</h1>
                         

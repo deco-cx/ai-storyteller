@@ -5,14 +5,10 @@ window.StoryPage = {
     template: `
         <div v-if="sdkAvailable" class="min-h-screen pb-16 bg-[#F4F4F5]">
             <!-- Navigation -->
-            <nav class="py-3 px-8 flex items-center relative max-w-3xl mx-auto">
+            <nav class="h-16 px-8 flex items-center relative max-w-3xl mx-auto">
                 <router-link to="/" class="absolute left-8">
-                <i class="fas fa-arrow-left text-slate-700"></i>
+                    <i class="fas fa-arrow-left text-slate-700"></i>
                 </router-link>
-                <div class="flex items-center gap-2 mx-auto p-2">
-                <img src="/assets/image/logo.png" alt="AI Storyteller" class="h-6 w-6" />
-                <span class="font-medium text-slate-800">AI Storyteller</span>
-                </div>
             </nav>
 
             <!-- Loading State -->
