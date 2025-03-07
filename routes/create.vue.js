@@ -48,6 +48,32 @@ window.CreatePage = {
       this.updateVoicesForLanguage();
       this.updateInterestSuggestions();
       
+      // Check if we have example data in localStorage
+      const exampleDataString = localStorage.getItem('createFromExample');
+      if (exampleDataString) {
+        try {
+          const exampleData = JSON.parse(exampleDataString);
+          
+          // Pre-fill form with example data
+          if (exampleData.childName) this.childName = exampleData.childName;
+          if (exampleData.themes) this.interests = exampleData.themes;
+          
+          // Select the voice if it exists in our voices array
+          if (exampleData.voice && this.voices.length > 0) {
+            const matchingVoice = this.voices.find(v => v.name === exampleData.voice);
+            if (matchingVoice) {
+              this.selectedVoice = matchingVoice;
+            }
+          }
+          
+          // Clear the localStorage item after using it
+          localStorage.removeItem('createFromExample');
+        } catch (error) {
+          console.error('Error parsing example data from localStorage:', error);
+          localStorage.removeItem('createFromExample');
+        }
+      }
+      
       // Check for URL parameters
       const urlParams = new URLSearchParams(window.location.search);
       const themes = urlParams.get('themes');
@@ -1259,7 +1285,7 @@ window.CreatePage = {
           // Provide default suggestions if nothing is available
           this.interestSuggestions = [
             { text: "Rockets", color: "#22C55E" },
-            { text: "Pirates", color: "#00B7EA" },
+            { text: "Pirates", color: "#A5B4FC" },
             { text: "Space", color: "#F59E0B" },
             { text: "Dinosaurs", color: "#EF4444" },
             { text: "Helping Others", color: "#F59E0B" },
@@ -1351,6 +1377,13 @@ window.CreatePage = {
       console.log(`Preview audio for "${voice.name}" playback completed`);
       this.isPreviewPlaying = null;
     },
+    getSuggestionClasses(suggestion) {
+      return [
+        `bg-${suggestion.color}-300`,
+        `text-${suggestion.color}-900`,
+        'px-3 py-2 rounded-full text-xs cursor-pointer'
+      ];
+    },
   },
   template: `
     <div class="min-h-screen bg-white pb-16">
@@ -1416,7 +1449,7 @@ window.CreatePage = {
                 <label class="block text-lg font-medium text-slate-700">{{ $t('create.interestsLabel') }}</label>
                 <div class="relative border border-gray-200 rounded-3xl">
                   <textarea :placeholder="$t('create.interestsPlaceholder')" v-model="interests" rows="4" :disabled="screen === 'loading'" class="w-full px-6 py-3 border-0 rounded-3xl focus:ring-2 focus:ring-[#4A90E2] resize-none text-lg min-h-[100px]"></textarea>
-                  <button type="button" @click="randomTheme" class="absolute right-4 bottom-4 bg-[#4A90E2] hover:bg-[#5FA0E9] text-white px-3 py-2 rounded-full text-xs flex items-center gap-2 shadow-md transition-colors duration-200">
+                  <button type="button" @click="randomTheme" class="absolute right-4 bottom-4 bg-purple-500 hover:bg-purple-400 text-white px-3 py-2 rounded-full text-xs flex items-center gap-2 shadow-md transition-colors duration-200">
                     <i class="fas fa-dice-five"></i>
                     {{ $t('create.randomTheme') }}
                   </button>
@@ -1426,8 +1459,7 @@ window.CreatePage = {
                   <span 
                     v-for="suggestion in interestSuggestions" 
                     :key="suggestion.text"
-                    :style="{ backgroundColor: suggestion.color }"
-                    class="text-white px-3 py-1 rounded-full text-xs cursor-pointer" 
+                    :class="getSuggestionClasses(suggestion)"
                     @click="addInterest(suggestion.text)"
                   >
                     {{ suggestion.text }}

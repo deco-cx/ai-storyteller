@@ -61,7 +61,7 @@ window.IndexPage = {
                              :class="[
                                 index % 4 === 0 ? 'bg-gradient-to-b from-teal-200 to-teal-400 border border-teal-700' : '',
                                 index % 4 === 1 ? 'bg-gradient-to-b from-purple-200 to-purple-400 border border-purple-700' : '',
-                                index % 4 === 2 ? 'bg-gradient-to-b from-yellow-200 to-yellow-400 border border-yellow-700' : '',
+                                index % 4 === 2 ? 'bg-gradient-to-b from-amber-200 to-amber-400 border border-amber-700' : '',
                                 index % 4 === 3 ? 'bg-gradient-to-b from-blue-200 to-blue-400 border border-blue-700' : ''
                              ]">
                             <div class="pt-24 p-4 pb-2">
@@ -73,14 +73,14 @@ window.IndexPage = {
                                              :class="[
                                                  index % 4 === 0 ? 'text-teal-900' : '',
                                                  index % 4 === 1 ? 'text-purple-900' : '',
-                                                 index % 4 === 2 ? 'text-yellow-900' : '',
+                                                 index % 4 === 2 ? 'text-amber-900' : '',
                                                  index % 4 === 3 ? 'text-blue-900' : ''
                                              ]">{{ $t('ui.childName') }}</div>
                                         <div class="text-sm"
                                              :class="[
                                                  index % 4 === 0 ? 'text-teal-800' : '',
                                                  index % 4 === 1 ? 'text-purple-800' : '',
-                                                 index % 4 === 2 ? 'text-yellow-800' : '',
+                                                 index % 4 === 2 ? 'text-amber-800' : '',
                                                  index % 4 === 3 ? 'text-blue-800' : ''
                                              ]">{{ example.childName || 'Pablo' }}</div>
                                     </div>
@@ -91,14 +91,14 @@ window.IndexPage = {
                                              :class="[
                                                  index % 4 === 0 ? 'text-teal-900' : '',
                                                  index % 4 === 1 ? 'text-purple-900' : '',
-                                                 index % 4 === 2 ? 'text-yellow-900' : '',
+                                                 index % 4 === 2 ? 'text-amber-900' : '',
                                                  index % 4 === 3 ? 'text-blue-900' : ''
                                              ]">{{ $t('ui.themes') }}</div>
                                         <div class="text-sm"
                                              :class="[
                                                  index % 4 === 0 ? 'text-teal-800' : '',
                                                  index % 4 === 1 ? 'text-purple-800' : '',
-                                                 index % 4 === 2 ? 'text-yellow-800' : '',
+                                                 index % 4 === 2 ? 'text-amber-800' : '',
                                                  index % 4 === 3 ? 'text-blue-800' : ''
                                              ]">{{ example.themes || 'Knights, Desert and Telling the Truth' }}</div>
                                     </div>
@@ -109,14 +109,14 @@ window.IndexPage = {
                                              :class="[
                                                  index % 4 === 0 ? 'text-teal-900' : '',
                                                  index % 4 === 1 ? 'text-purple-900' : '',
-                                                 index % 4 === 2 ? 'text-yellow-900' : '',
+                                                 index % 4 === 2 ? 'text-amber-900' : '',
                                                  index % 4 === 3 ? 'text-blue-900' : ''
                                              ]">{{ $t('home.narratedBy') }}</div>
                                         <div class="flex items-center gap-1"
                                              :class="[
                                                  index % 4 === 0 ? 'text-teal-800' : '',
                                                  index % 4 === 1 ? 'text-purple-800' : '',
-                                                 index % 4 === 2 ? 'text-yellow-800' : '',
+                                                 index % 4 === 2 ? 'text-amber-800' : '',
                                                  index % 4 === 3 ? 'text-blue-800' : ''
                                              ]">
                                             <div class="w-5 h-5 overflow-hidden rounded-full">
@@ -135,7 +135,7 @@ window.IndexPage = {
                                          :class="[
                                              index % 4 === 0 ? 'text-teal-900' : '',
                                              index % 4 === 1 ? 'text-purple-900' : '',
-                                             index % 4 === 2 ? 'text-yellow-900' : '',
+                                             index % 4 === 2 ? 'text-amber-900' : '',
                                              index % 4 === 3 ? 'text-blue-900' : ''
                                          ]">{{ example.title }}</h3>
                                     <button @click="toggleAudio(example)" 
@@ -143,7 +143,7 @@ window.IndexPage = {
                                             :class="[
                                                 index % 4 === 0 ? 'bg-teal-800' : '',
                                                 index % 4 === 1 ? 'bg-purple-800' : '',
-                                                index % 4 === 2 ? 'bg-yellow-800' : '',
+                                                index % 4 === 2 ? 'bg-amber-800' : '',
                                                 index % 4 === 3 ? 'bg-blue-800' : ''
                                             ]">
                                         <i v-if="example.loading" class="fa-solid fa-spinner fa-spin"></i>
@@ -159,6 +159,21 @@ window.IndexPage = {
                                     @canplaythrough="logAudioLoaded(example.title, example.audio)" 
                                     @error="logAudioError(example.title, example.audio, $event)" 
                                     preload="none"></audio>
+                                
+                                <!-- Create from this button - Updated to match the play button color -->
+                                <div class="mt-4">
+                                    <button @click="createFromExample(example)" 
+                                            class="w-full flex justify-center items-center gap-2 py-3 px-6 rounded-full cursor-pointer shadow-md transition-all duration-200 font-['Onest'] font-medium text-white"
+                                            :class="[
+                                                index % 4 === 0 ? 'bg-teal-800 hover:bg-teal-900' : '',
+                                                index % 4 === 1 ? 'bg-purple-800 hover:bg-purple-900' : '',
+                                                index % 4 === 2 ? 'bg-amber-800 hover:bg-amber-900' : '',
+                                                index % 4 === 3 ? 'bg-blue-800 hover:bg-blue-900' : ''
+                                            ]">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                        {{ $t('home.createFromThis') }}
+                                    </button>
+                                </div>
                             </div>
                             
                             <!-- Story Image (positioned absolutely) -->
@@ -166,7 +181,7 @@ window.IndexPage = {
                                  :class="[
                                      index % 4 === 0 ? 'border-teal-900' : '',
                                      index % 4 === 1 ? 'border-purple-900' : '',
-                                     index % 4 === 2 ? 'border-yellow-900' : '',
+                                     index % 4 === 2 ? 'border-amber-900' : '',
                                      index % 4 === 3 ? 'border-blue-900' : ''
                                  ]">
                                 <img :src="getOptimizedImageUrl(example.coverImage || example.image, 200, 200)" 
@@ -1016,10 +1031,53 @@ window.IndexPage = {
       }
     },
     trackCreateStoryClick() {
+      // Track the create story button click
+      if (window.gtag) {
+        window.gtag("event", "create_story_click", {
+          event_category: "engagement",
+          event_label: "home_page",
+        });
+      }
+      
       // Track create story button click with PostHog
       if (sdk && sdk.posthogEvent) {
         sdk.posthogEvent("create_story_clicked", {
           user: this.user ? this.user.username : 'anonymous'
+        });
+      }
+    },
+    createFromExample(example) {
+      // Store example data in localStorage to use in create page
+      const exampleData = {
+        childName: example.childName || '',
+        themes: example.themes || '',
+        voice: example.voice || '',
+        title: example.title || ''
+      };
+      
+      localStorage.setItem('createFromExample', JSON.stringify(exampleData));
+      
+      // Navigate to create page
+      if (this.user) {
+        this.$router.push('/create');
+      } else {
+        this.handleLogin();
+      }
+      
+      // Track the create from example button click
+      if (window.gtag) {
+        window.gtag("event", "create_from_example_click", {
+          event_category: "engagement",
+          event_label: example.title,
+        });
+      }
+      
+      // Track create from example button click with PostHog
+      if (sdk && sdk.posthogEvent) {
+        sdk.posthogEvent("create_from_example_clicked", {
+          user: this.user ? this.user.username : 'anonymous',
+          exampleTitle: example.title,
+          exampleThemes: example.themes
         });
       }
     },

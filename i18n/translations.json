@@ -149,7 +149,7 @@
         "themes": "Sibling bonds, family love, empathy and belonging",
         "voice": "Grandpa Solomon",
         "voiceId": "NOpBlnGInO9m6vDvFkFC",
-        "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Luis&accessories[]&clothingColor=9ddadb&face=cheeky,smile,calm&facialHair=full3&facialHairProbability=100&head=noHair2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=ffdfbf",
+        "voiceAvatar": "/assets/image/grandpa_1.png",
         "image": "/assets/image/ex2.png",
         "audio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-grandpa2.mp3",
         "isPlaying": false,
@@ -161,7 +161,7 @@
         "themes": "Curiosity, discovery, stars and constellations",
         "voice": "Grandma Beatriz",
         "voiceId": "S9EY1qVDizdxKWghP5FL",
-        "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Kimberly&accessories=glasses&clothingColor=e78276&face=cheeky,smile,smileBig,calm&facialHair[]&head=grayBun&headContrastColor=e8e1e1&skinColor=ae5d29&backgroundColor=ffd5dc,ffdfbf",
+        "voiceAvatar": "/assets/image/grandma_1.png",
         "image": "/assets/image/ex1.webp",
         "audio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-grandma.mp3",
         "isPlaying": false,
@@ -173,7 +173,7 @@
         "themes": "Adventure, creativity, imagination",
         "voice": "Aunt Dora",
         "voiceId": "ZqvIIuD5aI9JFejebHiH",
-        "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Chase&accessories[]&clothingColor=e279c7&face=cheeky,smile,calm&facialHair[]&facialHairProbability=0&head=long,bun2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=d1d4f9",
+        "voiceAvatar": "/assets/image/aunt_1.png",
         "image": "/assets/image/ex3.webp",
         "audio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-aunt.mp3",
         "isPlaying": false,
@@ -185,7 +185,7 @@
         "themes": "Courage, friendship, overcoming fear",
         "voice": "Uncle Joe",
         "voiceId": "IKne3meq5aSn9XLyUdCD",
-        "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Eden&accessories=glasses&clothingColor=78e185,ffcf77&face=cheeky,smile,smileBig,calm&facialHair=full&facialHairProbability=100&head=grayShort&headContrastColor=2c1b18&skinColor=ae5d29&backgroundColor=b6e3f4",
+        "voiceAvatar": "/assets/image/uncle_2.png",
         "image": "/assets/image/ex4.webp",
         "audio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-grandpa.mp3",
         "isPlaying": false,
@@ -197,25 +197,25 @@
         "id": "IKne3meq5aSn9XLyUdCD",
         "name": "Uncle Joe",
         "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/uncle_2.mp3",
-        "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Eden&accessories=glasses&clothingColor=78e185,ffcf77&face=cheeky,smile,smileBig,calm&facialHair=full&facialHairProbability=100&head=grayShort&headContrastColor=2c1b18&skinColor=ae5d29&backgroundColor=b6e3f4"
+        "avatar": "/assets/image/uncle_2.png"
       },
       {
         "id": "NOpBlnGInO9m6vDvFkFC",
         "name": "Grandpa Solomon",
         "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/grandpa_1.mp3",
-        "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Luis&accessories[]&clothingColor=9ddadb&face=cheeky,smile,calm&facialHair=full3&facialHairProbability=100&head=noHair2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=ffdfbf"
+        "avatar": "/assets/image/grandpa_1.png"
       },
       {
         "id": "ZqvIIuD5aI9JFejebHiH",
         "name": "Aunt Dora",
         "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/aunt_1.mp3",
-        "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Chase&accessories[]&clothingColor=e279c7&face=cheeky,smile,calm&facialHair[]&facialHairProbability=0&head=long,bun2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=d1d4f9"
+        "avatar": "/assets/image/aunt_1.png"
       },
       {
         "id": "S9EY1qVDizdxKWghP5FL",
         "name": "Grandma Beatriz",
         "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/grandma_1.mp3",
-        "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Kimberly&accessories=glasses&clothingColor=e78276&face=cheeky,smile,smileBig,calm&facialHair[]&head=grayBun&headContrastColor=e8e1e1&skinColor=ae5d29&backgroundColor=ffd5dc,ffdfbf"
+        "avatar": "/assets/image/grandma_1.png"
       }
     ],
     "themeSuggestions": [
@@ -231,12 +231,15 @@
       "Superhero Academy"
     ],
     "interestSuggestions": [
-      { "text": "Rockets", "color": "#22C55E" },
-      { "text": "Pirates", "color": "#00B7EA" },
-      { "text": "Space", "color": "#F59E0B" },
-      { "text": "Dinosaurs", "color": "#EF4444" },
-      { "text": "Helping Others", "color": "#F59E0B" },
-      { "text": "Respecting your Elders", "color": "#22C55E" }
+      { "text": "Everything pink", "color": "green" },
+      { "text": "Pirates", "color": "blue" },
+      { "text": "Outer space", "color": "amber" },
+      { "text": "Dinossaurs", "color": "red" },
+      { "text": "Helping others", "color": "amber" },
+      { "text": "Love", "color": "blue" },
+      { "text": "Respecting your elders", "color": "green" },
+      { "text": "Play sports", "color": "red" },
+      { "text": "Safari", "color": "green" }
     ],
     "prompts": {
       "generatePlot": "Create a detailed children's story title and plot for a {childName} who is interested in {interests}. The story should be educational, engaging, and appropriate for children. The plot should be a detailed paragraph that explains the main characters, setting, conflict, and resolution of the story. Include specific details about how {interests} are incorporated into the story in a way that would captivate a child's imagination. Ensure the plot provides enough detail to guide the creation of both an engaging story and a beautiful illustration.",
@@ -288,8 +291,8 @@
       "pauseStory": "Pausar História",
       "noExamples": "Ainda não há histórias de exemplo",
       "checkBackSoon": "Volte em breve para ver histórias de exemplo!",
-      "createFromThis": "Criar a partir deste",
-      "narratorDescription": "Selecione entre nossos encantadores narradores para dar vida à história com suas vozes únicas.",
+      "createFromThis": "Use este modelo",
+      "narratorDescription": "Escolha entre nossos encantadores narradores para dar vida à história com suas vozes únicas.",
       "tryItNow": "Tente agora gratuitamente. Leva 30 segundos!"
     },
     "login": {
@@ -333,8 +336,8 @@
       "pauseStory": "Pausar História",
       "noExamples": "Ainda não há histórias de exemplo",
       "checkBackSoon": "Volte em breve para ver histórias de exemplo!",
-      "createFromThis": "Criar a partir deste",
-      "narratorDescription": "Selecione entre nossos encantadores narradores para dar vida à história com suas vozes únicas."
+      "createFromThis": "Use este modelo",
+      "narratorDescription": "Escolha entre nossos encantadores narradores para dar vida à história com suas vozes únicas."
     },
     "create": {
       "title": "Criar uma História",
@@ -394,7 +397,7 @@
         "themes": "Laços entre irmãos, amor familiar, empatia e pertencimento",
         "voice": "Vô Pedro",
         "voiceId": "NOpBlnGInO9m6vDvFkFC",
-        "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Luis&accessories[]&clothingColor=9ddadb&face=cheeky,smile,calm&facialHair=full3&facialHairProbability=100&head=noHair2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=ffdfbf",
+        "voiceAvatar": "/assets/image/grandpa_1.png",
         "image": "/assets/image/ex2.png",
         "audio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-grandpa-pt2.mp3",
         "isPlaying": false,
@@ -406,7 +409,7 @@
         "themes": "Curiosidade, descoberta, estrelas e constelações",
         "voice": "Vó Eunice",
         "voiceId": "S9EY1qVDizdxKWghP5FL",
-        "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Kimberly&accessories=glasses&clothingColor=e78276&face=cheeky,smile,smileBig,calm&facialHair[]&head=grayBun&headContrastColor=e8e1e1&skinColor=ae5d29&backgroundColor=ffd5dc,ffdfbf",
+        "voiceAvatar": "/assets/image/grandma_1.png",
         "image": "/assets/image/ex1.webp",
         "audio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-grandma-pt.mp3",
         "isPlaying": false,
@@ -418,7 +421,7 @@
         "themes": "Aventura, criatividade, imaginação",
         "voice": "Tia Dora",
         "voiceId": "ZqvIIuD5aI9JFejebHiH",
-        "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Chase&accessories[]&clothingColor=e279c7&face=cheeky,smile,calm&facialHair[]&facialHairProbability=0&head=long,bun2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=d1d4f9",
+        "voiceAvatar": "/assets/image/aunt_1.png",
         "image": "/assets/image/ex3.webp",
         "audio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-aunt-pt.mp3",
         "isPlaying": false,
@@ -430,7 +433,7 @@
         "themes": "Coragem, amizade, superação do medo",
         "voice": "Tio José",
         "voiceId": "IKne3meq5aSn9XLyUdCD",
-        "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Eden&accessories=glasses&clothingColor=78e185,ffcf77&face=cheeky,smile,smileBig,calm&facialHair=full&facialHairProbability=100&head=grayShort&headContrastColor=2c1b18&skinColor=ae5d29&backgroundColor=b6e3f4",
+        "voiceAvatar": "/assets/image/uncle_2.png",
         "image": "/assets/image/ex4.webp",
         "audio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-grandpa-pt.mp3",
         "isPlaying": false,
@@ -442,25 +445,25 @@
         "id": "IKne3meq5aSn9XLyUdCD",
         "name": "Tio José",
         "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/uncle_2pt.mp3",
-        "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Eden&accessories=glasses&clothingColor=78e185,ffcf77&face=cheeky,smile,smileBig,calm&facialHair=full&facialHairProbability=100&head=grayShort&headContrastColor=2c1b18&skinColor=ae5d29&backgroundColor=b6e3f4"
+        "avatar": "/assets/image/uncle_2.png"
       },
       {
         "id": "NOpBlnGInO9m6vDvFkFC",
         "name": "Vô Pedro",
         "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/grandpa_1pt.mp3",
-        "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Luis&accessories[]&clothingColor=9ddadb&face=cheeky,smile,calm&facialHair=full3&facialHairProbability=100&head=noHair2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=ffdfbf"
+        "avatar": "/assets/image/grandpa_1.png"
       },
       {
         "id": "ZqvIIuD5aI9JFejebHiH",
         "name": "Tia Dora",
         "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/aunt_1pt.mp3",
-        "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Chase&accessories[]&clothingColor=e279c7&face=cheeky,smile,calm&facialHair[]&facialHairProbability=0&head=long,bun2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=d1d4f9"
+        "avatar": "/assets/image/aunt_1.png"
       },
       {
         "id": "S9EY1qVDizdxKWghP5FL",
         "name": "Vó Eunice",
         "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/grandma_1pt.mp3",
-        "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Kimberly&accessories=glasses&clothingColor=e78276&face=cheeky,smile,smileBig,calm&facialHair[]&head=grayBun&headContrastColor=e8e1e1&skinColor=ae5d29&backgroundColor=ffd5dc,ffdfbf"
+        "avatar": "/assets/image/grandma_1.png"
       }
     ],
     "themeSuggestions": [
@@ -476,12 +479,15 @@
       "Academia de Super-heróis"
     ],
     "interestSuggestions": [
-      { "text": "Foguetes", "color": "#22C55E" },
-      { "text": "Piratas", "color": "#00B7EA" },
-      { "text": "Espaço", "color": "#F59E0B" },
-      { "text": "Dinossauros", "color": "#EF4444" },
-      { "text": "Ajudar os Outros", "color": "#F59E0B" },
-      { "text": "Respeitar os Mais Velhos", "color": "#22C55E" }
+      { "text": "Tudo rosa", "color": "green" },
+      { "text": "Piratas", "color": "blue" },
+      { "text": "Espaço sideral", "color": "amber" },
+      { "text": "Dinossauros", "color": "red" },
+      { "text": "Ajudar os outros", "color": "amber" },
+      { "text": "Amor", "color": "blue" },
+      { "text": "Respeitar os mais velhos", "color": "green" },
+      { "text": "Praticar esportes", "color": "red" },
+      { "text": "Safari", "color": "green" }
     ],
     "prompts": {
       "generatePlot": "Crie um título e um enredo detalhado para uma história infantil sobre {childName} que se interessa por {interests}. A história deve ser educativa, envolvente e apropriada para crianças. O enredo deve ser um parágrafo detalhado que explique os personagens principais, o cenário, o conflito e a resolução da história. Inclua detalhes específicos sobre como {interests} são incorporados na história de uma forma que cativaria a imaginação de uma criança. Certifique-se de que o enredo fornece detalhes suficientes para orientar a criação de uma história envolvente e uma bela ilustração.",

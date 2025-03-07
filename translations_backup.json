@@ -141,7 +141,7 @@
         "themes": "Sibling bonds, family love, empathy and belonging",
         "voice": "Grandpa Solomon",
         "voiceId": "NOpBlnGInO9m6vDvFkFC",
-        "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Luis&accessories[]&clothingColor=9ddadb&face=cheeky,smile,calm&facialHair=full3&facialHairProbability=100&head=noHair2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=ffdfbf",
+        "voiceAvatar": "/assets/image/grandpa_1.png",
         "image": "/assets/image/ex2.png",
         "audio": "/assets/audio/sample/audio-grandpa2.mp3",
         "isPlaying": false,
@@ -153,7 +153,7 @@
         "themes": "Curiosity, discovery, stars and constellations",
         "voice": "Grandma Beatriz",
         "voiceId": "S9EY1qVDizdxKWghP5FL",
-        "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Kimberly&accessories=glasses&clothingColor=e78276&face=cheeky,smile,smileBig,calm&facialHair[]&head=grayBun&headContrastColor=e8e1e1&skinColor=ae5d29&backgroundColor=ffd5dc,ffdfbf",
+        "voiceAvatar": "/assets/image/grandma_1.png",
         "image": "/assets/image/ex1.webp",
         "audio": "/assets/audio/sample/audio-grandma.mp3",
         "isPlaying": false,
@@ -165,7 +165,7 @@
         "themes": "Adventure, creativity, imagination",
         "voice": "Aunt Dora",
         "voiceId": "ZqvIIuD5aI9JFejebHiH",
-        "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Chase&accessories[]&clothingColor=e279c7&face=cheeky,smile,calm&facialHair[]&facialHairProbability=0&head=long,bun2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=d1d4f9",
+        "voiceAvatar": "/assets/image/aunt_1.png",
         "image": "/assets/image/ex3.webp",
         "audio": "/assets/audio/sample/audio-aunt.mp3",
         "isPlaying": false,
@@ -177,7 +177,7 @@
         "themes": "Courage, friendship, overcoming fear",
         "voice": "Uncle Joe",
         "voiceId": "IKne3meq5aSn9XLyUdCD",
-        "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Eden&accessories=glasses&clothingColor=78e185,ffcf77&face=cheeky,smile,smileBig,calm&facialHair=full&facialHairProbability=100&head=grayShort&headContrastColor=2c1b18&skinColor=ae5d29&backgroundColor=b6e3f4",
+        "voiceAvatar": "/assets/image/uncle_2.png",
         "image": "/assets/image/ex4.webp",
         "audio": "/assets/audio/sample/audio-grandpa.mp3",
         "isPlaying": false,
@@ -189,25 +189,25 @@
         "id": "IKne3meq5aSn9XLyUdCD", 
         "name": "Uncle Joe", 
         "previewAudio": "/assets/audio/preview/uncle_2.mp3", 
-        "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Eden&accessories=glasses&clothingColor=78e185,ffcf77&face=cheeky,smile,smileBig,calm&facialHair=full&facialHairProbability=100&head=grayShort&headContrastColor=2c1b18&skinColor=ae5d29&backgroundColor=b6e3f4"
+        "avatar": "/assets/image/uncle_2.png"
       },
       { 
         "id": "NOpBlnGInO9m6vDvFkFC", 
         "name": "Grandpa Solomon", 
         "previewAudio": "/assets/audio/preview/grandpa_1.mp3", 
-        "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Luis&accessories[]&clothingColor=9ddadb&face=cheeky,smile,calm&facialHair=full3&facialHairProbability=100&head=noHair2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=ffdfbf"
+        "avatar": "/assets/image/grandpa_1.png"
       },
       { 
         "id": "ZqvIIuD5aI9JFejebHiH", 
         "name": "Aunt Dora", 
         "previewAudio": "/assets/audio/preview/aunt_1.mp3", 
-        "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Chase&accessories[]&clothingColor=e279c7&face=cheeky,smile,calm&facialHair[]&facialHairProbability=0&head=long,bun2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=d1d4f9"
+        "avatar": "/assets/image/aunt_1.png"
       },
       { 
         "id": "S9EY1qVDizdxKWghP5FL", 
         "name": "Grandma Beatriz", 
         "previewAudio": "/assets/audio/preview/grandma_1.mp3", 
-        "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Kimberly&accessories=glasses&clothingColor=e78276&face=cheeky,smile,smileBig,calm&facialHair[]&head=grayBun&headContrastColor=e8e1e1&skinColor=ae5d29&backgroundColor=ffd5dc,ffdfbf"
+        "avatar": "/assets/image/grandma_1.png"
       }
     ],
     "themeSuggestions": [
@@ -378,7 +378,7 @@
         "themes": "Laços entre irmãos, amor familiar, empatia e pertencimento",
         "voice": "Vô Pedro",
         "voiceId": "NOpBlnGInO9m6vDvFkFC",
-        "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Luis&accessories[]&clothingColor=9ddadb&face=cheeky,smile,calm&facialHair=full3&facialHairProbability=100&head=noHair2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=ffdfbf",
+        "voiceAvatar": "/assets/image/grandpa_1.png",
         "image": "/assets/image/ex2.png",
         "audio": "/assets/audio/sample/audio-grandpa-pt2.mp3",
         "isPlaying": false,
@@ -390,7 +390,7 @@
         "themes": "Curiosidade, descoberta, estrelas e constelações",
         "voice": "Vó Eunice",
         "voiceId": "S9EY1qVDizdxKWghP5FL",
-        "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Kimberly&accessories=glasses&clothingColor=e78276&face=cheeky,smile,smileBig,calm&facialHair[]&head=grayBun&headContrastColor=e8e1e1&skinColor=ae5d29&backgroundColor=ffd5dc,ffdfbf",
+        "voiceAvatar": "/assets/image/grandma_1.png",
         "image": "/assets/image/ex1.webp",
         "audio": "/assets/audio/sample/audio-grandma-pt.mp3",
         "isPlaying": false,
@@ -402,7 +402,7 @@
         "themes": "Aventura, criatividade, imaginação",
         "voice": "Tia Dora",
         "voiceId": "ZqvIIuD5aI9JFejebHiH",
-        "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Chase&accessories[]&clothingColor=e279c7&face=cheeky,smile,calm&facialHair[]&facialHairProbability=0&head=long,bun2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=d1d4f9",
+        "voiceAvatar": "/assets/image/aunt_1.png",
         "image": "/assets/image/ex3.webp",
         "audio": "/assets/audio/sample/audio-aunt-pt.mp3",
         "isPlaying": false,
@@ -414,7 +414,7 @@
         "themes": "Coragem, amizade, superação do medo",
         "voice": "Tio José",
         "voiceId": "IKne3meq5aSn9XLyUdCD",
-        "voiceAvatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Eden&accessories=glasses&clothingColor=78e185,ffcf77&face=cheeky,smile,smileBig,calm&facialHair=full&facialHairProbability=100&head=grayShort&headContrastColor=2c1b18&skinColor=ae5d29&backgroundColor=b6e3f4",
+        "voiceAvatar": "/assets/image/uncle_2.png",
         "image": "/assets/image/ex4.webp",
         "audio": "/assets/audio/sample/audio-grandpa-pt.mp3",
         "isPlaying": false,
@@ -426,25 +426,25 @@
         "id": "IKne3meq5aSn9XLyUdCD", 
         "name": "Tio José", 
         "previewAudio": "/assets/audio/preview/uncle_2pt.mp3", 
-        "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Eden&accessories=glasses&clothingColor=78e185,ffcf77&face=cheeky,smile,smileBig,calm&facialHair=full&facialHairProbability=100&head=grayShort&headContrastColor=2c1b18&skinColor=ae5d29&backgroundColor=b6e3f4"
+        "avatar": "/assets/image/uncle_2.png"
       },
       { 
         "id": "NOpBlnGInO9m6vDvFkFC", 
         "name": "Vô Pedro", 
         "previewAudio": "/assets/audio/preview/grandpa_1pt.mp3", 
-        "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Luis&accessories[]&clothingColor=9ddadb&face=cheeky,smile,calm&facialHair=full3&facialHairProbability=100&head=noHair2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=ffdfbf"
+        "avatar": "/assets/image/grandpa_1.png"
       },
       { 
         "id": "ZqvIIuD5aI9JFejebHiH", 
         "name": "Tia Dora", 
         "previewAudio": "/assets/audio/preview/aunt_1pt.mp3", 
-        "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Chase&accessories[]&clothingColor=e279c7&face=cheeky,smile,calm&facialHair[]&facialHairProbability=0&head=long,bun2&headContrastColor=2c1b18&mask[]&skinColor=edb98a&backgroundColor=d1d4f9"
+        "avatar": "/assets/image/aunt_1.png"
       },
       { 
         "id": "S9EY1qVDizdxKWghP5FL", 
         "name": "Vó Eunice", 
         "previewAudio": "/assets/audio/preview/grandma_1pt.mp3", 
-        "avatar": "https://api.dicebear.com/9.x/open-peeps/svg?seed=Kimberly&accessories=glasses&clothingColor=e78276&face=cheeky,smile,smileBig,calm&facialHair[]&head=grayBun&headContrastColor=e8e1e1&skinColor=ae5d29&backgroundColor=ffd5dc,ffdfbf"
+        "avatar": "/assets/image/grandma_1.png"
       }
     ],
     "themeSuggestions": [
