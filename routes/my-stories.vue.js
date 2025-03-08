@@ -62,13 +62,21 @@ window.MyStoriesPage = {
                                 :src="getOptimizedImageUrl(story.coverUrl, 400, 200)" 
                                 :alt="story.title" 
                                 class="w-full h-full object-cover absolute inset-0"
+                                @error="handleImageError($event, story)"
                             >
                             <div class="absolute inset-0 bg-[url('/assets/image/book-texture.svg')] bg-cover bg-no-repeat mix-blend-multiply pointer-events-none"></div>
                             
-                            <!-- Play Button (centered on the cover) -->
+                            <!-- Play Button (centered on the cover) 
                             <div class="absolute inset-0 flex items-center justify-center">
                                 <button @click.stop="playStory(story)" class="bg-[#9C6BFF] bg-opacity-90 rounded-full w-10 h-10 flex items-center justify-center text-white hover:bg-opacity-100 transition-all duration-200 transform hover:scale-110">
                                     <i class="fa-solid fa-play text-sm"></i>
+                                </button>
+                            </div> -->
+                            
+                            <!-- Delete Button (top right corner) -->
+                            <div class="absolute top-2 right-2">
+                                <button @click.stop="deleteStory(index)" class="bg-[#ff6b6b] bg-opacity-90 rounded-full w-10 h-10 flex items-center justify-center text-white hover:bg-opacity-100 transition-all duration-200 transform hover:scale-110">
+                                    <i class="fa-solid fa-trash text-sm"></i>
                                 </button>
                             </div>
                         </div>
@@ -850,15 +858,24 @@ window.MyStoriesPage = {
       }
     },
     deleteStory(index) {
-      if (confirm("Are you sure you want to delete this story?")) {
-        const story = this.generations[index];
+      const story = this.generations[index];
+      const title = story.title || 'this story';
+      
+      if (confirm(`Are you sure you want to delete "${title}"? This action cannot be undone and will remove all associated files.`)) {
+        // First remove from local array to immediately update UI
         this.generations.splice(index, 1);
-
+        console.log(`Removed story "${story.title}" at index ${index} from local array`);
+        
+        // Track deletion status for better error handling
+        let individualFileDeleted = false;
+        
         // Try to update both storage methods if SDK.fs is available
         if (sdk && typeof sdk.fs?.read === "function") {
           // 1. Try to delete the individual file if it exists
           if (typeof sdk.fs?.remove === "function") {
             try {
+              console.log("Deleting story and all associated files:", story.title);
+              
               // First try using the stored file path if available
               if (story._filePath) {
                 console.log(
@@ -872,8 +889,12 @@ window.MyStoriesPage = {
                     console.log(
                       "Individual story file deleted successfully using stored path",
                     );
+                    individualFileDeleted = true;
                     // After deleting the JSON file, delete the associated media files
                     this.deleteAssociatedMediaFiles(story);
+                    
+                    // Force update the generations.json file to ensure UI consistency
+                    this.updateGenerationsFile();
                   })
                   .catch((err) => {
                     console.log("Could not delete using stored path:", err);
@@ -886,16 +907,32 @@ window.MyStoriesPage = {
               }
             } catch (error) {
               console.log("Error during individual story deletion:", error);
+              
+              // Still update the generations file even if individual file deletion failed
+              this.updateGenerationsFile();
             }
+          } else {
+            // If SDK.fs.remove is not available, still update the generations file
+            this.updateGenerationsFile();
           }
-
-          // 2. Try to update the generations.json file if it exists
-          this.updateGenerationsFile();
+          
+          // As a final step, always try to update the generations.json file
+          setTimeout(() => {
+            if (!individualFileDeleted) {
+              console.log("Ensuring generations.json is updated after deletion");
+              this.updateGenerationsFile();
+            }
+          }, 1000);
         } else {
           // Update fallback data if SDK.fs is not available
           this.fallbackGenerations.generations = [...this.generations];
           console.log("SDK.fs not available, updated fallback data");
         }
+        
+        // Force reload the generations after a delay to ensure UI consistency
+        setTimeout(() => {
+          this.loadGenerations();
+        }, 2000);
       }
     },
 
@@ -918,6 +955,9 @@ window.MyStoriesPage = {
           console.log("Individual story file deleted successfully by title");
           // After deleting the JSON file, delete the associated media files
           this.deleteAssociatedMediaFiles(story);
+          
+          // Ensure the generations file is updated
+          this.updateGenerationsFile();
         })
         .catch((err) => {
           console.log(
@@ -926,7 +966,16 @@ window.MyStoriesPage = {
           );
 
           // Try with counter suffixes if the base name doesn't work
-          this.tryDeleteWithCounters(safeName, story);
+          this.tryDeleteWithCounters(safeName, story)
+            .then(success => {
+              // Force update the generations file regardless of success
+              this.updateGenerationsFile();
+            })
+            .catch(error => {
+              console.error("Error in counter-based deletion:", error);
+              // Still update the generations file
+              this.updateGenerationsFile();
+            });
         });
     },
 
@@ -951,9 +1000,12 @@ window.MyStoriesPage = {
 
         if (deleted && story) {
           this.deleteAssociatedMediaFiles(story);
+          return true;
         }
+        return false;
       } catch (error) {
         console.log("Error in tryDeleteWithCounters:", error);
+        return false;
       }
     },
 
@@ -966,8 +1018,11 @@ window.MyStoriesPage = {
 
         const attemptedPaths = new Set();
 
+        // 1. Delete audio file
         if (story.audioUrl) {
           await this.deleteFileFromUrl(story.audioUrl);
+          
+          // Extract filename from URL if possible
           try {
             const audioUrl = new URL(story.audioUrl);
             const audioPath = audioUrl.pathname;
@@ -989,10 +1044,29 @@ window.MyStoriesPage = {
           } catch (err) {
             console.log("Error extracting audio filename from URL:", err);
           }
+          
+          // Try with safe name format - this is the format specified by the user
+          const audioFileName = `~/Audio/${safeName}.mp3`;
+          if (!attemptedPaths.has(audioFileName)) {
+            attemptedPaths.add(audioFileName);
+            try {
+              await sdk.fs.remove(audioFileName);
+              console.log("Deleted audio file:", audioFileName);
+            } catch (err) {
+              console.log(
+                "Could not delete audio file or not found:",
+                audioFileName,
+                err,
+              );
+            }
+          }
         }
 
+        // 2. Delete image file
         if (story.coverUrl) {
           await this.deleteFileFromUrl(story.coverUrl);
+          
+          // Extract filename from URL if possible
           try {
             const imageUrl = new URL(story.coverUrl);
             const imagePath = imageUrl.pathname;
@@ -1014,11 +1088,48 @@ window.MyStoriesPage = {
           } catch (err) {
             console.log("Error extracting image filename from URL:", err);
           }
+          
+          // Try with safe name format - this is the format specified by the user
+          const imageFileName = `~/Pictures/${safeName}.webp`;
+          if (!attemptedPaths.has(imageFileName)) {
+            attemptedPaths.add(imageFileName);
+            try {
+              await sdk.fs.remove(imageFileName);
+              console.log("Deleted image file:", imageFileName);
+            } catch (err) {
+              console.log(
+                "Could not delete image file or not found:",
+                imageFileName,
+                err,
+              );
+            }
+          }
         }
 
+        // 3. Delete text file - handle the "historia_" prefix as specified in requirements
+        // According to the requirements, text files are saved as:
+        // ~/Documents/historia_[safeName].txt
         if (story.story) {
+          // First, attempt to delete the most common filename format (with the "historia_" prefix)
+          const textFileName = `~/Documents/historia_${safeName}.txt`;
+          if (!attemptedPaths.has(textFileName)) {
+            attemptedPaths.add(textFileName);
+            try {
+              await sdk.fs.remove(textFileName);
+              console.log("Deleted text file with prefix:", textFileName);
+            } catch (err) {
+              console.log(
+                "Could not delete text file with prefix or not found:",
+                textFileName,
+                err,
+              );
+            }
+          }
+          
+          // Also try looking for text files mentioned in the story content
           const textFileRegex = /historia_([a-zA-Z0-9_]+)\.txt/g;
           const matches = [...story.story.matchAll(textFileRegex)];
+          
           for (const match of matches) {
             if (match[1]) {
               const textFilename = `historia_${match[1]}.txt`;
@@ -1039,61 +1150,21 @@ window.MyStoriesPage = {
               }
             }
           }
-        }
-
-        const textFileName = `~/Documents/historia_${safeName}.txt`;
-        if (!attemptedPaths.has(textFileName)) {
-          try {
-            await sdk.fs.remove(textFileName);
-            console.log("Deleted text file:", textFileName);
-          } catch (err) {
-            console.log(
-              "Could not delete text file or not found:",
-              textFileName,
-              err,
-            );
-          }
-        }
-
-        const altTextFileName = `~/Documents/${safeName}.txt`;
-        if (!attemptedPaths.has(altTextFileName)) {
-          try {
-            await sdk.fs.remove(altTextFileName);
-            console.log("Deleted alternative text file:", altTextFileName);
-          } catch (err) {
-            console.log(
-              "Could not delete alternative text file or not found:",
-              altTextFileName,
-              err,
-            );
-          }
-        }
-
-        const audioFileName = `~/Audio/${safeName}.mp3`;
-        if (!attemptedPaths.has(audioFileName)) {
-          try {
-            await sdk.fs.remove(audioFileName);
-            console.log("Deleted audio file:", audioFileName);
-          } catch (err) {
-            console.log(
-              "Could not delete audio file or not found:",
-              audioFileName,
-              err,
-            );
-          }
-        }
-
-        const imageFileName = `~/Pictures/${safeName}.webp`;
-        if (!attemptedPaths.has(imageFileName)) {
-          try {
-            await sdk.fs.remove(imageFileName);
-            console.log("Deleted image file:", imageFileName);
-          } catch (err) {
-            console.log(
-              "Could not delete image file or not found:",
-              imageFileName,
-              err,
-            );
+          
+          // As a fallback, try without the "historia_" prefix
+          const altTextFileName = `~/Documents/${safeName}.txt`;
+          if (!attemptedPaths.has(altTextFileName)) {
+            attemptedPaths.add(altTextFileName);
+            try {
+              await sdk.fs.remove(altTextFileName);
+              console.log("Deleted text file without prefix:", altTextFileName);
+            } catch (err) {
+              console.log(
+                "Could not delete text file without prefix or not found:",
+                altTextFileName,
+                err,
+              );
+            }
           }
         }
 
@@ -1110,12 +1181,15 @@ window.MyStoriesPage = {
       if (!url) return;
 
       try {
+        // For URLs that include the file system domain
         if (url.includes("fs.webdraw.com")) {
           try {
             const parsedUrl = new URL(url);
             const filePath = parsedUrl.pathname;
 
+            // Handle paths that start with /users/
             if (filePath.startsWith("/users/")) {
+              // First try the full relative path
               const relativePath = filePath.startsWith("/")
                 ? filePath.substring(1)
                 : filePath;
@@ -1131,40 +1205,98 @@ window.MyStoriesPage = {
                 );
               }
 
+              // Extract filename and directory from path
               const parts = filePath.split("/");
               const filename = parts[parts.length - 1];
               const directory = parts[parts.length - 2];
 
               if (filename) {
                 let altPath = null;
-                if (directory === "Audio") {
+                
+                // Map directory name to standard path
+                if (directory === "Audio" || directory.toLowerCase() === "audio") {
                   altPath = `~/Audio/${filename}`;
-                } else if (directory === "Pictures") {
+                } else if (directory === "Pictures" || directory.toLowerCase() === "pictures") {
                   altPath = `~/Pictures/${filename}`;
-                } else if (directory === "Documents") {
+                } else if (directory === "Documents" || directory.toLowerCase() === "documents") {
                   altPath = `~/Documents/${filename}`;
                 }
 
                 if (altPath) {
                   try {
                     await sdk.fs.remove(altPath);
-                    console.log(
-                      "Deleted file using directory-based path:",
-                      altPath,
-                    );
+                    console.log("Deleted file using directory-based path:", altPath);
                     return true;
                   } catch (dirErr) {
-                    console.log(
-                      "Could not delete using directory-based path:",
-                      altPath,
-                      dirErr,
-                    );
+                    console.log("Could not delete using directory-based path:", altPath, dirErr);
+                  }
+                }
+                
+                // Try inferring the file type from the extension
+                const extension = filename.split('.').pop().toLowerCase();
+                let inferredPath = null;
+                
+                if (['mp3', 'wav', 'ogg', 'm4a'].includes(extension)) {
+                  inferredPath = `~/Audio/${filename}`;
+                } else if (['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(extension)) {
+                  inferredPath = `~/Pictures/${filename}`;
+                } else if (['txt', 'md', 'json', 'doc'].includes(extension)) {
+                  inferredPath = `~/Documents/${filename}`;
+                }
+                
+                if (inferredPath && inferredPath !== altPath) {
+                  try {
+                    await sdk.fs.remove(inferredPath);
+                    console.log("Deleted file using inferred path:", inferredPath);
+                    return true;
+                  } catch (infErr) {
+                    console.log("Could not delete using inferred path:", inferredPath, infErr);
                   }
                 }
               }
             }
           } catch (e) {
             console.log("Could not parse or delete URL:", url, e);
+          }
+        } else if (url.startsWith('/') || !url.startsWith('http')) {
+          // Handle relative or local paths
+          let localPath = url;
+          
+          // If the URL doesn't start with a slash but isn't an absolute URL, add a slash
+          if (!url.startsWith('/') && !url.startsWith('http') && !url.startsWith('~')) {
+            localPath = '/' + url;
+          }
+          
+          // If it's a local path, try to determine the directory
+          const filename = localPath.split('/').pop();
+          if (filename) {
+            const extension = filename.split('.').pop().toLowerCase();
+            
+            // Try to infer the directory based on file extension
+            let paths = [];
+            
+            if (['mp3', 'wav', 'ogg', 'm4a'].includes(extension)) {
+              paths.push(`~/Audio/${filename}`);
+            } else if (['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(extension)) {
+              paths.push(`~/Pictures/${filename}`);
+            } else if (['txt', 'md', 'json', 'doc'].includes(extension)) {
+              paths.push(`~/Documents/${filename}`);
+              // Also try with "historia_" prefix for text files
+              if (extension === 'txt' && !filename.startsWith('historia_')) {
+                paths.push(`~/Documents/historia_${filename}`);
+              }
+            }
+            
+            // Try each path
+            for (const path of paths) {
+              try {
+                await sdk.fs.remove(path);
+                console.log("Deleted file using inferred directory:", path);
+                return true;
+              } catch (pathErr) {
+                console.log("Could not delete using inferred directory:", path, pathErr);
+              }
+            }
           }
         }
         return false;
@@ -1176,35 +1308,65 @@ window.MyStoriesPage = {
 
     // Method to update the generations.json file
     async updateGenerationsFile() {
+      if (!sdk || typeof sdk.fs?.write !== "function") {
+        console.log("SDK.fs not available for updating generations.json");
+        return;
+      }
+
       try {
-        // First try to read the current file to get the complete structure
-        const content = await sdk.fs.read("~/AI Storyteller/generations.json");
-        const data = JSON.parse(content);
+        // First check if the generations.json file exists
+        const generationsPath = "~/AI Storyteller/generations.json";
+        const exists = await sdk.fs.exists(generationsPath);
 
-        // Update only the generations array
-        data.generations = [...this.generations];
+        if (exists) {
+          // Prepare the data to write
+          const dataToWrite = JSON.stringify({
+            generations: this.generations.map(g => {
+              // Create a clean copy without any Vue reactivity
+              const cleanCopy = JSON.parse(JSON.stringify(g));
+              return cleanCopy;
+            }),
+            version: 2
+          }, null, 2);
 
-        // Write back to the file
-        await sdk.fs.write(
-          "~/AI Storyteller/generations.json",
-          JSON.stringify(data, null, 2),
-        );
+          // Write the updated file
+          await sdk.fs.write(generationsPath, dataToWrite);
+          console.log("generations.json updated successfully");
 
-        // Set file permissions to read-only (0444 in octal)
-        try {
-          await sdk.fs.chmod("~/AI Storyteller/generations.json", 0o444);
-          console.log("Set read-only permissions for generations.json");
-        } catch (permError) {
-          console.warn(
-            "Could not set file permissions for generations.json:",
-            permError,
-          );
-          // Continue even if setting permissions fails
+          // Set file permissions to be readable
+          try {
+            await sdk.fs.chmod(generationsPath, 0o644);
+            console.log("Set read-only permissions for generations.json");
+          } catch (permErr) {
+            console.log("Could not set permissions for generations.json:", permErr);
+          }
+        } else {
+          console.log("generations.json does not exist, creating it");
+          
+          // Create a new generations.json file
+          const dataToWrite = JSON.stringify({
+            generations: this.generations.map(g => {
+              // Create a clean copy without any Vue reactivity
+              const cleanCopy = JSON.parse(JSON.stringify(g));
+              return cleanCopy;
+            }),
+            version: 2
+          }, null, 2);
+          
+          // Write the file
+          await sdk.fs.write(generationsPath, dataToWrite);
+          console.log("Created new generations.json file");
+          
+          // Set file permissions
+          try {
+            await sdk.fs.chmod(generationsPath, 0o644);
+            console.log("Set read-only permissions for generations.json");
+          } catch (permErr) {
+            console.log("Could not set permissions for generations.json:", permErr);
+          }
         }
-
-        console.log("generations.json updated successfully");
       } catch (error) {
-        console.log("Could not update generations.json:", error);
+        console.error("Error updating generations.json:", error);
       }
     },
 
@@ -1258,6 +1420,11 @@ window.MyStoriesPage = {
         // If no audio, just view the story normally
         this.viewStory(story);
       }
+    },
+    handleImageError(event, story) {
+      console.log(`Failed to load image for story: ${story.title}`);
+      // Set a fallback image
+      event.target.src = '/assets/image/bg.webp';
     },
   },
 };
