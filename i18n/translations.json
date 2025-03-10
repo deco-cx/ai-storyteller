@@ -1,7 +1,7 @@
 {
   "en": {
     "ui": {
-      "appName": "AI Storyteller",
+      "appName": "AI Storytime",
       "loading": "Loading...",
       "error": "Error",
       "back": "Back to Home",
@@ -58,7 +58,7 @@
       "signUp": "Sign Up"
     },
     "home": {
-      "welcome": "Create bedtime stories for your kids with one click!",
+      "welcome": "Bring your child’s imagination to life in personalized stories",
       "tagline": "Transform your ideas into captivating stories with the power of artificial intelligence.",
       "createButton": "Create new story!",
       "myStoriesButton": "My stories",
@@ -314,7 +314,7 @@
       "signUp": "Cadastrar"
     },
     "home": {
-      "welcome": "Crie histórias para dormir para seus filhos com um clique!",
+      "welcome": "Crie histórias com a imaginação do seu filho",
       "tagline": "Transforme suas ideias em histórias cativantes com o poder da inteligência artificial.",
       "createButton": "Criar nova história!",
       "myStoriesButton": "Minhas histórias",
