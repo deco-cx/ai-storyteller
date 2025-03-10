@@ -1433,27 +1433,10 @@ window.MyStoriesPage = {
       this.$router.push("/create");
     },
     getOptimizedImageUrl(url, width, height) {
-      if (!url || url.startsWith("data:")) return url;
-
-      // If the URL already starts with /assets/image, just return it directly
-      if (url.startsWith("/assets/image") || url.startsWith("assets/image")) {
-        return url.startsWith("/") ? url : `/${url}`;
-      }
-
-      // For local paths, use direct path
-      let processedUrl = url;
-
-      // If the URL is not absolute and doesn't start with a slash, add a slash
-      if (!url.startsWith("http") && !url.startsWith("/")) {
-        processedUrl = "/" + url;
-      }
-
-      // Return the direct URL without optimization service
-      if (!processedUrl.startsWith("http")) {
-        return `${window.location.origin}${processedUrl}`;
-      }
-
-      return processedUrl;
+      if (!url || url.startsWith('data:')) return url;
+       
+      // Use the webdraw.com image optimization service
+      return `https://webdraw.com/image-optimize?src=${encodeURIComponent(url)}&width=${width}&height=${height}&fit=cover`;
     },
     playStory(story) {
       // Check if the story has an audio URL
