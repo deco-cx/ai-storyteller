@@ -216,6 +216,37 @@ window.IndexPage = {
     };
   },
   async mounted() {
+    console.log("IndexPage mounted");
+
+    // Check for custom translator file
+    await this.checkTranslatorFile();
+
+    // Load examples from translations (available immediately from i18n)
+    const currentLang = window.i18n.getLanguage();
+    if (window.i18n && window.i18n.translations && window.i18n.translations[currentLang]) {
+      this.examples = window.i18n.translations[currentLang].examples || [];
+      
+      if (this.examples && this.examples.length > 0) {
+        console.log("Examples loaded:", this.examples.length);
+        this.examples.forEach((example, idx) => {
+          console.log("Example", idx + ":", example.title, "- Audio:", example.audio);
+        });
+      } else {
+        console.log("No examples found in translations");
+      }
+    } else {
+      console.log("Translations not fully loaded yet");
+      this.examples = [];
+    }
+
+    // Fix permissions for example audio files
+    await this.fixExampleAudioPermissions();
+
+    // Start preloading audio files for examples
+    if (this.examples && this.examples.length > 0) {
+      this.preloadAudios();
+    }
+
     try {
       this.user = await sdk.getUser();
     } catch (error) {
@@ -964,13 +995,14 @@ window.IndexPage = {
       });
     },
     handleAudioError(example, audioElement, audioUrl, error) {
-      example.loading = false;
+      example.loading = true; // Manter o estado de carregamento ativo enquanto tentamos alternativas
 
       // Se for um erro de interrupção, apenas mostramos o feedback e não fazemos mais nada
       if (error && error.name === "AbortError") {
         console.log(
           `Audio playback was interrupted for "${example.title}" - likely due to multiple clicks`,
         );
+        example.loading = false;
         return;
       }
 
@@ -980,45 +1012,162 @@ window.IndexPage = {
       );
 
       try {
-        const tempAudio = new Audio(audioUrl);
-        tempAudio.play()
-          .then(() => {
-            // Se conseguir reproduzir, usamos este elemento
-            console.log(
-              `Playing audio via alternative method: "${example.title}"`,
-            );
-            example.isPlaying = true;
+        const tempAudio = new Audio();
+        
+        // Adicionar evento para monitorar o carregamento
+        tempAudio.addEventListener("canplaythrough", () => {
+          console.log(`Alternative audio method ready for "${example.title}"`);
+          
+          // Reproduzir automaticamente quando estiver pronto
+          tempAudio.play()
+            .then(() => {
+              // Se conseguir reproduzir, usamos este elemento
+              console.log(
+                `Playing audio via alternative method: "${example.title}"`,
+              );
+              example.isPlaying = true;
+              example.loading = false;
 
-            // Adicionar evento para atualizar o progresso
-            tempAudio.addEventListener("timeupdate", (event) => {
-              if (tempAudio && !isNaN(tempAudio.duration)) {
-                const percentage = (tempAudio.currentTime /
-                  tempAudio.duration) * 100;
-                example.progress = percentage + "%";
-              }
+              // Adicionar evento para atualizar o progresso
+              tempAudio.addEventListener("timeupdate", (event) => {
+                if (tempAudio && !isNaN(tempAudio.duration)) {
+                  const percentage = (tempAudio.currentTime /
+                    tempAudio.duration) * 100;
+                  example.progress = percentage + "%";
+                }
+              });
+
+              // Adicionar evento para quando o áudio terminar
+              tempAudio.addEventListener("ended", () => {
+                example.isPlaying = false;
+                example.progress = "0%";
+                example.tempAudio = null; // Limpar a referência
+              });
+
+              // Armazenar a referência para poder pausar depois
+              example.tempAudio = tempAudio;
+            })
+            .catch((playError) => {
+              console.error(
+                `Alternative playback failed to play for "${example.title}"`,
+                playError
+              );
+              // Tentar terceira alternativa com permissões do arquivo
+              this.tryWithPermissionsFix(example, audioUrl);
             });
-
-            // Adicionar evento para quando o áudio terminar
-            tempAudio.addEventListener("ended", () => {
-              example.isPlaying = false;
-              example.progress = "0%";
-            });
-
-            // Armazenar a referência para poder pausar depois
-            example.tempAudio = tempAudio;
-          })
-          .catch((fallbackError) => {
-            console.error(
-              `Alternative playback also failed for "${example.title}"`,
-              fallbackError,
-            );
-            example.isPlaying = false;
-          });
+        }, { once: true });
+        
+        // Adicionar handler de erro
+        tempAudio.addEventListener("error", (audioError) => {
+          console.error(
+            `Alternative audio loading failed for "${example.title}"`,
+            audioError
+          );
+          // Tentar terceira alternativa com permissões do arquivo
+          this.tryWithPermissionsFix(example, audioUrl);
+        }, { once: true });
+        
+        // Iniciar carregamento
+        tempAudio.src = audioUrl;
+        tempAudio.load();
       } catch (finalError) {
         console.error(
-          `All audio playback attempts failed for "${example.title}"`,
+          `Second audio playback attempt failed for "${example.title}"`,
           finalError,
         );
+        // Tentar terceira alternativa com permissões do arquivo
+        this.tryWithPermissionsFix(example, audioUrl);
+      }
+    },
+    
+    // Tentativa adicional após corrigir permissões
+    async tryWithPermissionsFix(example, audioUrl) {
+      console.log(`Trying with permissions fix for "${example.title}"`);
+      
+      try {
+        // Extrair o caminho do arquivo da URL
+        let filePath = audioUrl;
+        if (filePath.startsWith("http")) {
+          try {
+            const url = new URL(audioUrl);
+            filePath = url.pathname;
+          } catch (e) {
+            console.warn("Could not parse URL:", audioUrl);
+          }
+        }
+        
+        // Remover prefixo ~ se presente
+        if (filePath.startsWith('~')) {
+          filePath = filePath.substring(1);
+        }
+        
+        // Remover barras duplas iniciais
+        while (filePath.startsWith('//')) {
+          filePath = filePath.substring(1);
+        }
+        
+        // Tentar corrigir permissões do arquivo
+        if (sdk && typeof sdk.fs?.chmod === 'function') {
+          try {
+            console.log(`Fixing permissions for audio file: ${filePath}`);
+            await sdk.fs.chmod(filePath, 0o644);
+            console.log(`Successfully fixed permissions for: ${filePath}`);
+            
+            // Criar novo elemento após corrigir permissões
+            const finalAudio = new Audio();
+            
+            finalAudio.addEventListener("canplaythrough", () => {
+              finalAudio.play()
+                .then(() => {
+                  console.log(`Playing audio after permissions fix: "${example.title}"`);
+                  example.isPlaying = true;
+                  example.loading = false;
+                  
+                  // Configurar eventos para progresso e finalização
+                  finalAudio.addEventListener("timeupdate", () => {
+                    if (finalAudio && !isNaN(finalAudio.duration)) {
+                      const percentage = (finalAudio.currentTime / finalAudio.duration) * 100;
+                      example.progress = percentage + "%";
+                    }
+                  });
+                  
+                  finalAudio.addEventListener("ended", () => {
+                    example.isPlaying = false;
+                    example.progress = "0%";
+                    example.tempAudio = null;
+                  });
+                  
+                  example.tempAudio = finalAudio;
+                })
+                .catch(finalPlayError => {
+                  console.error(`Final playback attempt failed for "${example.title}"`, finalPlayError);
+                  example.loading = false;
+                  example.isPlaying = false;
+                });
+            }, { once: true });
+            
+            finalAudio.addEventListener("error", (finalLoadError) => {
+              console.error(`Final audio loading failed for "${example.title}"`, finalLoadError);
+              example.loading = false;
+              example.isPlaying = false;
+            }, { once: true });
+            
+            // Tentar com URL com marca temporal para evitar cache
+            finalAudio.src = `${audioUrl}?t=${Date.now()}`;
+            finalAudio.load();
+          } catch (permError) {
+            console.error(`Failed to fix permissions for "${example.title}"`, permError);
+            example.loading = false;
+            example.isPlaying = false;
+          }
+        } else {
+          console.warn("Permission utilities not available for final attempt");
+          example.loading = false;
+          example.isPlaying = false;
+        }
+      } catch (finalError) {
+        console.error(`All audio playback attempts failed for "${example.title}"`, finalError);
+        example.loading = false;
         example.isPlaying = false;
       }
     },
@@ -1079,6 +1228,66 @@ window.IndexPage = {
           exampleTitle: example.title,
           exampleThemes: example.themes
         });
+      }
+    },
+    // Fix permissions for example audio files, especially those from different users
+    async fixExampleAudioPermissions() {
+      if (!sdk || typeof sdk.fs?.chmod !== "function") {
+        console.warn("File permission utilities not available");
+        return;
+      }
+      
+      // Arrays of audio files that need permissions fixed
+      const audioFiles = [
+        // Uncle Joe/Tio José files
+        "/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-uncle-joe.mp3",
+        "/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-uncle-jose.mp3",
+      ];
+      
+      console.log("Fixing permissions for example audio files...");
+      
+      // Process each file
+      for (const filePath of audioFiles) {
+        try {
+          await sdk.fs.chmod(filePath, 0o644);
+          console.log(`Successfully set permissions (0o644) for audio file: ${filePath}`);
+        } catch (error) {
+          console.warn(`Could not set file permissions for ${filePath}:`, error);
+        }
+      }
+    },
+    // Check for translator file
+    async checkTranslatorFile() {
+      // Check if custom translator file exists
+      try {
+        if (sdk && typeof sdk.fs?.read === "function") {
+          const translatorPath = "~/AI Storyteller/translations.json";
+          try {
+            const translationsContent = await sdk.fs.read(
+              translatorPath,
+            );
+            console.log(
+              "Custom translator file exists, updating translations",
+            );
+
+            // If the file exists, update the translations
+            if (translationsContent) {
+              const customTranslations = JSON.parse(translationsContent);
+              window.i18n.updateTranslations(customTranslations);
+            }
+          } catch (readError) {
+            console.log(
+              "Translator file doesn't exist or can't be read:",
+              readError.message,
+            );
+          }
+        } else {
+          console.log(
+            "SDK.fs.read is not available, using default translations",
+          );
+        }
+      } catch (error) {
+        console.error("Error checking for translator file:", error);
       }
     },
   },
