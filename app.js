@@ -230,4 +230,56 @@ app.mixin({
     }
 });
 
-app.mount('#app'); 
+app.mount('#app');
+
+// Navigation guard to handle the story parameter format
+router.beforeEach((to, from, next) => {
+  // Handle the compact story parameter format
+  if (to.query.story) {
+    const storyCompact = to.query.story;
+    const indexParam = to.query.index;
+    const idParam = to.query.id;
+    
+    // Split the compact format into parts (assuming format: userId/storyId)
+    const parts = storyCompact.split('/');
+    let userId, storyId;
+    
+    if (parts.length >= 2) {
+      // Extract userId and storyId
+      userId = parts[0];
+      // Combine remaining parts in case the story name has slashes
+      storyId = parts.slice(1).join('/');
+    } else {
+      // Handle case where format doesn't match expected pattern
+      userId = storyCompact;
+      storyId = '';
+    }
+    
+    // Construct the full file path
+    const fullPath = `/users/${userId}/AI Storyteller/${storyId}`;
+    
+    // Construct a new query object
+    const query = {
+      file: fullPath
+    };
+    
+    // Add index parameter if present
+    if (indexParam !== undefined) {
+      query.index = indexParam;
+    }
+    
+    // Add id parameter if present
+    if (idParam) {
+      query.id = idParam;
+    }
+    
+    // Redirect to the story page with standard parameters
+    next({
+      path: '/story',
+      query: query
+    });
+  } else {
+    // No special parameters, proceed normally
+    next();
+  }
+}); 

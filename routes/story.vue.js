@@ -225,10 +225,13 @@ window.StoryPage = {
             return;
         }
         
-        // Get query parameters
+        // Get query parameters using URLSearchParams
         const urlParams = new URLSearchParams(window.location.search);
+        
+        // Only use regular file parameter - storyPath is no longer supported
         this.fileUrl = urlParams.get('file');
         this.storyIndex = urlParams.get('index');
+        this.storyId = urlParams.get('id');
         
         // Check if the translations file exists
         await this.checkTranslationsFile();
@@ -670,29 +673,104 @@ window.StoryPage = {
             this.currentTime = player.currentTime;
         },
         shareStory() {
-            // Create a shareable link to this story
-            const currentUrl = window.location.href;
+            // Define the production URL for sharing
+            const PRODUCTION_ORIGIN = "https://webdraw.com/apps/ai-storyteller";
+            
+            // Determine if we're on localhost for development
+            const isLocalhost = window.location.hostname === 'localhost' || 
+                                window.location.hostname === '127.0.0.1' ||
+                                window.location.hostname.includes('192.168.');
+            
+            // Use localhost for development, production URL otherwise
+            let baseUrl;
+            if (isLocalhost) {
+                baseUrl = window.location.origin;
+                console.log("Using localhost URL for sharing (development mode):", baseUrl);
+            } else {
+                baseUrl = PRODUCTION_ORIGIN;
+                console.log("Using production URL for sharing:", baseUrl);
+            }
+            
+            // Try to get parent URL as fallback option if we're in an iframe
+            try {
+                if (!isLocalhost && window.parent !== window && window.parent.location.href) {
+                    // Check if parent URL looks like a webdraw URL
+                    const parentUrl = window.parent.location.origin + window.parent.location.pathname;
+                    if (parentUrl.includes('webdraw.com')) {
+                        baseUrl = parentUrl;
+                        console.log("Using parent window URL for sharing:", baseUrl);
+                    }
+                }
+            } catch (e) {
+                console.warn("Could not access parent window URL:", e);
+                // Continue with already determined baseUrl
+            }
+            
+            // Create a query parameter with the story path
+            let shareUrl;
+            if (this.fileUrl) {
+                // Parse the file path to get userId and storyId
+                const pathRegex = /\/users\/([^\/]+)\/AI Storyteller\/(.*)/;
+                const match = this.fileUrl.match(pathRegex);
+                
+                if (match && match.length >= 3) {
+                    // Extract userId and storyId from the file path
+                    const userId = match[1];
+                    const storyId = match[2];
+                    
+                    // Use the new story parameter format with the determined base URL
+                    shareUrl = `${baseUrl}?story=${encodeURIComponent(userId + '/' + storyId)}`;
+                    
+                    // If we also have an index, include it
+                    if (this.storyIndex !== null) {
+                        shareUrl += `&index=${this.storyIndex}`;
+                    }
+                    
+                    // If we have a story ID, include it for verification
+                    if (this.storyId) {
+                        shareUrl += `&id=${encodeURIComponent(this.storyId)}`;
+                    }
+                } else {
+                    // Fallback to using file parameter if path doesn't match expected format
+                    shareUrl = `${baseUrl}?file=${encodeURIComponent(this.fileUrl)}`;
+                    
+                    // If we have additional parameters, include them
+                    if (this.storyIndex !== null) {
+                        shareUrl += `&index=${this.storyIndex}`;
+                    }
+                    
+                    if (this.storyId) {
+                        shareUrl += `&id=${encodeURIComponent(this.storyId)}`;
+                    }
+                }
+            } else {
+                // Fallback to current URL if no fileUrl available
+                shareUrl = window.location.href;
+            }
+            
+            console.log("Sharing URL:", shareUrl);
             
             // Track share event with PostHog
             if (sdk && sdk.posthogEvent) {
                 sdk.posthogEvent("story_shared", {
                     story_id: this.storyId,
                     story_title: this.story.title,
+                    share_url: shareUrl
                 });
             }
             
             // Try to use the Web Share API if available
             if (navigator.share) {
                 navigator.share({
-                    title: this.story.title,
-                    text: `Check out this story: ${this.story.title}`,
-                    url: currentUrl
+                    title: this.story?.title || "Shared Story",
+                    text: `Check out this story: ${this.story?.title || ""}`,
+                    url: shareUrl
                 }).catch(err => {
                     console.error('Error sharing:', err);
-                    this.fallbackShare(currentUrl);
+                    this.fallbackShare(shareUrl);
                 });
             } else {
-                this.fallbackShare(currentUrl);
+                this.fallbackShare(shareUrl);
             }
         },
         fallbackShare(url) {
