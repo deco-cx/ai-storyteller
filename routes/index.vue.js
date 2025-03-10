@@ -1198,7 +1198,6 @@ window.IndexPage = {
     createFromExample(example) {
       // Store example data in localStorage to use in create page
       const exampleData = {
-        childName: example.childName || '',
         themes: example.themes || '',
         voice: example.voice || '',
         title: example.title || ''
