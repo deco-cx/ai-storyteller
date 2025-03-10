@@ -1658,7 +1658,7 @@ window.CreatePage = {
         >
           <div class="flex justify-center mb-4" v-if="warningModalData.type === 'warning'">
             <div class="bg-amber-500 bg-opacity-20 rounded-full p-4 w-16 h-16 flex items-center justify-center">
-              <i class="fa-solid fa-exclamation text-2xl text-amber-500"></i>
+              <i class="fa-solid fa-triangle-exclamation text-2xl text-amber-500"></i>
             </div>
           </div>
           
