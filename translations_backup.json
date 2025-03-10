@@ -179,7 +179,7 @@
         "voiceId": "IKne3meq5aSn9XLyUdCD",
         "voiceAvatar": "/assets/image/uncle_2.png",
         "image": "/assets/image/ex4.webp",
-        "audio": "/assets/audio/sample/audio-grandpa.mp3",
+        "audio": "/assets/audio/sample/audio-uncle-joe.mp3",
         "isPlaying": false,
         "progress": "0%"
       }
@@ -416,7 +416,7 @@
         "voiceId": "IKne3meq5aSn9XLyUdCD",
         "voiceAvatar": "/assets/image/uncle_2.png",
         "image": "/assets/image/ex4.webp",
-        "audio": "/assets/audio/sample/audio-grandpa-pt.mp3",
+        "audio": "/assets/audio/sample/audio-uncle-jose.mp3",
         "isPlaying": false,
         "progress": "0%"
       }
