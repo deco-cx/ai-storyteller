@@ -29,7 +29,14 @@ window.AdminPage = {
       searchQuery: '',
       expandedItems: {},
       isLoading: true,
-      allowEditingEnglish: false
+      allowEditingEnglish: false,
+      showConfirmModal: false,
+      confirmModalData: {
+        title: "",
+        message: "",
+        confirmCallback: null,
+        type: "delete" // delete, warning, info, etc.
+      },
     };
   },
   computed: {
@@ -342,20 +349,7 @@ window.AdminPage = {
       }
     },
     removeExample(index) {
-      if (confirm('Are you sure you want to remove this example?')) {
-        this.editedTranslations[this.currentLanguage].examples.splice(index, 1);
-        
-        // If we're removing from English, we should remove from all languages to maintain consistency
-        if (this.currentLanguage === 'en') {
-          Object.keys(this.editedTranslations).forEach(langCode => {
-            if (langCode !== 'en' && 
-                this.editedTranslations[langCode].examples && 
-                this.editedTranslations[langCode].examples.length > index) {
-              this.editedTranslations[langCode].examples.splice(index, 1);
-            }
-          });
-        }
-      }
+      this.showDeleteConfirm('example', index);
     },
     updateEnglishTranslation(item, value) {
       if (item.isObject) return;
@@ -473,20 +467,64 @@ window.AdminPage = {
       }
     },
     removeInterestSuggestion(index) {
-      if (confirm('Are you sure you want to remove this interest suggestion?')) {
-        this.editedTranslations[this.currentLanguage].interestSuggestions.splice(index, 1);
-        
-        // If we're removing from English, we should remove from all languages to maintain consistency
-        if (this.currentLanguage === 'en') {
-          Object.keys(this.editedTranslations).forEach(langCode => {
-            if (langCode !== 'en' && 
-                this.editedTranslations[langCode].interestSuggestions && 
-                this.editedTranslations[langCode].interestSuggestions.length > index) {
-              this.editedTranslations[langCode].interestSuggestions.splice(index, 1);
-            }
-          });
-        }
+      this.showDeleteConfirm('interest', index);
+    },
+    showDeleteConfirm(itemType, index) {
+      let title, message, callback;
+      
+      if (itemType === 'example') {
+        const example = this.editedTranslations[this.currentLanguage].examples[index];
+        title = this.$t('admin.removeExampleTitle');
+        message = this.$t('admin.removeExampleMessage').replace('{title}', example.title);
+        callback = () => {
+          this.editedTranslations[this.currentLanguage].examples.splice(index, 1);
+          
+          // If we're removing from English, we should remove from all languages to maintain consistency
+          if (this.currentLanguage === 'en') {
+            Object.keys(this.editedTranslations).forEach(langCode => {
+              if (langCode !== 'en' && this.editedTranslations[langCode].examples && 
+                  this.editedTranslations[langCode].examples.length > index) {
+                this.editedTranslations[langCode].examples.splice(index, 1);
+              }
+            });
+          }
+        };
+      } else if (itemType === 'interest') {
+        const suggestion = this.editedTranslations[this.currentLanguage].interestSuggestions[index];
+        title = this.$t('admin.removeInterestTitle');
+        message = this.$t('admin.removeInterestMessage').replace('{text}', suggestion.text);
+        callback = () => {
+          this.editedTranslations[this.currentLanguage].interestSuggestions.splice(index, 1);
+          
+          // If we're removing from English, we should remove from all languages to maintain consistency
+          if (this.currentLanguage === 'en') {
+            Object.keys(this.editedTranslations).forEach(langCode => {
+              if (langCode !== 'en' && this.editedTranslations[langCode].interestSuggestions && 
+                  this.editedTranslations[langCode].interestSuggestions.length > index) {
+                this.editedTranslations[langCode].interestSuggestions.splice(index, 1);
+              }
+            });
+          }
+        };
       }
+      
+      this.confirmModalData = {
+        title: title,
+        message: message,
+        confirmCallback: callback,
+        type: 'delete'
+      };
+      
+      this.showConfirmModal = true;
+    },
+    closeConfirmModal() {
+      this.showConfirmModal = false;
+    },
+    confirmAction() {
+      if (this.confirmModalData.confirmCallback) {
+        this.confirmModalData.confirmCallback();
+      }
+      this.closeConfirmModal();
     }
   },
   mounted() {
@@ -895,6 +933,48 @@ window.AdminPage = {
                 :disabled="!newLanguageCode || !newLanguageName"
               >
                 Add Language
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Confirmation Modal -->
+        <div v-if="showConfirmModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 transition-opacity duration-300 ease-in-out">
+          <div 
+            class="bg-white rounded-3xl shadow-xl p-6 max-w-md w-full relative overflow-hidden transform transition-all duration-300 ease-out"
+            :class="{
+              'border-l-4 border-[#ff6b6b]': confirmModalData.type === 'delete',
+              'scale-100 opacity-100': showConfirmModal,
+              'scale-95 opacity-0': !showConfirmModal
+            }"
+          >
+            <!-- Header Icon -->
+            <div class="flex justify-center mb-4" v-if="confirmModalData.type === 'delete'">
+              <div class="bg-[#ff6b6b] bg-opacity-20 rounded-full p-4 w-16 h-16 flex items-center justify-center">
+                <i class="fa-solid fa-trash text-2xl text-[#ff6b6b]"></i>
+              </div>
+            </div>
+            
+            <!-- Title -->
+            <h3 class="text-lg font-medium text-center mb-2">{{ confirmModalData.title }}</h3>
+            
+            <!-- Message -->
+            <p class="text-gray-600 text-center mb-6">{{ confirmModalData.message }}</p>
+            
+            <!-- Buttons -->
+            <div class="flex gap-3 justify-center">
+              <button 
+                @click="closeConfirmModal" 
+                class="px-5 py-2 rounded-full border border-gray-300 text-gray-700 bg-white hover:bg-gray-100 transition duration-200 font-medium text-sm"
+              >
+                {{ $t('ui.cancel') }}
+              </button>
+              <button 
+                @click="confirmAction" 
+                class="px-5 py-2 rounded-full text-white font-medium text-sm"
+                :class="confirmModalData.type === 'delete' ? 'bg-[#ff6b6b] hover:bg-[#ff5252]' : 'bg-gradient-to-b from-[#4A90E2] to-[#2871CC] hover:from-[#5FA0E9] hover:to-[#4A90E2]'"
+              >
+                {{ $t('ui.confirm') }}
               </button>
             </div>
           </div>

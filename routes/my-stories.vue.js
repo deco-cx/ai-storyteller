@@ -75,7 +75,7 @@ window.MyStoriesPage = {
                             
                             <!-- Delete Button (top right corner) -->
                             <div class="absolute top-2 right-2">
-                                <button @click.stop="deleteStory(index)" class="bg-[#ff6b6b] bg-opacity-90 rounded-full w-10 h-10 flex items-center justify-center text-white hover:bg-opacity-100 transition-all duration-200 transform hover:scale-110">
+                                <button @click.stop="showDeleteConfirm(index)" class="bg-[#ff6b6b] bg-opacity-90 rounded-full w-10 h-10 flex items-center justify-center text-white hover:bg-opacity-100 transition-all duration-200 transform hover:scale-110">
                                     <i class="fa-solid fa-trash text-sm"></i>
                                 </button>
                             </div>
@@ -86,6 +86,48 @@ window.MyStoriesPage = {
                     </div>
                 </div>
             </main>
+
+            <!-- Confirmation Modal -->
+            <div v-if="showConfirmModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 transition-opacity duration-300 ease-in-out">
+                <div 
+                    class="bg-white rounded-3xl shadow-xl p-6 max-w-md w-full relative overflow-hidden transform transition-all duration-300 ease-out"
+                    :class="{
+                      'border-l-4 border-[#ff6b6b]': confirmModalData.type === 'delete',
+                      'scale-100 opacity-100': showConfirmModal,
+                      'scale-95 opacity-0': !showConfirmModal
+                    }"
+                >
+                    <!-- Header Icon -->
+                    <div class="flex justify-center mb-4" v-if="confirmModalData.type === 'delete'">
+                        <div class="bg-[#ff6b6b] bg-opacity-20 rounded-full p-4 w-16 h-16 flex items-center justify-center">
+                            <i class="fa-solid fa-trash text-2xl text-[#ff6b6b]"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Title -->
+                    <h3 class="text-lg font-medium text-center mb-2">{{ confirmModalData.title }}</h3>
+                    
+                    <!-- Message -->
+                    <p class="text-gray-600 text-center mb-6">{{ confirmModalData.message }}</p>
+                    
+                    <!-- Buttons -->
+                    <div class="flex gap-3 justify-center">
+                        <button 
+                            @click="closeConfirmModal" 
+                            class="px-5 py-2 rounded-full border border-gray-300 text-gray-700 bg-white hover:bg-gray-100 transition duration-200 font-medium text-sm"
+                        >
+                            {{ $t('ui.cancel') }}
+                        </button>
+                        <button 
+                            @click="confirmAction" 
+                            class="px-5 py-2 rounded-full text-white font-medium text-sm"
+                            :class="confirmModalData.type === 'delete' ? 'bg-[#ff6b6b] hover:bg-[#ff5252]' : 'bg-gradient-to-b from-[#4A90E2] to-[#2871CC] hover:from-[#5FA0E9] hover:to-[#4A90E2]'"
+                        >
+                            {{ $t('ui.confirm') }}
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     `,
   data() {
@@ -94,6 +136,14 @@ window.MyStoriesPage = {
       loading: true,
       searchQuery: "",
       BASE_FS_URL: "https://fs.webdraw.com",
+      // For the confirmation modal
+      showConfirmModal: false,
+      confirmModalData: {
+        title: "",
+        message: "",
+        confirmCallback: null,
+        type: "delete" // delete, warning, info, etc.
+      },
       // Fallback data when SDK.fs is not available
       fallbackGenerations: {
         generations: [
@@ -184,6 +234,8 @@ window.MyStoriesPage = {
         "myStories.listen": "Listen",
         "myStories.today": "Today at",
         "myStories.yesterday": "Yesterday at",
+        "myStories.deleteConfirmTitle": "Delete Story",
+        "myStories.deleteConfirmMessage": "Are you sure you want to delete this story? This action cannot be undone and will remove all associated files."
       };
 
       // Portuguese translations for the new keys
@@ -191,6 +243,8 @@ window.MyStoriesPage = {
         "myStories.listen": "Ouvir",
         "myStories.today": "Hoje às",
         "myStories.yesterday": "Ontem às",
+        "myStories.deleteConfirmTitle": "Excluir História",
+        "myStories.deleteConfirmMessage": "Tem certeza que deseja excluir esta história? Esta ação não pode ser desfeita e removerá todos os arquivos associados."
       };
 
       // Add translations if they don't exist
@@ -859,81 +913,78 @@ window.MyStoriesPage = {
     },
     deleteStory(index) {
       const story = this.generations[index];
-      const title = story.title || 'this story';
       
-      if (confirm(`Are you sure you want to delete "${title}"? This action cannot be undone and will remove all associated files.`)) {
-        // First remove from local array to immediately update UI
-        this.generations.splice(index, 1);
-        console.log(`Removed story "${story.title}" at index ${index} from local array`);
-        
-        // Track deletion status for better error handling
-        let individualFileDeleted = false;
-        
-        // Try to update both storage methods if SDK.fs is available
-        if (sdk && typeof sdk.fs?.read === "function") {
-          // 1. Try to delete the individual file if it exists
-          if (typeof sdk.fs?.remove === "function") {
-            try {
-              console.log("Deleting story and all associated files:", story.title);
-              
-              // First try using the stored file path if available
-              if (story._filePath) {
-                console.log(
-                  "Attempting to delete file using stored path:",
-                  story._filePath,
-                );
+      // First remove from local array to immediately update UI
+      this.generations.splice(index, 1);
+      console.log(`Removed story "${story.title}" at index ${index} from local array`);
+      
+      // Track deletion status for better error handling
+      let individualFileDeleted = false;
+      
+      // Try to update both storage methods if SDK.fs is available
+      if (sdk && typeof sdk.fs?.read === "function") {
+        // 1. Try to delete the individual file if it exists
+        if (typeof sdk.fs?.remove === "function") {
+          try {
+            console.log("Deleting story and all associated files:", story.title);
+            
+            // First try using the stored file path if available
+            if (story._filePath) {
+              console.log(
+                "Attempting to delete file using stored path:",
+                story._filePath,
+              );
 
-                // Try to delete the story JSON file
-                sdk.fs.remove(story._filePath)
-                  .then(() => {
-                    console.log(
-                      "Individual story file deleted successfully using stored path",
-                    );
-                    individualFileDeleted = true;
-                    // After deleting the JSON file, delete the associated media files
-                    this.deleteAssociatedMediaFiles(story);
-                    
-                    // Force update the generations.json file to ensure UI consistency
-                    this.updateGenerationsFile();
-                  })
-                  .catch((err) => {
-                    console.log("Could not delete using stored path:", err);
-                    // Fall back to title-based deletion
-                    this.deleteByTitle(story);
-                  });
-              } else if (story.title) {
-                // Fall back to title-based deletion
-                this.deleteByTitle(story);
-              }
-            } catch (error) {
-              console.log("Error during individual story deletion:", error);
-              
-              // Still update the generations file even if individual file deletion failed
-              this.updateGenerationsFile();
+              // Try to delete the story JSON file
+              sdk.fs.remove(story._filePath)
+                .then(() => {
+                  console.log(
+                    "Individual story file deleted successfully using stored path",
+                  );
+                  individualFileDeleted = true;
+                  // After deleting the JSON file, delete the associated media files
+                  this.deleteAssociatedMediaFiles(story);
+                  
+                  // Force update the generations.json file to ensure UI consistency
+                  this.updateGenerationsFile();
+                })
+                .catch((err) => {
+                  console.log("Could not delete using stored path:", err);
+                  // Fall back to title-based deletion
+                  this.deleteByTitle(story);
+                });
+            } else if (story.title) {
+              // Fall back to title-based deletion
+              this.deleteByTitle(story);
             }
-          } else {
-            // If SDK.fs.remove is not available, still update the generations file
+          } catch (error) {
+            console.log("Error during individual story deletion:", error);
+            
+            // Still update the generations file even if individual file deletion failed
             this.updateGenerationsFile();
           }
-          
-          // As a final step, always try to update the generations.json file
-          setTimeout(() => {
-            if (!individualFileDeleted) {
-              console.log("Ensuring generations.json is updated after deletion");
-              this.updateGenerationsFile();
-            }
-          }, 1000);
         } else {
-          // Update fallback data if SDK.fs is not available
-          this.fallbackGenerations.generations = [...this.generations];
-          console.log("SDK.fs not available, updated fallback data");
+          // If SDK.fs.remove is not available, still update the generations file
+          this.updateGenerationsFile();
         }
         
-        // Force reload the generations after a delay to ensure UI consistency
+        // As a final step, always try to update the generations.json file
         setTimeout(() => {
-          this.loadGenerations();
-        }, 2000);
+          if (!individualFileDeleted) {
+            console.log("Ensuring generations.json is updated after deletion");
+            this.updateGenerationsFile();
+          }
+        }, 1000);
+      } else {
+        // Update fallback data if SDK.fs is not available
+        this.fallbackGenerations.generations = [...this.generations];
+        console.log("SDK.fs not available, updated fallback data");
       }
+      
+      // Force reload the generations after a delay to ensure UI consistency
+      setTimeout(() => {
+        this.loadGenerations();
+      }, 2000);
     },
 
     // Method to delete a story by its title
@@ -1425,6 +1476,33 @@ window.MyStoriesPage = {
       console.log(`Failed to load image for story: ${story.title}`);
       // Set a fallback image
       event.target.src = '/assets/image/bg.webp';
+    },
+    // Show delete confirmation modal
+    showDeleteConfirm(index) {
+      const story = this.generations[index];
+      const title = story.title || this.$t('story.untitledStory');
+      
+      this.confirmModalData = {
+        title: this.$t('myStories.deleteConfirmTitle'),
+        message: this.$t('myStories.deleteConfirmMessage').replace('{storyTitle}', `"${title}"`),
+        confirmCallback: () => this.deleteStory(index),
+        type: 'delete'
+      };
+      
+      this.showConfirmModal = true;
+    },
+    
+    // Close the confirmation modal
+    closeConfirmModal() {
+      this.showConfirmModal = false;
+    },
+    
+    // Execute the action when confirmed
+    confirmAction() {
+      if (this.confirmModalData.confirmCallback) {
+        this.confirmModalData.confirmCallback();
+      }
+      this.closeConfirmModal();
     },
   },
 };
