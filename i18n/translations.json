@@ -45,7 +45,8 @@
       "checkBackSoon": "Check back soon for example stories!",
       "createFromThis": "Create from this",
       "narratorDescription": "Select from our charming narrators to bring the story to life with their unique voices.",
-      "tryItNow": "Try it now for free. Takes 30 seconds!"
+      "tryItNow": "Try it now for free. Takes 30 seconds!",
+      "ok": "OK"
     },
     "login": {
       "title": "Login",
@@ -119,7 +120,8 @@
       "listen": "Listen",
       "saveAndShare": "Save & Share",
       "startOver": "Start Over",
-      "fillAllFields": "Please fill in all fields and select a voice before creating a story."
+      "fillAllFields": "Please fill in all fields and select a voice before creating a story.",
+      "warningTitle": "Missing Information"
     },
     "myStories": {
       "pageTitle": "My Stories",
@@ -301,7 +303,8 @@
       "checkBackSoon": "Volte em breve para ver histórias de exemplo!",
       "createFromThis": "Use este modelo",
       "narratorDescription": "Escolha entre nossos encantadores narradores para dar vida à história com suas vozes únicas.",
-      "tryItNow": "Tente agora gratuitamente. Leva 30 segundos!"
+      "tryItNow": "Tente agora gratuitamente. Leva 30 segundos!",
+      "ok": "OK"
     },
     "login": {
       "title": "Entrar",
@@ -375,7 +378,8 @@
       "listen": "Ouvir",
       "saveAndShare": "Salvar e Compartilhar",
       "startOver": "Recomeçar",
-      "fillAllFields": "Por favor, preencha todos os campos e selecione uma voz antes de criar uma história."
+      "fillAllFields": "Por favor, preencha todos os campos e selecione uma voz antes de criar uma história.",
+      "warningTitle": "Informações Ausentes"
     },
     "myStories": {
       "pageTitle": "Minhas Histórias",

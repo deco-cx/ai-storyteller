@@ -27,7 +27,13 @@ window.CreatePage = {
       preloadedAudios: {},
       BASE_FS_URL: "https://fs.webdraw.com",
       currentLanguage: window.i18n.getLanguage(),
-      interestSuggestions: []
+      interestSuggestions: [],
+      showWarningModal: false,
+      warningModalData: {
+        title: "",
+        message: "",
+        type: "warning"
+      }
     };
   },
   watch: {
@@ -338,7 +344,12 @@ window.CreatePage = {
     },
     async generateStory() {
       if (!this.childName || !this.interests || !this.selectedVoice) {
-        alert("Please fill in all fields and select a voice before creating a story.");
+        this.warningModalData = {
+          title: this.$t('create.warningTitle'),
+          message: this.$t('create.fillAllFields'),
+          type: 'warning'
+        };
+        this.showWarningModal = true;
         return;
       }
       
@@ -1343,7 +1354,6 @@ window.CreatePage = {
     },
     
     getPreviewAudioUrl(voice) {
-      return voice.previewAudio;
       if (!voice.previewAudio) return null;
       
       const fileName = voice.previewAudio.split('/').pop();
@@ -1377,6 +1387,7 @@ window.CreatePage = {
       console.log(`Preview audio for "${voice.name}" playback completed`);
       this.isPreviewPlaying = null;
     },
+    
     getSuggestionClasses(suggestion) {
       return [
         `bg-${suggestion.color}-300`,
@@ -1384,6 +1395,10 @@ window.CreatePage = {
         'px-3 py-2 rounded-full text-xs cursor-pointer'
       ];
     },
+
+    closeWarningModal() {
+      this.showWarningModal = false;
+    }
   },
   template: `
     <div class="min-h-screen bg-white pb-16">
@@ -1630,6 +1645,36 @@ window.CreatePage = {
         >
           <source v-if="voice.previewAudio" :src="getPreviewAudioUrl(voice)" type="audio/mpeg">
         </audio>
+      </div>
+
+      <div v-if="showWarningModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 transition-opacity duration-300 ease-in-out">
+        <div 
+          class="bg-white rounded-3xl shadow-xl p-6 max-w-md w-full relative overflow-hidden transform transition-all duration-300 ease-out"
+          :class="{
+            'border-l-4 border-amber-500': warningModalData.type === 'warning',
+            'scale-100 opacity-100': showWarningModal,
+            'scale-95 opacity-0': !showWarningModal
+          }"
+        >
+          <div class="flex justify-center mb-4" v-if="warningModalData.type === 'warning'">
+            <div class="bg-amber-500 bg-opacity-20 rounded-full p-4 w-16 h-16 flex items-center justify-center">
+              <i class="fa-solid fa-exclamation text-2xl text-amber-500"></i>
+            </div>
+          </div>
+          
+          <h3 class="text-lg font-medium text-center mb-2">{{ warningModalData.title }}</h3>
+          
+          <p class="text-gray-600 text-center mb-6">{{ warningModalData.message }}</p>
+          
+          <div class="flex justify-center">
+            <button 
+              @click="closeWarningModal" 
+              class="px-5 py-2 rounded-full text-white font-medium text-sm bg-gradient-to-b from-purple-300 to-purple-500 border border-purple-700 hover:translate-y-[-2px] transition-transform duration-200"
+            >
+              {{ $t('ui.ok') }}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   `
