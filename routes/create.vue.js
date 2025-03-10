@@ -1669,7 +1669,7 @@ window.CreatePage = {
           <div class="flex justify-center">
             <button 
               @click="closeWarningModal" 
-              class="px-5 py-2 rounded-full text-white font-medium text-sm bg-gradient-to-b from-purple-300 to-purple-500 border border-purple-700 hover:translate-y-[-2px] transition-transform duration-200"
+              class="px-5 py-2 rounded-full text-white font-medium text-sm bg-gradient-to-b from-amber-400 to-amber-500 border border-amber-600 hover:translate-y-[-2px] hover:from-amber-300 hover:to-amber-400 transition-all duration-200"
             >
               {{ $t('ui.ok') }}
             </button>
