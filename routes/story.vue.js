@@ -672,53 +672,129 @@ window.StoryPage = {
             this.audioProgress = clickPosition * 100;
             this.currentTime = player.currentTime;
         },
-        shareStory() {
-            // Define the production URL for sharing
-            const PRODUCTION_ORIGIN = "https://webdraw.com/apps/ai-storyteller";
-            
-            // Determine if we're on localhost for development
-            const isLocalhost = window.location.hostname === 'localhost' || 
-                                window.location.hostname === '127.0.0.1' ||
-                                window.location.hostname.includes('192.168.');
-            
-            // Use localhost for development, production URL otherwise
-            let baseUrl;
-            if (isLocalhost) {
-                baseUrl = window.location.origin;
-                console.log("Using localhost URL for sharing (development mode):", baseUrl);
-            } else {
-                baseUrl = PRODUCTION_ORIGIN;
-                console.log("Using production URL for sharing:", baseUrl);
-            }
-            
-            // Try to get parent URL as fallback option if we're in an iframe
+        async shareStory() {
             try {
-                if (!isLocalhost && window.parent !== window && window.parent.location.href) {
-                    // Check if parent URL looks like a webdraw URL
-                    const parentUrl = window.parent.location.origin + window.parent.location.pathname;
-                    if (parentUrl.includes('webdraw.com')) {
-                        baseUrl = parentUrl;
-                        console.log("Using parent window URL for sharing:", baseUrl);
-                    }
-                }
-            } catch (e) {
-                console.warn("Could not access parent window URL:", e);
-                // Continue with already determined baseUrl
-            }
-            
-            // Create a query parameter with the story path
-            let shareUrl;
-            if (this.fileUrl) {
-                // Parse the file path to get userId and storyId
-                const pathRegex = /\/users\/([^\/]+)\/AI Storyteller\/(.*)/;
-                const match = this.fileUrl.match(pathRegex);
+                // Define the production URL for sharing
+                const PRODUCTION_ORIGIN = "https://webdraw.com/apps/ai-storyteller";
                 
-                if (match && match.length >= 3) {
-                    // Extract userId and storyId from the file path
-                    const userId = match[1];
-                    const storyId = match[2];
+                // Determine if we're on localhost for development
+                const isLocalhost = window.location.hostname === 'localhost' || 
+                                    window.location.hostname === '127.0.0.1' ||
+                                    window.location.hostname.includes('192.168.');
+                
+                // Use localhost for development, production URL otherwise
+                let baseUrl;
+                if (isLocalhost) {
+                    baseUrl = window.location.origin;
+                    console.log("Using localhost URL for sharing (development mode):", baseUrl);
+                } else {
+                    baseUrl = PRODUCTION_ORIGIN;
+                    console.log("Using production URL for sharing:", baseUrl);
+                }
+                
+                // Try to get parent URL as fallback option if we're in an iframe
+                try {
+                    if (!isLocalhost && window.parent !== window && window.parent.location.href) {
+                        // Check if parent URL looks like a webdraw URL
+                        const parentUrl = window.parent.location.origin + window.parent.location.pathname;
+                        if (parentUrl.includes('webdraw.com')) {
+                            baseUrl = parentUrl;
+                            console.log("Using parent window URL for sharing:", baseUrl);
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Could not access parent window URL:", e);
+                    // Continue with already determined baseUrl
+                }
+                
+                // Create a query parameter with the story path
+                let shareUrl;
+                
+                if (this.fileUrl) {
+                    let userId = null;
+                    let storyId = null;
                     
-                    // Use the new story parameter format with the determined base URL
+                    // Standard pattern: /users/{userId}/AI Storyteller/{storyName}
+                    const pathRegex = /\/users\/([^\/]+)\/AI Storyteller\/(.*)/;
+                    const match = this.fileUrl.match(pathRegex);
+                    
+                    if (match && match.length >= 3) {
+                        // Extract userId and storyId from the file path
+                        userId = match[1];
+                        storyId = match[2];
+                        console.log("Extracted from standard path format - userId:", userId, "storyId:", storyId);
+                    } 
+                    // Home directory reference: ~/AI Storyteller/{storyName} or other relative path
+                    else {
+                        // Use fs.cwd() to get the current working directory which will include the user ID
+                        try {
+                            if (sdk && sdk.fs && typeof sdk.fs.cwd === 'function') {
+                                const cwdPath = await sdk.fs.cwd();
+                                console.log("Current working directory:", cwdPath);
+                                
+                                // Extract user ID from the cwd path
+                                const cwdMatch = cwdPath.match(/\/users\/([^\/]+)/);
+                                if (cwdMatch && cwdMatch[1]) {
+                                    userId = cwdMatch[1];
+                                    console.log("Extracted userId from CWD:", userId);
+                                }
+                                
+                                // Extract the story filename
+                                if (this.fileUrl.includes('AI Storyteller/')) {
+                                    const storyParts = this.fileUrl.split('AI Storyteller/');
+                                    if (storyParts.length > 1) {
+                                        storyId = storyParts[1]; // Get everything after "AI Storyteller/"
+                                    } else {
+                                        let pathParts = this.fileUrl.split('/');
+                                        storyId = pathParts[pathParts.length - 1]; 
+                                    }
+                                } else {
+                                    // Just the filename
+                                    let pathParts = this.fileUrl.split('/');
+                                    storyId = pathParts[pathParts.length - 1];
+                                }
+                                console.log("Extracted story ID:", storyId);
+                            } else {
+                                console.warn("sdk.fs.cwd is not available");
+                            }
+                        } catch (cwdError) {
+                            console.error("Error getting current working directory:", cwdError);
+                        }
+                        
+                        // If we still don't have a userId, try alternate methods
+                        if (!userId) {
+                            // Fallback - try to get user ID from route
+                            if (this.$route && this.$route.query && this.$route.query.story) {
+                                const storyParts = this.$route.query.story.split('/');
+                                if (storyParts.length > 0 && storyParts[0] !== 'anonymous') {
+                                    userId = storyParts[0];
+                                    console.log("Got userId from route query:", userId);
+                                }
+                            }
+                            
+                            // Another fallback - if we're in localhost for testing
+                            if (!userId && isLocalhost) {
+                                userId = "a4896ea5-db22-462e-a239-22641f27118c"; // The ID seen in working URLs
+                                console.log("Using fallback userId for localhost:", userId);
+                            }
+                            
+                            // Final fallback
+                            if (!userId) {
+                                userId = "anonymous";
+                                console.log("Using anonymous userId as last resort");
+                            }
+                        }
+                    }
+                    
+                    // Clean up the storyId - remove any leading/trailing slashes
+                    storyId = storyId.replace(/^\/+|\/+$/g, '');
+                    
+                    // If we end up with an empty storyId, use a default
+                    if (!storyId || storyId.trim() === '') {
+                        storyId = "story.json";
+                    }
+                    
+                    // Always use story parameter format for sharing
                     shareUrl = `${baseUrl}?story=${encodeURIComponent(userId + '/' + storyId)}`;
                     
                     // If we also have an index, include it
@@ -731,46 +807,39 @@ window.StoryPage = {
                         shareUrl += `&id=${encodeURIComponent(this.storyId)}`;
                     }
                 } else {
-                    // Fallback to using file parameter if path doesn't match expected format
-                    shareUrl = `${baseUrl}?file=${encodeURIComponent(this.fileUrl)}`;
-                    
-                    // If we have additional parameters, include them
-                    if (this.storyIndex !== null) {
-                        shareUrl += `&index=${this.storyIndex}`;
-                    }
-                    
-                    if (this.storyId) {
-                        shareUrl += `&id=${encodeURIComponent(this.storyId)}`;
-                    }
+                    // Fallback to current URL if no fileUrl available
+                    shareUrl = window.location.href;
                 }
-            } else {
-                // Fallback to current URL if no fileUrl available
-                shareUrl = window.location.href;
-            }
-            
-            console.log("Sharing URL:", shareUrl);
-            
-            // Track share event with PostHog
-            if (sdk && sdk.posthogEvent) {
-                sdk.posthogEvent("story_shared", {
-                    story_id: this.storyId,
-                    story_title: this.story.title,
-                    share_url: shareUrl
-                });
-            }
-            
-            // Try to use the Web Share API if available
-            if (navigator.share) {
-                navigator.share({
-                    title: this.story?.title || "Shared Story",
-                    text: `Check out this story: ${this.story?.title || ""}`,
-                    url: shareUrl
-                }).catch(err => {
-                    console.error('Error sharing:', err);
+                
+                console.log("Final share URL:", shareUrl);
+                
+                // Track share event with PostHog
+                if (sdk && sdk.posthogEvent) {
+                    sdk.posthogEvent("story_shared", {
+                        story_id: this.storyId,
+                        story_title: this.story.title,
+                        share_url: shareUrl
+                    });
+                }
+                
+                // Try to use the Web Share API if available
+                if (navigator.share) {
+                    try {
+                        await navigator.share({
+                            title: this.story?.title || "Shared Story",
+                            text: `Check out this story: ${this.story?.title || ""}`,
+                            url: shareUrl
+                        });
+                    } catch (err) {
+                        console.error("Error sharing:", err);
+                        this.fallbackShare(shareUrl);
+                    }
+                } else {
                     this.fallbackShare(shareUrl);
-                });
-            } else {
-                this.fallbackShare(shareUrl);
+                }
+            } catch (overallError) {
+                console.error("Unexpected error in shareStory:", overallError);
+                alert(this.$t('ui.errorSharing'));
             }
         },
         fallbackShare(url) {
