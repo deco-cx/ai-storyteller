@@ -404,18 +404,18 @@ window.CreatePage = {
         });
         console.log("Using image prompt:", imagePrompt);
 
-        // Iniciar ambas as tarefas em paralelo, mas capturar erros de imagem
         let imagePromise;
         try {
           imagePromise = sdk.ai.generateImage({
-            model: "openai:dall-e-3",
+            //model: "openai:dall-e-3",
+            model: "stability:core",
             n: 1,
-            size: "1792x1024",
+            //size: "1792x1024", 
+            size: "1024x1024",
             prompt: imagePrompt
           });
         } catch (error) {
           console.error("Error starting image generation:", error);
-          // Continuamos com a geração da história mesmo se a imagem falhar
           imagePromise = Promise.resolve({ error: "Failed to initialize image generation" });
         }
         
