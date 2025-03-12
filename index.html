@@ -109,54 +109,27 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(to bottom, #E1F5FE, #BBDEFB);
-            display: flex;
-            justify-content: center;
-            align-items: center;
             z-index: 9999;
-            font-family: 'Onest', sans-serif;
+            /* Skeleton pulse animation with whiter colors */
+            background: linear-gradient(90deg, #ffffff 25%, #f8f8f8 50%, #ffffff 75%);
+            background-size: 200% 100%;
+            animation: pulse 1.5s ease-in-out infinite;
         }
-        .spinner {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            border: 4px solid rgba(255, 255, 255, 0.7);
-            border-top: 4px solid #4A90E2;
-            animation: spin 1s linear infinite;
-            box-shadow: 0 0 10px rgba(74, 144, 226, 0.2);
-            margin: 0 auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .loader-content {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.05);
-            text-align: center;
-            border: 1px solid rgba(74, 144, 226, 0.1);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .loader-text {
-            font-size: 1.25rem;
-            font-weight: 500;
-            color: #4A90E2;
-            margin-top: 1rem;
+        
+        @keyframes pulse {
+            0% {
+                background-position: 0% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
         }
     </style>
 </head>
 <body class="bg-gray-50 font-['Onest']">
     <!-- Initial loading animation (shown before Vue loads) -->
     <div id="initial-loader" class="initial-loader">
-        <div class="loader-content">
-            <div class="spinner"></div>
-            <p class="loader-text">Carregando...</p>
-        </div>
+        <!-- No content, just the animated background -->
     </div>
 
     <div id="app">
