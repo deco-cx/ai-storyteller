@@ -634,7 +634,7 @@ window.IndexPage = {
         return `/assets/image/${filename}`;
       }
 
-      // For other URLs, keep the original behavior but with fallback
+      // For other URLs, prepare for optimization
       let processedUrl = url;
 
       // If the URL is not absolute and doesn't start with a slash, add a slash
@@ -642,12 +642,13 @@ window.IndexPage = {
         processedUrl = "/" + url;
       }
 
-      // Return the direct URL without optimization service
+      // For relative URLs, convert to absolute
       if (!processedUrl.startsWith("http")) {
-        return `${window.location.origin}${processedUrl}`;
+        processedUrl = `${window.location.origin}${processedUrl}`;
       }
 
-      return processedUrl;
+      // Use the webdraw.com image optimization service with cover fit
+      return `https://webdraw.com/image-optimize?src=${encodeURIComponent(processedUrl)}&width=${width}&height=${height}&fit=cover`;
     },
     getOptimizedAudioUrl(url) {
       // If the URL is empty, a data URL, or null, return it as is

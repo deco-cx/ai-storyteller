@@ -1063,7 +1063,7 @@ window.CreatePage = {
       const fallbackImages = [
         '/assets/image/bg.png',
         '/assets/image/ex1.webp',
-        '/assets/image/ex2.png',
+        '/assets/image/ex2.webp',
         '/assets/image/ex3.webp',
         '/assets/image/ex4.webp'
       ];

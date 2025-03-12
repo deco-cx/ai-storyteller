@@ -154,7 +154,7 @@
         "voice": "Grandpa Solomon",
         "voiceId": "NOpBlnGInO9m6vDvFkFC",
         "voiceAvatar": "/assets/image/grandpa_1.png",
-        "image": "/assets/image/ex2.png",
+        "image": "/assets/image/ex2.webp",
         "audio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-grandpa2.mp3",
         "isPlaying": false,
         "progress": "0%"
@@ -412,7 +412,7 @@
         "voice": "Vô Pedro",
         "voiceId": "NOpBlnGInO9m6vDvFkFC",
         "voiceAvatar": "/assets/image/grandpa_1.png",
-        "image": "/assets/image/ex2.png",
+        "image": "/assets/image/ex2.webp",
         "audio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-grandpa-pt2.mp3",
         "isPlaying": false,
         "progress": "0%"
