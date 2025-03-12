@@ -402,20 +402,46 @@ window.CreatePage = {
           title: object.title,
           plot: object.plot
         });
-        console.log("Using image prompt:", imagePrompt);
+
+        let translatedPrompt;
+        try {
+          const translationResponse = await sdk.ai.generateText({
+            messages: [
+              {
+                role: "system",
+                content: "You are a translator. Translate the following text to English."
+              },
+              {
+                role: "user",
+                content: imagePrompt
+              }
+            ]
+          });
+          
+          translatedPrompt = translationResponse.text;
+        } catch (translationError) {
+          console.error("Error translating prompt:", translationError);
+          // Fallback: create a basic English prompt if translation fails
+          translatedPrompt = `Create a cheerful and child-friendly illustration for a children's story titled "${object.title}". Use bright, soft colors and a warm, engaging style. The image should depict a main scene from the story in a magical, inspiring way that's appropriate for young children.`;
+          console.log("Using fallback English prompt:", translatedPrompt);
+        }
 
         let imagePromise;
         try {
           imagePromise = sdk.ai.generateImage({
-            //model: "openai:dall-e-3",
-            model: "stability:core",
-            n: 1,
-            //size: "1792x1024", 
-            size: "1024x1024",
-            prompt: imagePrompt
+            model: "replicate:recraft-ai/recraft-v3",
+            prompt: translatedPrompt,
+            providerOptions: {
+              replicate: {
+                size: "1024x1024",
+                style: "digital_illustration",
+                prompt: translatedPrompt
+              }
+            }
           });
         } catch (error) {
           console.error("Error starting image generation:", error);
+          // Continuamos com a geração da história mesmo se a imagem falhar
           imagePromise = Promise.resolve({ error: "Failed to initialize image generation" });
         }
         
@@ -446,7 +472,6 @@ window.CreatePage = {
         console.log("Story generation complete:", this.storyData.story);
         this.taskStatus.story = "done";
         
-        // Tente obter o resultado da imagem, mas lide com falhas graciosamente
         try {
           const imageResult = await imagePromise;
           console.log("Raw image generation result:", JSON.stringify(imageResult));
@@ -455,12 +480,26 @@ window.CreatePage = {
             throw new Error(imageResult.error);
           }
           
-          if (imageResult.url) {
-            this.storyImage = imageResult.url;
+          if (imageResult.images && imageResult.images.length > 0) {
+            const replicateImageUrl = imageResult.images[0];
+            console.log("Got Replicate image URL:", replicateImageUrl);
+            
+            try {
+              console.log("Downloading image from Replicate URL...");
+              const filename = imageResult.filepath || `/users/${this.userId}/Pictures/${this.safeFolderName(object.title)}.webp`;
+              
+              this.storyImage = replicateImageUrl;
+              console.log("Using direct Replicate URL for now:", this.storyImage);
+              
+              if (imageResult.filepath) {
+                console.log("Local filepath for future reference:", imageResult.filepath);
+              }
+            } catch (downloadError) {
+              console.error("Error downloading image from Replicate:", downloadError);
+              this.storyImage = replicateImageUrl;// Use a direct Replicate URL as a fallback
+            }
           } else if (imageResult.filepath) {
             this.storyImage = imageResult.filepath;
-          } else if (imageResult.images && imageResult.images.length > 0) {
-            this.storyImage = imageResult.images[0];
           } else {
             console.warn("Unexpected image result format:", imageResult);
             this.storyImage = null;
@@ -477,9 +516,6 @@ window.CreatePage = {
             if (imageResult.filepath) {
               await this.setFilePermissions(imageResult.filepath);
               console.log("Set permissions for image file:", imageResult.filepath);
-            } else if (imageResult.images && imageResult.images.length > 0) {
-              await this.setFilePermissions(imageResult.images[0]);
-              console.log("Set permissions for image file:", imageResult.images[0]);
             }
           } catch (permError) {
             console.warn("Error setting permissions for image file:", permError);
