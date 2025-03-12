@@ -396,6 +396,81 @@ window.CreatePage = {
           story: ""
         };
         
+        this.taskStatus.story = "loading";
+        console.log("Starting story generation...");
+        
+        const storyPrompt = this.$tf('prompts.generateStory', {
+          childName: this.childName,
+          interests: this.interests,
+          title: object.title,
+          plot: object.plot
+        }) + "\n\nIMPORTANT: DO NOT include the title at the beginning of the story, as it will be read separately in the narration. Start directly with the story content.";
+        
+        console.log("Using story prompt with length instructions:", storyPrompt.includes("2500-4000 CHARACTERS"));
+        
+        try {
+          console.log("Attempting to generate story with streaming...");
+          const storyStream = await sdk.ai.streamText({
+            messages: [
+              {
+                role: "user",
+                content: storyPrompt
+              }
+            ]
+          });
+          
+          this.storyData.story = "";
+          let chunkCount = 0;
+          for await (const chunk of storyStream) {
+            chunkCount++;
+            if (chunkCount === 1) {
+              console.log("Received first chunk of story stream");
+            }
+            this.streamingText += chunk.text;
+            this.storyData.story += chunk.text;
+          }
+          
+          console.log(`Story stream completed with ${chunkCount} chunks`);
+        } catch (streamError) {
+          console.error("Error during story streaming:", streamError);
+          this.storyData.story = "";
+        }
+        
+        if (!this.storyData.story || this.storyData.story.trim() === '') {
+          try {
+            const textResponse = await sdk.ai.generateText({
+              messages: [{ role: "user", content: storyPrompt }]
+            });
+            this.storyData.story = textResponse.text || "";
+          } catch (textError) {
+            this.storyData.story = this.storyData.plot;
+          }
+        }
+        
+        if (!this.storyData.story || this.storyData.story.trim() === '') {
+          this.storyData.story = this.storyData.plot;
+        } else if (this.storyData.story.length < 2500) {
+          try {
+            const retryResponse = await sdk.ai.generateText({
+              messages: [{
+                role: "user",
+                content: storyPrompt + `\n\nIMPORTANT: Please create a LONGER story with AT LEAST 2500 CHARACTERS.`
+              }]
+            });
+            
+            if (retryResponse.text && retryResponse.text.length > this.storyData.story.length) {
+              this.storyData.story = retryResponse.text;
+            }
+          } catch (error) {}
+        } else if (this.storyData.story.length > 3500) {
+          this.storyData.story = this.truncateStoryIntelligently(this.storyData.story, 3500);
+        }
+        
+        this.storyData.originalStory = this.storyData.story;
+        console.log("Story generated:", this.storyData.story);
+        this.storyData.story = this.formatStoryText(this.storyData.story);
+        this.taskStatus.story = "done";
+        
         this.taskStatus.image = "loading";
         console.log("Starting image generation...");
         const imagePrompt = this.$tf('prompts.generateImage', {
@@ -426,9 +501,9 @@ window.CreatePage = {
           console.log("Using fallback English prompt:", translatedPrompt);
         }
 
-        let imagePromise;
         try {
-          imagePromise = sdk.ai.generateImage({
+          console.log("Generating image with prompt:", translatedPrompt);
+          const imageResult = await sdk.ai.generateImage({
             model: "replicate:recraft-ai/recraft-v3",
             prompt: translatedPrompt,
             providerOptions: {
@@ -439,41 +514,7 @@ window.CreatePage = {
               }
             }
           });
-        } catch (error) {
-          console.error("Error starting image generation:", error);
-          // Continuamos com a geração da história mesmo se a imagem falhar
-          imagePromise = Promise.resolve({ error: "Failed to initialize image generation" });
-        }
-        
-        this.taskStatus.story = "loading";
-        console.log("Starting story generation...");
-        const storyStream = await sdk.ai.streamText({
-          messages: [
-            {
-              role: "user",
-              content: this.$tf('prompts.generateStory', {
-                childName: this.childName,
-                interests: this.interests,
-                title: object.title,
-                plot: object.plot
-              })
-            }
-          ]
-        });
-        
-        this.storyData.story = "";
-        for await (const chunk of storyStream) {
-          this.streamingText += chunk.text;
-          this.storyData.story += chunk.text;
-        }
-        
-        this.storyData.story = this.formatStoryText(this.storyData.story);
-        
-        console.log("Story generation complete:", this.storyData.story);
-        this.taskStatus.story = "done";
-        
-        try {
-          const imageResult = await imagePromise;
+          
           console.log("Raw image generation result:", JSON.stringify(imageResult));
           
           if (imageResult.error) {
@@ -536,10 +577,10 @@ window.CreatePage = {
         
         this.taskStatus.image = "done";
         
+        // Finalmente, iniciar a geração do áudio com a história completa garantida
         this.taskStatus.audio = "loading";
         console.log("Starting audio generation...");
-        //const audioText = this.storyData.story;
-        const audioText = `${this.storyData.title}. ${this.storyData.story}`;
+        const audioText = `${this.storyData.title}. ${this.storyData.originalStory}`;
 
         const chosenVoice = this.selectedVoice || this.voices[0];
         
@@ -1030,6 +1071,50 @@ window.CreatePage = {
       // Seleciona uma imagem aleatória
       const randomIndex = Math.floor(Math.random() * fallbackImages.length);
       return fallbackImages[randomIndex];
+    },
+    
+    truncateStoryIntelligently(story, maxLength) {
+      if (story.length <= maxLength) return story;
+      
+      const paragraphs = story.split(/\n\n+/);
+      
+      if (paragraphs.length <= 1) {
+        const truncated = story.substring(0, maxLength);
+        const lastPeriodPos = truncated.lastIndexOf('. ');
+        
+        if (lastPeriodPos > maxLength * 0.75) {
+          return story.substring(0, lastPeriodPos + 1);
+        }
+        return story.substring(0, maxLength - 3) + '...';
+      }
+      
+      let result = '';
+      let currentLength = 0;
+      
+      for (let i = 0; i < paragraphs.length; i++) {
+        if (currentLength + paragraphs[i].length + (i > 0 ? 2 : 0) > maxLength) {
+          if (i === paragraphs.length - 1) {
+            const remaining = maxLength - currentLength - 2;
+            if (remaining > 0) {
+              const part = paragraphs[i].substring(0, remaining);
+              const lastPeriod = part.lastIndexOf('. ');
+              
+              if (lastPeriod > 0) {
+                result += '\n\n' + paragraphs[i].substring(0, lastPeriod + 1);
+              } else {
+                result += '\n\n' + paragraphs[i].substring(0, remaining - 3) + '...';
+              }
+            }
+          }
+          break;
+        }
+        
+        if (i > 0) result += '\n\n';
+        result += paragraphs[i];
+        currentLength += paragraphs[i].length + (i > 0 ? 2 : 0);
+      }
+      
+      return result;
     },
     
     generateExcerpt(story) {
