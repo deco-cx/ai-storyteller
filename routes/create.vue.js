@@ -1246,6 +1246,7 @@ window.CreatePage = {
             path: "/story",
             query: { 
               file: filename,
+              fromCreate: 'true'
             }
           });
 

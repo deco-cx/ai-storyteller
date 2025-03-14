@@ -140,11 +140,16 @@
     "story": {
       "loadingStory": "Loading your story...",
       "errorLoadingStory": "Error Loading Story",
-      "noStorySpecified": "No story file specified. Please provide a valid file URL.",
+      "errorLoading": "Error loading story",
+      "noStorySpecified": "No story specified",
       "invalidIndex": "Invalid story index",
-      "noStoryContent": "No story content available",
       "untitledStory": "Untitled Story",
-      "errorDownloadingAudio": "There was an error downloading the audio file. Please try again later."
+      "preparingStory": "Preparing your story...",
+      "preparingCover": "Preparing cover image...",
+      "preparingAudio": "Preparing audio...",
+      "verifyingCover": "Verifying cover image",
+      "verifyingAudio": "Verifying audio",
+      "errorDownloadingAudio": "Error downloading audio"
     },
     "examples": [
       {
@@ -398,11 +403,16 @@
     "story": {
       "loadingStory": "Carregando sua história...",
       "errorLoadingStory": "Erro ao Carregar História",
-      "noStorySpecified": "Nenhum arquivo de história especificado. Por favor, forneça uma URL de arquivo válida.",
+      "errorLoading": "Erro ao carregar história",
+      "noStorySpecified": "Nenhuma história especificada",
       "invalidIndex": "Índice de história inválido",
-      "noStoryContent": "Nenhum conteúdo de história disponível",
-      "untitledStory": "História sem Título",
-      "errorDownloadingAudio": "Houve um erro ao baixar o arquivo de áudio. Por favor, tente novamente mais tarde."
+      "untitledStory": "História Sem Título",
+      "preparingStory": "Preparando sua história...",
+      "preparingCover": "Preparando imagem de capa...",
+      "preparingAudio": "Preparando áudio...",
+      "verifyingCover": "Verificando imagem de capa",
+      "verifyingAudio": "Verificando áudio",
+      "errorDownloadingAudio": "Erro ao baixar áudio"
     },
     "examples": [
       {

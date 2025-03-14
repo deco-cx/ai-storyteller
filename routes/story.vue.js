@@ -15,6 +15,7 @@ window.StoryPage = {
             <div v-if="loading" class="max-w-4xl mx-auto px-6 py-12 flex flex-col items-center justify-center min-h-[70vh]">
                 <div class="w-16 h-16 border-4 border-[#BBDEFB] border-t-[#4A90E2] rounded-full animate-spin mb-6"></div>
                 <p class="text-xl text-[#4A90E2] font-medium">{{ $t('story.loadingStory') }}</p>
+                <p v-if="fileCheckMessage" class="text-sm text-[#64748B] mt-2">{{ fileCheckMessage }}</p>
             </div>
 
             <!-- Error State -->
@@ -185,7 +186,15 @@ window.StoryPage = {
             BASE_FS_URL: "https://fs.webdraw.com", // Base URL for file system access
             translationsFileExists: false,
             addingAsExample: false,
-            adminCheckInterval: null
+            adminCheckInterval: null,
+            
+            // File readiness check variables
+            fileCheckMaxAttempts: 10,
+            fileCheckAttemptDelay: 1000, // 1 second between attempts
+            fileCheckCurrentAttempt: 0,
+            fileCheckMessage: "",
+            coverReady: false,
+            audioReady: false
         }
     },
     computed: {
@@ -200,6 +209,10 @@ window.StoryPage = {
         storyId() {
             // Get the optional ID parameter for additional matching
             return this.$route.query.id || null;
+        },
+        fromCreate() {
+            // Check if we're coming directly from the create page
+            return this.$route.query.fromCreate === 'true';
         }
     },
     watch: {
@@ -232,6 +245,15 @@ window.StoryPage = {
         this.fileUrl = urlParams.get('file');
         this.storyIndex = urlParams.get('index');
         this.storyId = urlParams.get('id');
+        
+        // Check if we're coming from the create page
+        const fromCreate = urlParams.get('fromCreate') === 'true';
+        
+        // If we're coming from the create page, skip the loading screen
+        if (fromCreate) {
+            console.log("Coming from create page, skipping loading screen");
+            this.loading = false;
+        }
         
         // Check if the translations file exists
         await this.checkTranslationsFile();
@@ -360,13 +382,19 @@ window.StoryPage = {
             return false;
         },
         async loadStory() {
-            this.loading = true;
+            // If coming from create page, we don't need to show loading since it's already been shown
+            if (!this.fromCreate) {
+                this.loading = true;
+            }
             this.error = null;
             this.story = null;
             this.isPlaying = false;
             this.audioProgress = 0;
             this.currentTime = 0;
             this.duration = 0;
+            this.fileCheckMessage = this.$t('story.preparingStory');
+            this.coverReady = false;
+            this.audioReady = false;
             
             if (!this.fileUrl) {
                 this.error = this.$t('story.noStorySpecified');
@@ -382,6 +410,16 @@ window.StoryPage = {
                 // Check if the file path starts with ~ (indicating it's a local file path)
                 if (this.fileUrl.startsWith('~') && sdk && typeof sdk.fs?.read === 'function') {
                     console.log("Loading story from local file system");
+                    
+                    // Set permissions for the story file itself first
+                    if (sdk && sdk.fs && typeof sdk.fs.chmod === 'function') {
+                        try {
+                            await sdk.fs.chmod(this.fileUrl, 0o644);
+                            console.log(`Successfully set permissions (0o644) for story file: ${this.fileUrl}`);
+                        } catch (chmodError) {
+                            console.warn(`Could not set file permissions for story file ${this.fileUrl}:`, chmodError);
+                        }
+                    }
                     
                     // Read the file using the SDK
                     const content = await sdk.fs.read(this.fileUrl);
@@ -545,8 +583,8 @@ window.StoryPage = {
                     this.story.audioUrl = `${this.BASE_FS_URL}${this.story.audioUrl.startsWith('/') ? '' : '/'}${this.story.audioUrl}`;
                 }
                 
-                // Fix permissions for media files
-                await this.fixMediaPermissions();
+                // Fix permissions and verify accessibility of media files
+                await this.verifyAndFixMediaFiles();
                 
                 this.loading = false;
                 
@@ -563,17 +601,38 @@ window.StoryPage = {
             }
         },
         
+        // Fix permissions and verify accessibility of media files
+        async verifyAndFixMediaFiles() {
+            console.log("Verifying media files accessibility...");
+            
+            this.fileCheckCurrentAttempt = 0;
+            this.coverReady = false;
+            this.audioReady = false;
+            
+            // Set permissions for both files first
+            await this.fixMediaPermissions();
+            
+            // Then verify they're accessible with retries
+            await this.verifyMediaFilesAccessibility();
+        },
+        
         // Fix permissions for media files
         async fixMediaPermissions() {
             try {
                 // Fix permissions for cover image
                 if (this.story.coverUrl) {
+                    this.fileCheckMessage = this.$t('story.preparingCover');
                     await this.fixFilePermissions(this.story.coverUrl);
+                } else {
+                    this.coverReady = true; // No cover to check
                 }
                 
                 // Fix permissions for audio file
                 if (this.story.audioUrl) {
+                    this.fileCheckMessage = this.$t('story.preparingAudio');
                     await this.fixFilePermissions(this.story.audioUrl);
+                } else {
+                    this.audioReady = true; // No audio to check
                 }
             } catch (error) {
                 console.warn("Error fixing media permissions:", error);
@@ -620,6 +679,84 @@ window.StoryPage = {
                 }
             } catch (error) {
                 console.warn(`Could not set file permissions for ${fileUrl}:`, error);
+            }
+        },
+        
+        // Verify media files are accessible with retries
+        async verifyMediaFilesAccessibility() {
+            this.fileCheckCurrentAttempt = 0;
+            
+            while (this.fileCheckCurrentAttempt < this.fileCheckMaxAttempts) {
+                console.log(`Verifying media files accessibility (attempt ${this.fileCheckCurrentAttempt + 1}/${this.fileCheckMaxAttempts})...`);
+                
+                // Check cover image if needed
+                if (!this.coverReady && this.story.coverUrl) {
+                    this.fileCheckMessage = `${this.$t('story.verifyingCover')}`;
+                    try {
+                        await this.checkFileAccessibility(this.story.coverUrl);
+                        console.log("Cover image is accessible!");
+                        this.coverReady = true;
+                    } catch (error) {
+                        console.warn(`Cover image not yet accessible (attempt ${this.fileCheckCurrentAttempt + 1}/${this.fileCheckMaxAttempts}):`, error);
+                    }
+                }
+                
+                // Check audio file if needed
+                if (!this.audioReady && this.story.audioUrl) {
+                    this.fileCheckMessage = `${this.$t('story.verifyingAudio')}`;
+                    try {
+                        await this.checkFileAccessibility(this.story.audioUrl);
+                        console.log("Audio file is accessible!");
+                        this.audioReady = true;
+                    } catch (error) {
+                        console.warn(`Audio file not yet accessible (attempt ${this.fileCheckCurrentAttempt + 1}/${this.fileCheckMaxAttempts}):`, error);
+                    }
+                }
+                
+                // If both files are ready or not needed, we're done
+                if ((this.coverReady || !this.story.coverUrl) && 
+                    (this.audioReady || !this.story.audioUrl)) {
+                    console.log("All media files are accessible!");
+                    return;
+                }
+                
+                // Increment attempt counter
+                this.fileCheckCurrentAttempt++;
+                
+                // If we've reached the maximum attempts, break out
+                if (this.fileCheckCurrentAttempt >= this.fileCheckMaxAttempts) {
+                    console.warn("Maximum verification attempts reached. Proceeding anyway.");
+                    break;
+                }
+                
+                // Wait before trying again
+                await new Promise(resolve => setTimeout(resolve, this.fileCheckAttemptDelay));
+            }
+            
+            // Log the results after all attempts
+            if (!this.coverReady && this.story.coverUrl) {
+                console.warn("Could not confirm cover image is accessible after maximum attempts.");
+            }
+            
+            if (!this.audioReady && this.story.audioUrl) {
+                console.warn("Could not confirm audio file is accessible after maximum attempts.");
+            }
+        },
+        
+        // Check if a file is accessible via fetch
+        async checkFileAccessibility(fileUrl) {
+            try {
+                if (!fileUrl) return Promise.reject(new Error("No file URL provided"));
+                
+                const response = await fetch(fileUrl, { method: 'HEAD' });
+                
+                if (!response.ok) {
+                    return Promise.reject(new Error(`File not accessible: ${response.status} ${response.statusText}`));
+                }
+                
+                return Promise.resolve(true);
+            } catch (error) {
+                return Promise.reject(error);
             }
         },
         toggleAudio() {
