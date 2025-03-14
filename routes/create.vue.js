@@ -433,7 +433,7 @@ window.CreatePage = {
           plot: object.plot
         }) + "\n\nIMPORTANT: DO NOT include the title at the beginning of the story, as it will be read separately in the narration. Start directly with the story content.";
         
-        console.log("Using story prompt with length instructions:", storyPrompt.includes("2500-4000 CHARACTERS"));
+        console.log("Using story prompt with length instructions:", storyPrompt.includes("2500-3500 CHARACTERS"));
         
         try {
           console.log("Attempting to generate story with streaming...");
@@ -497,6 +497,61 @@ window.CreatePage = {
         console.log("Story generated:", this.storyData.story);
         this.storyData.story = this.formatStoryText(this.storyData.story);
         this.taskStatus.story = "done";
+        
+        // Save a text version of the story to prevent sync errors
+        try {
+          const safeName = this.safeFolderName(this.storyData.title);
+          
+          // Ensure all content is properly converted to strings
+          const titleText = String(this.storyData.title || "");
+          const storyText = String(this.storyData.story || "");
+          const fullText = `${titleText}\n\n${storyText}`;
+          
+          // Extract user ID from existing file paths if available, or use a default path
+          let userPath = "";
+          if (sdk.user && sdk.user.id) {
+            userPath = `/users/${sdk.user.id}`;
+          } else if (this.storyImage && this.storyImage.includes('/users/')) {
+            // Extract user path from image URL
+            const match = this.storyImage.match(/\/users\/[a-zA-Z0-9-]+/);
+            if (match) {
+              userPath = match[0];
+            }
+          }
+          
+          // Create an array of possible file paths that might be accessed
+          const possiblePaths = [];
+          
+          // Base path
+          possiblePaths.push(userPath ? `${userPath}/Documents/${safeName}Story.txt` : `~/Documents/${safeName}Story.txt`);
+          
+          // Also try variations with different formatting
+          possiblePaths.push(userPath ? `${userPath}/Documents/${safeName}.txt` : `~/Documents/${safeName}.txt`);
+          possiblePaths.push(userPath ? `${userPath}/Documents/${safeName}_1.txt` : `~/Documents/${safeName}_1.txt`);
+          possiblePaths.push(userPath ? `${userPath}/Documents/${safeName}_2.txt` : `~/Documents/${safeName}_2.txt`);
+          possiblePaths.push(userPath ? `${userPath}/Documents/historia_${safeName}.txt` : `~/Documents/historia_${safeName}.txt`);
+          
+          // Try to save to all possible paths
+          for (const path of possiblePaths) {
+            try {
+              console.log("Saving story text to:", path);
+              await sdk.fs.write(path, fullText);
+              console.log("Successfully saved story text file at:", path);
+              
+              // Set permissions
+              try {
+                await this.setFilePermissions(path);
+              } catch (permError) {
+                console.log(`Error setting permissions for ${path} (non-critical):`, permError);
+              }
+            } catch (writeError) {
+              console.log(`Error saving to ${path} (trying next path):`, writeError);
+            }
+          }
+        } catch (textFileError) {
+          console.log("Error in text file saving process (non-critical):", textFileError);
+          // This is non-critical so we continue even if it fails
+        }
 
         // Tente obter o resultado da imagem, mas lide com falhas graciosamente
         try {

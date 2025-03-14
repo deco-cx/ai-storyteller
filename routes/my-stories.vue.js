@@ -56,7 +56,7 @@ window.MyStoriesPage = {
                     <div v-for="(story, index) in filteredGenerations" :key="index" @click="viewStory(story)" class="cursor-pointer">
                         <!-- Cover Image with Book Texture -->
                         <div 
-                            class="relative mb-3 overflow-hidden rounded-r md:rounded-r-lg lg:rounded-r-xl aspect-[98/111.1] w-full shadow-[0_10px_15px_rgba(0,0,0,0.2)]"
+                            class="relative mb-3 overflow-hidden rounded-r md:rounded-r-lg lg:rounded-r-xl aspect-[111.1/111.1] w-full shadow-[0_10px_15px_rgba(0,0,0,0.2)]"
                         >
                             <img 
                                 :src="getOptimizedImageUrl(story.coverUrl, 600, 600)" 

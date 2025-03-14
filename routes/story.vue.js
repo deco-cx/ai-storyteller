@@ -35,7 +35,7 @@ window.StoryPage = {
                     <div class="mb-8">
                         <div class="flex flex-col items-center mb-8">
                             <!-- Book Cover -->
-                            <div class="relative w-full max-w-xs aspect-[98/111.1] rounded-lg mb-6 overflow-hidden shadow-[0_1px_2px_0_rgba(22,109,149,0.2),0_3px_3px_0_rgba(22,109,149,0.17),0_7px_4px_0_rgba(22,109,149,0.1),0_12px_5px_0_rgba(22,109,149,0.03)]">
+                            <div class="relative w-full max-w-xs aspect-[138/138] rounded-lg mb-6 overflow-hidden shadow-[0_1px_2px_0_rgba(22,109,149,0.2),0_3px_3px_0_rgba(22,109,149,0.17),0_7px_4px_0_rgba(22,109,149,0.1),0_12px_5px_0_rgba(22,109,149,0.03)]">
                                 <img 
                                     :src="getOptimizedImageUrl(story.coverUrl, 800, 400)" 
                                     :alt="story.title" 
