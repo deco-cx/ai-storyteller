@@ -47,23 +47,23 @@ window.CreatePage = {
   mounted() {
     // Debug initial translations
     this.debugTranslations();
-    
+
     // Initialize voices based on current language
     // Check if translations are loaded first
     if (window.i18n && window.i18n.translations) {
       this.updateVoicesForLanguage();
       this.updateInterestSuggestions();
-      
+
       // Check if we have example data in localStorage
       const exampleDataString = localStorage.getItem('createFromExample');
       if (exampleDataString) {
         try {
           const exampleData = JSON.parse(exampleDataString);
-          
+
           // Pre-fill form with example data
           if (exampleData.childName) this.childName = exampleData.childName;
           if (exampleData.themes) this.interests = exampleData.themes;
-          
+
           // Select the voice if it exists in our voices array
           if (exampleData.voice && this.voices.length > 0) {
             const matchingVoice = this.voices.find(v => v.name === exampleData.voice);
@@ -71,7 +71,7 @@ window.CreatePage = {
               this.selectedVoice = matchingVoice;
             }
           }
-          
+
           // Clear the localStorage item after using it
           localStorage.removeItem('createFromExample');
         } catch (error) {
@@ -79,17 +79,17 @@ window.CreatePage = {
           localStorage.removeItem('createFromExample');
         }
       }
-      
+
       // Check for URL parameters
       const urlParams = new URLSearchParams(window.location.search);
       const themes = urlParams.get('themes');
       const voiceId = urlParams.get('voiceId');
-      
+
       // Pre-fill the themes if provided
       if (themes) {
         this.interests = themes;
       }
-      
+
       // Pre-select the voice if provided
       if (voiceId && this.voices.length > 0) {
         const matchingVoice = this.voices.find(voice => voice.id === voiceId);
@@ -102,17 +102,17 @@ window.CreatePage = {
       const onTranslationsLoaded = () => {
         this.updateVoicesForLanguage();
         this.updateInterestSuggestions();
-        
+
         // Check for URL parameters
         const urlParams = new URLSearchParams(window.location.search);
         const themes = urlParams.get('themes');
         const voiceId = urlParams.get('voiceId');
-        
+
         // Pre-fill the themes if provided
         if (themes) {
           this.interests = themes;
         }
-        
+
         // Pre-select the voice if provided
         if (voiceId && this.voices.length > 0) {
           const matchingVoice = this.voices.find(voice => voice.id === voiceId);
@@ -120,23 +120,23 @@ window.CreatePage = {
             this.selectedVoice = matchingVoice;
           }
         }
-        
+
         // Remove the listener after handling it once
         document.removeEventListener('translations-loaded', onTranslationsLoaded);
       };
-      
+
       document.addEventListener('translations-loaded', onTranslationsLoaded);
     }
-    
+
     // Listen for audio errors
     document.addEventListener('audioerror', this.handleAudioError);
-    
+
     this.previewAudioElement = new Audio();
     this.previewAudioElement.addEventListener('ended', () => {
       this.isPreviewPlaying = null;
       console.log('Preview audio playback completed');
     });
-    
+
     this.$nextTick(() => {
       const audioPlayer = this.$refs.audioPlayer;
       if (audioPlayer) {
@@ -146,11 +146,11 @@ window.CreatePage = {
           this.audioProgress = 0;
         });
       }
-      
+
       // Preload voice preview audios
       this.preloadVoiceAudios();
     });
-    
+
     // Listen for language change events
     if (window.eventBus) {
       window.eventBus.on('language-changed', this.handleLanguageChange);
@@ -162,13 +162,13 @@ window.CreatePage = {
       audioPlayer.removeEventListener('timeupdate', this.updateAudioProgress);
       audioPlayer.removeEventListener('ended', () => {});
     }
-    
+
     // Clean up language change event listener
     if (window.eventBus) {
       window.eventBus.events['language-changed'] = window.eventBus.events['language-changed']?.filter(
         callback => callback !== this.handleLanguageChange
       );
-      
+
       // Clean up translations-loaded event listener
       if (window.eventBus.events['translations-loaded']) {
         window.eventBus.events['translations-loaded'] = window.eventBus.events['translations-loaded'].filter(
@@ -176,7 +176,7 @@ window.CreatePage = {
         );
       }
     }
-    
+
     // Clean up audio check interval
     if (this.audioCheckInterval) {
       clearInterval(this.audioCheckInterval);
@@ -188,7 +188,7 @@ window.CreatePage = {
     updateVoicesForLanguage() {
       const lang = this.currentLanguage;
       console.log(`Updating voices for language: ${lang}`);
-      
+
       // Check if window.i18n and translations exist
       if (!window.i18n || !window.i18n.translations) {
         console.warn('Translations not loaded yet, will retry later');
@@ -196,12 +196,12 @@ window.CreatePage = {
         setTimeout(() => this.updateVoicesForLanguage(), 500);
         return;
       }
-      
+
       // Check if the current language exists in translations
       if (lang && window.i18n.translations[lang] && window.i18n.translations[lang].voices) {
         this.voices = window.i18n.translations[lang].voices;
         console.log(`Loaded ${this.voices.length} voices for ${lang}:`, this.voices);
-        
+
         // If a voice was previously selected, find its equivalent in the new language
         if (this.selectedVoice) {
           const previousIndex = this.voices.findIndex(v => v.id === this.selectedVoice.id);
@@ -222,25 +222,25 @@ window.CreatePage = {
         }
       }
     },
-    
+
     // Handle language change events
     handleLanguageChange(lang) {
       console.log('Language change event received in CreatePage:', lang);
       this.currentLanguage = lang;
-      
+
       // Update voices for the new language
       this.updateVoicesForLanguage();
-      
+
       // Update interest suggestions for the new language
       this.updateInterestSuggestions();
-      
+
       // Debug translations
       this.debugTranslations();
-      
+
       // Force re-render
       this.$forceUpdate();
     },
-    
+
     // Debug translations
     debugTranslations() {
       console.log('Current language:', this.currentLanguage);
@@ -249,7 +249,7 @@ window.CreatePage = {
       console.log('Translation for create.nameLabel:', window.i18n.t('create.nameLabel'));
       console.log('Available translations:', window.i18n.translations);
     },
-    
+
     selectVoice(voice) {
       this.selectedVoice = voice;
       // Add a visual feedback when a voice is selected
@@ -259,7 +259,7 @@ window.CreatePage = {
       const interestText = suggestion;
       // Get the conjunction based on the current language
       const conjunction = this.currentLanguage === 'pt' ? ' e ' : ' and ';
-      
+
       // Also update the regex to split by both "and" and "e"
       let currentInterests = this.interests
         .split(/,\s*|\s+and\s+|\s+e\s+/gi)
@@ -294,21 +294,21 @@ window.CreatePage = {
     playVoicePreview(voice) {
       // Remove the automatic voice selection when playing preview
       // this.selectVoice(voice);
-      
+
       // Get the audio element for this voice
       const audioElement = document.getElementById(`preview-audio-${voice.id}`);
       if (!audioElement) {
         console.error(`Audio element for voice ${voice.name} not found`);
         return;
       }
-      
+
       if (this.isPreviewPlaying === voice.id) {
         // User clicked the same voice that's currently playing - pause it
         audioElement.pause();
         this.isPreviewPlaying = null;
         return;
       }
-      
+
       // If another voice preview is playing, stop it first
       if (this.isPreviewPlaying) {
         const previousAudio = document.getElementById(`preview-audio-${this.isPreviewPlaying}`);
@@ -317,17 +317,17 @@ window.CreatePage = {
         }
         this.isPreviewPlaying = null;
       }
-      
+
       if (voice.previewAudio) {
         voice.isLoading = true;
-        
+
         // Ensure source is set
         if (!audioElement.querySelector('source').src) {
           const source = audioElement.querySelector('source');
           source.src = this.getPreviewAudioUrl(voice);
           audioElement.load();
         }
-        
+
         // Try to play the audio
         audioElement.play()
           .then(() => {
@@ -352,9 +352,9 @@ window.CreatePage = {
         this.showWarningModal = true;
         return;
       }
-      
+
       this.screen = "loading";
-      
+
       this.storyData = null;
       this.storyImage = null;
       this.audioSource = null;
@@ -365,7 +365,7 @@ window.CreatePage = {
         image: "waiting",
         audio: "waiting",
       };
-      
+
       try {
         console.log("Starting plot generation...");
         const { object } = await sdk.ai.generateObject({
@@ -387,7 +387,7 @@ window.CreatePage = {
             }
           ]
         });
-        
+
         console.log("Plot generation complete:", object);
         this.taskStatus.plot = "done";
         this.storyData = {
@@ -395,7 +395,34 @@ window.CreatePage = {
           plot: object.plot,
           story: ""
         };
-        
+
+        this.taskStatus.image = "loading";
+        console.log("Starting image generation...");
+        const imagePrompt = this.$tf('prompts.generateImage', {
+          title: object.title,
+          plot: object.plot
+        });
+        console.log("Using image prompt:", imagePrompt);
+
+        let imagePromise;
+        try {
+          imagePromise = sdk.ai.generateImage({
+            //model: "openai:dall-e-3",
+            model: "replicate:recraft-ai/recraft-v3",
+            prompt: imagePrompt,
+            providerOptions: {
+              replicate: {
+                size: "1024x1024",
+                style: "digital_illustration",
+                prompt: imagePrompt
+              }
+            }
+          });
+        } catch (error) {
+          console.error("Error starting image generation:", error);
+          imagePromise = Promise.resolve({ error: "Failed to initialize image generation" });
+        }
+
         this.taskStatus.story = "loading";
         console.log("Starting story generation...");
         
@@ -470,98 +497,50 @@ window.CreatePage = {
         console.log("Story generated:", this.storyData.story);
         this.storyData.story = this.formatStoryText(this.storyData.story);
         this.taskStatus.story = "done";
-        
-        this.taskStatus.image = "loading";
-        console.log("Starting image generation...");
-        const imagePrompt = this.$tf('prompts.generateImage', {
-          title: object.title,
-          plot: object.plot
-        });
 
-        let translatedPrompt;
+        // Tente obter o resultado da imagem, mas lide com falhas graciosamente
         try {
-          const translationResponse = await sdk.ai.generateText({
-            messages: [
-              {
-                role: "system",
-                content: "You are a translator. Translate the following text to English."
-              },
-              {
-                role: "user",
-                content: imagePrompt
-              }
-            ]
-          });
-          
-          translatedPrompt = translationResponse.text;
-        } catch (translationError) {
-          console.error("Error translating prompt:", translationError);
-          // Fallback: create a basic English prompt if translation fails
-          translatedPrompt = `Create a cheerful and child-friendly illustration for a children's story titled "${object.title}". Use bright, soft colors and a warm, engaging style. The image should depict a main scene from the story in a magical, inspiring way that's appropriate for young children.`;
-          console.log("Using fallback English prompt:", translatedPrompt);
-        }
-
-        try {
-          console.log("Generating image with prompt:", translatedPrompt);
-          const imageResult = await sdk.ai.generateImage({
-            model: "replicate:recraft-ai/recraft-v3",
-            prompt: translatedPrompt,
-            providerOptions: {
-              replicate: {
-                size: "1024x1024",
-                style: "digital_illustration",
-                prompt: translatedPrompt
-              }
-            }
-          });
-          
+          const imageResult = await imagePromise;
           console.log("Raw image generation result:", JSON.stringify(imageResult));
-          
+          console.log("partes do imageResult", imageResult.images);
+
           if (imageResult.error) {
             throw new Error(imageResult.error);
           }
-          
+
+          // ALWAYS use the Replicate URL if available
           if (imageResult.images && imageResult.images.length > 0) {
-            const replicateImageUrl = imageResult.images[0];
-            console.log("Got Replicate image URL:", replicateImageUrl);
-            
-            try {
-              console.log("Downloading image from Replicate URL...");
-              const filename = imageResult.filepath || `/users/${this.userId}/Pictures/${this.safeFolderName(object.title)}.webp`;
-              
-              this.storyImage = replicateImageUrl;
-              console.log("Using direct Replicate URL for now:", this.storyImage);
-              
-              if (imageResult.filepath) {
-                console.log("Local filepath for future reference:", imageResult.filepath);
-              }
-            } catch (downloadError) {
-              console.error("Error downloading image from Replicate:", downloadError);
-              this.storyImage = replicateImageUrl;// Use a direct Replicate URL as a fallback
-            }
+            // Use the Replicate URL directly - this is what we want
+            this.storyImage = imageResult.images[0];
+            console.log("Using Replicate URL for image:", this.storyImage);
+          } else if (imageResult.url) {
+            // Fallback to url if available
+            this.storyImage = imageResult.url;
+            console.log("Using URL for image:", this.storyImage);
           } else if (imageResult.filepath) {
-            this.storyImage = imageResult.filepath;
+            // Last resort: use filepath with fs.webdraw.com prefix
+            this.storyImage = `https://fs.webdraw.com${imageResult.filepath.startsWith('/') ? '' : '/'}${imageResult.filepath}`;
+            console.log("Using filepath for image:", this.storyImage);
           } else {
             console.warn("Unexpected image result format:", imageResult);
             this.storyImage = null;
           }
-          
-          if (this.storyImage && !this.storyImage.startsWith('http')) {
-            this.storyImage = `https://fs.webdraw.com${this.storyImage.startsWith('/') ? '' : '/'}${this.storyImage}`;
-          }
-          
+
           console.log("Final image URL:", this.storyImage);
+
+          // Store the local filepath separately for permission setting
+          const localImagePath = imageResult.filepath;
           
-          // Set permissions for the image file immediately
+          // Set permissions for the image file immediately - ONLY for the local file
           try {
-            if (imageResult.filepath) {
-              await this.setFilePermissions(imageResult.filepath);
-              console.log("Set permissions for image file:", imageResult.filepath);
+            if (localImagePath && !this.storyImage.includes('replicate.delivery')) {
+              await this.setFilePermissions(localImagePath);
+              console.log("Set permissions for local image file:", localImagePath);
             }
           } catch (permError) {
             console.warn("Error setting permissions for image file:", permError);
           }
-          
+
         } catch (imageError) {
           console.error("Error generating story image:", imageError);
           // Use uma imagem aleatória de backup
@@ -574,16 +553,31 @@ window.CreatePage = {
             }
           });
         }
-        
+
         this.taskStatus.image = "done";
-        
-        // Finalmente, iniciar a geração do áudio com a história completa garantida
+
         this.taskStatus.audio = "loading";
         console.log("Starting audio generation...");
-        const audioText = `${this.storyData.title}. ${this.storyData.originalStory}`;
+        
+        // Prepare the audio text - start with the title
+        let audioText = this.storyData.title;
+        
+        // Check if the story already starts with the title (despite our instructions)
+        const storyStartsWithTitle = this.storyData.story.trim().startsWith(this.storyData.title);
+        
+        // Add the story content, either directly or with a separator
+        if (storyStartsWithTitle) {
+          console.log("Story already starts with title, using story text as is");
+          audioText = this.storyData.story;
+        } else {
+          console.log("Adding title and story with separator for audio narration");
+          audioText = `${this.storyData.title}. ${this.storyData.story}`;
+        }
+        
+        console.log(`Audio text length: ${audioText.length} characters`);
 
         const chosenVoice = this.selectedVoice || this.voices[0];
-        
+
         const audioResponse = await sdk.ai.generateAudio({
           model: "elevenlabs:tts",
           prompt: audioText,
@@ -601,11 +595,11 @@ window.CreatePage = {
             },
           },
         });
-        
+
         console.log("Audio generation complete:", audioResponse);
-        
+
         let audioPath = null;
-        
+
         if (audioResponse.filepath && audioResponse.filepath.length > 0) {
           audioPath = audioResponse.filepath[0];
           console.log("Using filepath as audio source:", audioPath);
@@ -619,7 +613,7 @@ window.CreatePage = {
           console.warn("No recognizable audio source found in response:", audioResponse);
           alert("Audio was generated but the source format is not recognized. The audio playback may not work.");
         }
-        
+
         let fullAudioUrl = null;
         if (audioPath) {
           if (!audioPath.startsWith('http') && !audioPath.startsWith('data:')) {
@@ -628,7 +622,7 @@ window.CreatePage = {
             fullAudioUrl = audioPath;
           }
           console.log("Final audio source with domain:", fullAudioUrl);
-          
+
           // Set permissions for the audio file immediately
           try {
             await this.setFilePermissions(audioPath);
@@ -636,19 +630,19 @@ window.CreatePage = {
           } catch (permError) {
             console.warn("Error setting permissions for audio file:", permError);
           }
-          
+
           // Set audio source immediately but mark as loading
           this.audioSource = fullAudioUrl;
           this.audioLoading = true;
-          
+
           // Add an initial delay before checking to allow permissions to propagate
           console.log("Waiting 4 seconds for file permissions to apply before checking...");
           await new Promise(resolve => setTimeout(resolve, 4000));
-          
+
           // Do an initial check with fewer attempts and less logging
           console.log("Checking if audio file is ready...");
           const isAudioReady = await this.checkAudioReady(fullAudioUrl, 2, 3000);
-          
+
           if (isAudioReady) {
             console.log("Audio file is confirmed ready");
             this.audioLoading = false;
@@ -658,33 +652,33 @@ window.CreatePage = {
             this.startBackgroundAudioCheck(fullAudioUrl);
           }
         }
-        
+
         if (fullAudioUrl) {
           console.log("Waiting for audio file to be fully accessible before showing result screen...");
           let audioReady = false;
           let attempts = 0;
           const maxAttempts = 30;
           let lastStatus = null;
-          
+
           while (!audioReady && attempts < maxAttempts) {
             attempts++;
             // Only log on first attempt or every 5th attempt to reduce console spam
             if (attempts === 1 || attempts % 5 === 0 || attempts === maxAttempts) {
               console.log(`Audio availability check attempt ${attempts}/${maxAttempts}`);
             }
-            
+
             // If previous attempt returned 403, only make actual request periodically
             const shouldSkipRequest = lastStatus === 403 && 
                                       attempts > 1 && 
                                       attempts % 5 !== 0 && 
                                       attempts !== maxAttempts;
-                                      
+
             if (shouldSkipRequest) {
               // Just wait without making a request
               await new Promise(resolve => setTimeout(resolve, 2000));
               continue;
             }
-            
+
             try {
               const response = await fetch(fullAudioUrl, { 
                 method: 'GET',
@@ -692,9 +686,9 @@ window.CreatePage = {
                   'Range': 'bytes=0-1'
                 }
               });
-              
+
               lastStatus = response.status;
-              
+
               if (response.ok || response.status === 206) {
                 console.log(`Audio file is accessible! Status: ${response.status}`);
                 audioReady = true;
@@ -714,7 +708,7 @@ window.CreatePage = {
               await new Promise(resolve => setTimeout(resolve, 2000));
             }
           }
-          
+
           if (!audioReady) {
             console.warn("Could not confirm audio file is ready after maximum attempts. Proceeding anyway.");
             this.taskStatus.audio = "error";
@@ -722,10 +716,10 @@ window.CreatePage = {
             console.log("Audio file confirmed accessible! Proceeding to result screen.");
             this.audioLoading = false;
           }
-          
+
           // Only switch to the result screen and save the story after confirming that the audio is ready
           this.screen = "result";
-          
+
           // Save story only after audio is available
           await this.saveStory();
         } else {
@@ -734,7 +728,7 @@ window.CreatePage = {
           this.screen = "result";
           await this.saveStory();
         }
-        
+
       } catch (error) {
         console.error("Error generating story:", error);
         alert("There was an error generating your story. Please try again.");
@@ -746,14 +740,14 @@ window.CreatePage = {
       if (this.audioCheckInterval) {
         clearInterval(this.audioCheckInterval);
       }
-      
+
       let attempts = 0;
       const maxAttempts = 30; // Check for up to 5 minutes (30 * 10 seconds)
-      
+
       this.audioCheckInterval = setInterval(async () => {
         attempts++;
         console.log(`Background audio check attempt ${attempts}/${maxAttempts}`);
-        
+
         try {
           // Use a GET request with range headers instead of HEAD
           const response = await fetch(url, { 
@@ -762,29 +756,29 @@ window.CreatePage = {
               'Range': 'bytes=0-1' // Just request the first 2 bytes
             }
           });
-          
+
           if (response.ok || response.status === 206) { // 206 is Partial Content
             console.log(`Audio file response status: ${response.status}`);
-            
+
             // If we got a response, the file likely exists and is accessible
             console.log('Audio file is now ready!');
-            
+
             // Extract the path from the URL and set permissions
             try {
               const audioPath = url.includes(this.BASE_FS_URL) 
                 ? url.replace(this.BASE_FS_URL, '') 
                 : url;
-              
+
               await this.setFilePermissions(audioPath);
               console.log("Set permissions for audio file in background check:", audioPath);
             } catch (permError) {
               console.warn("Error setting permissions for audio file in background check:", permError);
             }
-            
+
             this.audioLoading = false;
             clearInterval(this.audioCheckInterval);
             this.audioCheckInterval = null;
-            
+
             // Force audio element to reload the source
             this.$nextTick(() => {
               const audioPlayer = this.$refs.audioPlayer;
@@ -798,7 +792,7 @@ window.CreatePage = {
         } catch (error) {
           console.warn(`Error in background audio check: ${error.message}`);
         }
-        
+
         // Stop checking after max attempts
         if (attempts >= maxAttempts) {
           console.warn('Max background check attempts reached');
@@ -819,7 +813,7 @@ window.CreatePage = {
           if (audioPlayer.readyState >= 2) { // HAVE_CURRENT_DATA or higher
             console.log(`Playing audio: ${this.audioSource}`);
             console.log(`Audio duration: ${audioPlayer.duration.toFixed(2)} seconds`);
-            
+
             fetch(this.audioSource, { method: 'HEAD' })
               .then(response => {
                 const contentLength = response.headers.get('content-length');
@@ -833,7 +827,7 @@ window.CreatePage = {
               .catch(error => {
                 console.warn("Error fetching audio file size:", error);
               });
-            
+
             audioPlayer.play()
               .then(() => {
                 this.isPlaying = true;
@@ -850,30 +844,30 @@ window.CreatePage = {
         }
       }
     },
-    
+
     reloadAndPlayAudio() {
       this.audioLoading = true;
       console.log("Reloading audio from source:", this.audioSource);
-      
+
       const audioPlayer = this.$refs.audioPlayer;
       if (audioPlayer) {
         const currentSource = audioPlayer.querySelector('source');
         if (currentSource) {
           currentSource.remove();
         }
-        
+
         const newSource = document.createElement('source');
         newSource.src = this.audioSource;
         newSource.type = "audio/mpeg";
         audioPlayer.appendChild(newSource);
-        
+
         audioPlayer.load();
-        
+
         // Add an event listener to play when ready
         const canPlayHandler = () => {
           console.log("Audio reloaded and ready to play");
           console.log(`Audio duration after reload: ${audioPlayer.duration.toFixed(2)} seconds`);
-          
+
           this.audioLoading = false;
           audioPlayer.play()
             .then(() => {
@@ -885,12 +879,12 @@ window.CreatePage = {
               this.isPlaying = false;
               this.audioLoading = false;
             });
-          
+
           audioPlayer.removeEventListener('canplaythrough', canPlayHandler);
         };
-        
+
         audioPlayer.addEventListener('canplaythrough', canPlayHandler);
-        
+
         // Add a timeout to avoid getting stuck loading
         setTimeout(() => {
           if (this.audioLoading) {
@@ -943,13 +937,13 @@ window.CreatePage = {
             a.style.display = 'none';
             document.body.appendChild(a);
             a.click();
-            
+
             // Clean up
             setTimeout(() => {
               document.body.removeChild(a);
               URL.revokeObjectURL(url);
             }, 100);
-            
+
             console.log("Downloading audio from:", this.audioSource);
           })
           .catch(error => {
@@ -963,29 +957,29 @@ window.CreatePage = {
     },
     async checkAudioReady(url, maxAttempts = 10, delayMs = 2000) {
       if (!url) return false;
-      
+
       let lastStatus = null;
-      
+
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
         try {
           // Only log on first attempt or last attempt
           if (attempt === 0 || attempt === maxAttempts - 1) {
             console.log(`Checking audio availability (attempt ${attempt + 1}/${maxAttempts})...`);
           }
-          
+
           // If previous attempt returned 403, only make actual network request on first, third, and last attempts
           // to reduce console errors while still checking periodically
           const shouldSkipActualRequest = lastStatus === 403 && 
                                           attempt > 0 && 
                                           attempt !== 2 && 
                                           attempt !== maxAttempts - 1;
-          
+
           if (shouldSkipActualRequest) {
             // Skip actual network request but still wait
             await new Promise(resolve => setTimeout(resolve, delayMs));
             continue;
           }
-          
+
           // Use a GET request with range headers instead of HEAD
           // This requests just the first few bytes of the file
           const response = await fetch(url, { 
@@ -994,17 +988,17 @@ window.CreatePage = {
               'Range': 'bytes=0-1' // Just request the first 2 bytes
             }
           });
-          
+
           lastStatus = response.status;
-          
+
           if (response.ok || response.status === 206) { // 206 is Partial Content
             console.log(`Audio file response status: ${response.status}`);
-            
+
             // If we got a response, the file likely exists and is accessible
             console.log('Audio file is ready!');
             return true;
           }
-          
+
           // Only log on first attempt to reduce console spam
           if (attempt === 0 || attempt === maxAttempts - 1) {
             console.log(`Audio file not ready yet (status: ${response.status}), waiting ${delayMs}ms...`);
@@ -1018,147 +1012,110 @@ window.CreatePage = {
           await new Promise(resolve => setTimeout(resolve, delayMs));
         }
       }
-      
+
       console.warn('Max attempts reached, audio file may not be fully available');
       return false;
     },
     formatStoryText(text) {
       if (!text) return '';
-      
+
       // Remove the title if it appears at the beginning of the story
       // This way the title only appears in the blue header above
       if (this.storyData && this.storyData.title) {
         const title = this.storyData.title.trim();
-        
+
         // Check for common title patterns at the beginning of the text
         // 1. Exact title match at beginning
         text = text.replace(new RegExp(`^\\s*${title}\\s*[\n\r]+`), '');
-        
+
         // 2. Title with markdown heading format (# Title)
         text = text.replace(new RegExp(`^\\s*#\\s*${title}\\s*[\n\r]+`), '');
-        
+
         // 3. Title with double line or other formatting
         text = text.replace(new RegExp(`^\\s*${title}\\s*[\n\r]+[-=]+[\n\r]+`), '');
       }
-      
+
       text = text.replace(/^# (.*$)/gm, '<h1>$1</h1>');
       text = text.replace(/^## (.*$)/gm, '<h2>$1</h2>');
       text = text.replace(/^### (.*$)/gm, '<h3>$1</h3>');
-      
+
       text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      
+
       text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
-      
+
       text = text.replace(/\n\n/g, '\n\n');
-      
+
       return text;
     },
     safeFolderName(name) {
       if (!name) return 'untitled';
       return name.replace(/[^a-zA-Z0-9_\-\s]/g, '_').substring(0, 100);
     },
-    
+
     getRandomFallbackImage() {
       // Lista de imagens de fallback disponíveis
       const fallbackImages = [
         '/assets/image/bg.png',
         '/assets/image/ex1.webp',
-        '/assets/image/ex2.webp',
+        '/assets/image/ex2.png',
         '/assets/image/ex3.webp',
         '/assets/image/ex4.webp'
       ];
-      
+
       // Seleciona uma imagem aleatória
       const randomIndex = Math.floor(Math.random() * fallbackImages.length);
       return fallbackImages[randomIndex];
     },
-    
-    truncateStoryIntelligently(story, maxLength) {
-      if (story.length <= maxLength) return story;
-      
-      const paragraphs = story.split(/\n\n+/);
-      
-      if (paragraphs.length <= 1) {
-        const truncated = story.substring(0, maxLength);
-        const lastPeriodPos = truncated.lastIndexOf('. ');
-        
-        if (lastPeriodPos > maxLength * 0.75) {
-          return story.substring(0, lastPeriodPos + 1);
-        }
-        return story.substring(0, maxLength - 3) + '...';
-      }
-      
-      let result = '';
-      let currentLength = 0;
-      
-      for (let i = 0; i < paragraphs.length; i++) {
-        if (currentLength + paragraphs[i].length + (i > 0 ? 2 : 0) > maxLength) {
-          if (i === paragraphs.length - 1) {
-            const remaining = maxLength - currentLength - 2;
-            if (remaining > 0) {
-              const part = paragraphs[i].substring(0, remaining);
-              const lastPeriod = part.lastIndexOf('. ');
-              
-              if (lastPeriod > 0) {
-                result += '\n\n' + paragraphs[i].substring(0, lastPeriod + 1);
-              } else {
-                result += '\n\n' + paragraphs[i].substring(0, remaining - 3) + '...';
-              }
-            }
-          }
-          break;
-        }
-        
-        if (i > 0) result += '\n\n';
-        result += paragraphs[i];
-        currentLength += paragraphs[i].length + (i > 0 ? 2 : 0);
-      }
-      
-      return result;
-    },
-    
+
     generateExcerpt(story) {
       if (!story) return '';
       const plainText = story.replace(/<[^>]*>/g, '');
       return plainText.substring(0, 150) + (plainText.length > 150 ? '...' : '');
     },
-    
+
     async saveStory() {
       if (!this.storyData || !this.storyData.title) {
         console.error("Cannot save story: No story data available");
         return;
       }
-      
+
       try {
         console.log("DEBUG: Starting saveStory method");
         console.log("DEBUG: SDK available?", !!sdk);
         console.log("DEBUG: SDK.fs available?", !!(sdk && sdk.fs));
         console.log("DEBUG: SDK.fs.write available?", !!(sdk && sdk.fs && typeof sdk.fs.write === 'function'));
-        
+
         const timestamp = new Date().toISOString();
         const safeName = this.safeFolderName(this.storyData.title);
         console.log("DEBUG: Safe folder name generated:", safeName);
-        
+
         const excerpt = this.generateExcerpt(this.storyData.story);
-        
+
         console.log("Debug - Story image URL before processing:", this.storyImage);
+
+        let imageFilepath = this.storyImage;
         
-        let imageFilepath = null;
-        if (this.storyImage) {
+        // No need to process or set permissions for Replicate URLs
+        if (this.storyImage && this.storyImage.includes('replicate.delivery')) {
+          console.log("Using Replicate image URL directly in story data:", this.storyImage);
+        } else if (this.storyImage) {
+          // Only process non-Replicate URLs
           if (this.storyImage.includes(this.BASE_FS_URL)) {
             imageFilepath = this.storyImage.replace(this.BASE_FS_URL, '');
             console.log("Extracted image filepath from URL:", imageFilepath);
-          } else {
+            // Set permissions for local files only
+            await this.setFilePermissions(imageFilepath);
+          } else if (!this.storyImage.startsWith('http')) {
+            // For local paths that don't have full URL
             imageFilepath = this.storyImage;
-            console.log("Using full image URL as filepath:", imageFilepath);
+            console.log("Using image filepath:", imageFilepath);
+            // Set permissions for local files
+            await this.setFilePermissions(imageFilepath);
           }
-          
-          // Set permissions for image file
-          await this.setFilePermissions(imageFilepath);
         } else {
           console.warn("No story image URL available");
         }
-        
+
         let audioFilepath = null;
         if (this.audioSource) {
           if (this.audioSource.includes(this.BASE_FS_URL)) {
@@ -1168,13 +1125,13 @@ window.CreatePage = {
             audioFilepath = this.audioSource;
             console.log("Using full audio URL as filepath:", audioFilepath);
           }
-          
+
           // Set permissions for audio file
           await this.setFilePermissions(audioFilepath);
         } else {
           console.warn("No audio source URL available");
         }
-        
+
         const newGeneration = {
           title: this.storyData.title,
           coverUrl: this.storyImage || null,
@@ -1186,13 +1143,13 @@ window.CreatePage = {
           childName: this.childName,
           themes: this.interests
         };
-        
+
         console.log("Story object to save:", JSON.stringify(newGeneration, null, 2));
-        
+
         let baseFilename = `~/AI Storyteller/${safeName}`;
         let filename = `${baseFilename}.json`;
         let counter = 1;
-        
+
         try {
           console.log("DEBUG: Checking if file already exists:", filename);
           while (true) {
@@ -1210,12 +1167,12 @@ window.CreatePage = {
           console.log("Error checking for existing file:", e);
           console.log("DEBUG: Error details:", e.message, e.stack);
         }
-        
+
         console.log("Saving story to:", filename);
         try {
           await sdk.fs.write(filename, JSON.stringify(newGeneration, null, 2));
           console.log("DEBUG: Write operation completed");
-          
+
           // Verify the file was written
           try {
             const content = await sdk.fs.read(filename);
@@ -1223,12 +1180,12 @@ window.CreatePage = {
           } catch (verifyError) {
             console.error("DEBUG: Verification failed - Could not read the file after writing:", verifyError);
           }
-          
+
           // Set permissions for story JSON file
           await this.setFilePermissions(filename);
-          
+
           console.log("Story saved successfully!");
-          
+
           // Redirect to the story page
           this.$router.push({
             path: "/story",
@@ -1236,14 +1193,14 @@ window.CreatePage = {
               file: filename,
             }
           });
-          
+
           return true;
         } catch (writeError) {
           console.error("DEBUG: Error during write operation:", writeError);
           console.error("DEBUG: Error details:", writeError.message, writeError.stack);
           throw writeError;
         }
-        
+
       } catch (error) {
         console.error("Error saving story:", error);
         console.error("DEBUG: Error details:", error.message, error.stack);
@@ -1251,38 +1208,38 @@ window.CreatePage = {
         return false;
       }
     },
-    
+
     // Helper method to set file permissions
     async setFilePermissions(filepath) {
       if (!filepath) return;
-      
+
       try {
         console.log("DEBUG: Starting setFilePermissions for:", filepath);
         // Clean up the filepath
         let cleanPath = filepath;
-        
+
         // Remove any URL prefix
         if (cleanPath.startsWith('http')) {
           const url = new URL(cleanPath);
           cleanPath = url.pathname;
           console.log("DEBUG: Removed URL prefix, now:", cleanPath);
         }
-        
+
         // Remove the leading ~ if present
         if (cleanPath.startsWith('~')) {
           cleanPath = cleanPath.substring(1);
           console.log("DEBUG: Removed leading ~, now:", cleanPath);
         }
-        
+
         // Ensure the path doesn't start with double slashes
         while (cleanPath.startsWith('//')) {
           cleanPath = cleanPath.substring(1);
           console.log("DEBUG: Removed extra slash, now:", cleanPath);
         }
-        
+
         console.log(`Setting permissions for: ${cleanPath}`);
         console.log("DEBUG: SDK.fs.chmod available?", !!(sdk && sdk.fs && typeof sdk.fs.chmod === 'function'));
-        
+
         try {
           // Use 0o644 (rw-r--r--) instead of 0o444 (r--r--r--) to ensure web server can access the files
           await sdk.fs.chmod(cleanPath, 0o644);
@@ -1290,7 +1247,7 @@ window.CreatePage = {
         } catch (chmodError) {
           console.warn(`Could not set file permissions with chmod for ${cleanPath}:`, chmodError);
           console.log("DEBUG: Error details:", chmodError.message, chmodError.stack);
-          
+
           // Try again with a different approach if needed
           try {
             console.log("DEBUG: Trying alternative chmod approach");
@@ -1307,25 +1264,25 @@ window.CreatePage = {
     },
     handleAudioError(event) {
       console.warn("Audio error occurred:", event);
-      
+
       // Retry with exponential backoff
       let retryCount = 0;
       const maxRetries = 5;
       const baseDelay = 1000;
-      
+
       const retryWithBackoff = () => {
         if (retryCount >= maxRetries) {
           console.warn(`Failed to load audio after ${maxRetries} retries`);
           this.audioLoading = false;
           return;
         }
-        
+
         const delay = baseDelay * Math.pow(2, retryCount);
         console.log(`Retrying audio load in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})`);
-        
+
         setTimeout(() => {
           retryCount++;
-          
+
           // Tentar definir permissões novamente
           if (this.audioSource) {
             this.setFilePermissions(this.audioSource)
@@ -1343,22 +1300,22 @@ window.CreatePage = {
           }
         }, delay);
       };
-      
+
       this.audioLoading = true;
       retryWithBackoff();
-      
+
       this.startBackgroundAudioCheck(this.audioSource);
     },
     handleAudioReady(event) {
       console.log('Audio canplaythrough event:', event);
       this.audioLoading = false;
-      
+
       const audioPlayer = this.$refs.audioPlayer;
       if (audioPlayer) {
         console.log(`Audio ready - Source: ${this.audioSource}`);
         console.log(`Audio ready - Duration: ${audioPlayer.duration.toFixed(2)} seconds`);
         console.log(`Audio ready - Ready State: ${audioPlayer.readyState}`);
-        
+
         // Check if the audio has enough data for playback
         if (audioPlayer.readyState >= 3) { // HAVE_FUTURE_DATA or HAVE_ENOUGH_DATA
           console.log("Audio has enough data for smooth playback");
@@ -1369,32 +1326,32 @@ window.CreatePage = {
     },
     getOptimizedImageUrl(url, width, height) {
       if (!url || url.startsWith('data:')) return url;
-      
+
       // If the URL already starts with /assets/image, just return it directly
       if (url.startsWith('/assets/image') || url.startsWith('assets/image')) {
         return url.startsWith('/') ? url : `/${url}`;
       }
-      
+
       // For local paths, use direct path
       let processedUrl = url;
-      
+
       // If the URL is not absolute and doesn't start with a slash, add a slash
       if (!url.startsWith('http') && !url.startsWith('/')) {
         processedUrl = '/' + url;
       }
-      
+
       // Return the direct URL without optimization service
       if (!processedUrl.startsWith('http')) {
         return `${window.location.origin}${processedUrl}`;
       }
-      
+
       return processedUrl;
     },
     // Get interest suggestions for the current language
     updateInterestSuggestions() {
       const lang = this.currentLanguage;
       console.log(`Updating interest suggestions for language: ${lang}`);
-      
+
       // Check if window.i18n and translations exist
       if (!window.i18n || !window.i18n.translations) {
         console.warn('Translations not loaded yet, will retry later');
@@ -1402,7 +1359,7 @@ window.CreatePage = {
         setTimeout(() => this.updateInterestSuggestions(), 500);
         return;
       }
-      
+
       // Check if the current language exists in translations
       if (lang && window.i18n.translations[lang] && window.i18n.translations[lang].interestSuggestions) {
         this.interestSuggestions = window.i18n.translations[lang].interestSuggestions;
@@ -1432,39 +1389,39 @@ window.CreatePage = {
         console.log("No voices to preload audio for");
         return;
       }
-      
+
       this.voices.forEach(voice => {
         if (!voice.previewAudio) {
           console.log(`Voice ${voice.name}: No preview audio to preload`);
           return;
         }
-        
+
         try {
           // Get audio URL for this voice
           const audioUrl = this.getPreviewAudioUrl(voice);
-          
+
           // Skip if already preloaded
           if (this.preloadedAudios[audioUrl]) {
             console.log(`Audio for "${voice.name}" already preloaded`);
             return;
           }
-          
+
           // Get the audio element
           const audioElement = document.getElementById(`preview-audio-${voice.id}`);
           if (!audioElement) {
             console.warn(`Audio element for voice ${voice.name} not found`);
             return;
           }
-          
+
           // Set preload attribute to auto
           audioElement.preload = "auto";
-          
+
           // Log preload start
           console.log(`Started preloading audio for voice "${voice.name}": ${audioUrl}`);
-          
+
           // Mark as being loaded
           voice.isLoading = true;
-          
+
           // Load the audio
           audioElement.load();
         } catch (error) {
@@ -1473,48 +1430,73 @@ window.CreatePage = {
         }
       });
     },
-    
+
     getPreviewAudioUrl(voice) {
       if (!voice.previewAudio) return null;
-      
+
       const fileName = voice.previewAudio.split('/').pop();
       const audioPath = `/assets/audio/preview/${fileName}`;
-      
+
       // Always use absolute URLs
       // For localhost, use the staging environment as the origin
       if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         return `https://staging-ai-storyteller.webdraw.app${audioPath}`;
       }
-      
+
       // For production, use the current site's origin
       return `${window.location.origin}${audioPath}`;
     },
-    
+
     previewAudioReady(voice) {
       console.log(`Preview audio for "${voice.name}" loaded and ready to play`);
       voice.isLoading = false;
-      
+
       // Mark as preloaded
       const audioUrl = this.getPreviewAudioUrl(voice);
       this.preloadedAudios[audioUrl] = true;
     },
-    
+
     previewAudioError(event, voice) {
       console.error(`Error loading preview audio for "${voice.name}":`, event);
       voice.isLoading = false;
     },
-    
+
     previewAudioEnded(voice) {
       console.log(`Preview audio for "${voice.name}" playback completed`);
       this.isPreviewPlaying = null;
     },
-    
+
     getSuggestionClasses(suggestion) {
       return [
         `bg-${suggestion.color}-300`,
         `text-${suggestion.color}-900`,
         'px-3 py-2 rounded-full text-xs cursor-pointer'
       ];
+    },
+
+    truncateStoryIntelligently(story, maxLength) {
+      if (!story || story.length <= maxLength) return story;
+      
+      // Find the last paragraph break before maxLength
+      const lastBreakIndex = story.lastIndexOf('\n\n', maxLength);
+      if (lastBreakIndex > maxLength * 0.85) {
+        // If we have a good paragraph break point, use that
+        return story.substring(0, lastBreakIndex) + '\n\n[...]';
+      }
+      
+      // Find the last sentence break before maxLength
+      const lastSentenceMatch = story.substring(0, maxLength).match(/[.!?]\s+[A-Z]/g);
+      if (lastSentenceMatch && lastSentenceMatch.length > 0) {
+        const lastMatch = lastSentenceMatch[lastSentenceMatch.length - 1];
+        const lastSentenceIndex = story.lastIndexOf(lastMatch, maxLength);
+        if (lastSentenceIndex > 0) {
+          // Include the punctuation but exclude the capital letter of the next sentence
+          return story.substring(0, lastSentenceIndex + 2) + '[...]';
+        }
+      }
+      
+      // If no good break points found, just truncate at maxLength
+      return story.substring(0, maxLength) + '[...]';
     },
 
     closeWarningModal() {
@@ -1531,7 +1513,6 @@ window.CreatePage = {
           {{ $t('ui.createNewStory') }}
         </div>
       </nav>
-
       <div v-if="screen === 'form' || screen === 'loading'" class="max-w-3xl mx-auto w-full">
         <template v-if="screen === 'loading'">
           <div class="p-8 transform transition-all duration mb-8">
@@ -1573,7 +1554,6 @@ window.CreatePage = {
             </div>
           </div>
         </template>
-
         <template v-else>
           <div class="p-8">
             <div class="space-y-8">
@@ -1590,7 +1570,6 @@ window.CreatePage = {
                     {{ $t('create.randomTheme') }}
                   </button>
                 </div>
-
                 <div class="flex flex-wrap gap-3 mt-4">
                   <span 
                     v-for="suggestion in interestSuggestions" 
@@ -1602,7 +1581,6 @@ window.CreatePage = {
                   </span>
                 </div>
               </div>
-
               <div class="space-y-3">
                 <label class="block text-lg font-medium text-slate-700">
                   {{ $t('create.voiceLabel') }}
@@ -1666,7 +1644,6 @@ window.CreatePage = {
                   {{ $tf('create.voiceSelected', { name: selectedVoice.name }) }}
                 </div>
               </div>
-
               <button @click="generateStory" :disabled="screen === 'loading'" class="flex justify-center items-center gap-2 py-3 px-6 w-full md:w-auto md:min-w-[250px] h-12 bg-gradient-to-b from-purple-300 to-purple-500 border border-purple-700 rounded-full cursor-pointer shadow-md hover:translate-y-[-2px] transition-transform duration-200 font-['Onest'] font-medium text-lg text-white">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
@@ -1677,7 +1654,6 @@ window.CreatePage = {
           </div>
         </template>
       </div>
-
       <div v-if="screen === 'result'" class="max-w-3xl mx-auto pt-6 pb-16 px-4">
         <div class="p-8">
           <div class="space-y-6 mb-6">
@@ -1695,7 +1671,6 @@ window.CreatePage = {
               </div>
             </div>
           </div>
-
           <div class="audio-controls mb-8 space-y-4" v-if="audioSource">
             <div class="flex items-center gap-4">
               <button @click="toggleAudio" class="p-3 rounded-full bg-[#4A90E2] hover:bg-[#5FA0E9] text-white shadow-md transition-colors duration-200" :disabled="audioLoading">
@@ -1721,7 +1696,6 @@ window.CreatePage = {
               </a>
             </div>
           </div>
-
           <div v-if="storyData" class="prose-base text-slate-700 space-y-4">
             <h2 class="text-2xl font-bold mb-6 text-center relative">
               <span class="inline-block bg-clip-text text-transparent bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] mb-3">
@@ -1730,7 +1704,6 @@ window.CreatePage = {
             </h2>
             <div class="space-y-6 whitespace-pre-line text-left" v-html="storyData.story"></div>
           </div>
-
           <div class="mt-8 text-center">
             <router-link to="/my-stories" class="inline-flex items-center gap-2 bg-gradient-to-b from-[#4A90E2] to-[#2871CC] text-white px-6 py-3 rounded-full shadow-lg hover:shadow-xl hover:from-[#5FA0E9] hover:to-[#4A90E2] transition-all duration-300 group font-medium border border-[#2871CC]">
               <span>{{ $t('ui.myStories') }}</span>
@@ -1741,7 +1714,6 @@ window.CreatePage = {
           </div>
         </div>
       </div>
-
       <audio 
         ref="audioPlayer" 
         @error="handleAudioError" 
@@ -1752,7 +1724,6 @@ window.CreatePage = {
         <source v-if="audioSource" :src="audioSource" type="audio/mpeg" />
         {{ $t('ui.audioNotSupported') }}
       </audio>
-
       <!-- Add audio elements for voice previews -->
       <div style="display: none;">
         <audio 
@@ -1767,7 +1738,6 @@ window.CreatePage = {
           <source v-if="voice.previewAudio" :src="getPreviewAudioUrl(voice)" type="audio/mpeg">
         </audio>
       </div>
-
       <div v-if="showWarningModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 transition-opacity duration-300 ease-in-out">
         <div 
           class="bg-white rounded-3xl shadow-xl p-6 max-w-md w-full relative overflow-hidden transform transition-all duration-300 ease-out"
@@ -1798,5 +1768,4 @@ window.CreatePage = {
         </div>
       </div>
     </div>
-  `
-}; 
+`};
