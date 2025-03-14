@@ -33,7 +33,9 @@ window.CreatePage = {
         title: "",
         message: "",
         type: "warning"
-      }
+      },
+      // Cache para URLs de avatar otimizados
+      optimizedAvatars: {}
     };
   },
   watch: {
@@ -199,7 +201,20 @@ window.CreatePage = {
 
       // Check if the current language exists in translations
       if (lang && window.i18n.translations[lang] && window.i18n.translations[lang].voices) {
-        this.voices = window.i18n.translations[lang].voices;
+        // Deep clone the voices array to avoid modifying the original data
+        this.voices = JSON.parse(JSON.stringify(window.i18n.translations[lang].voices));
+        
+        // Process avatar URLs to use the image optimization service
+        this.voices.forEach(voice => {
+          if (voice.avatar && typeof voice.avatar === 'string') {
+            // Apply permissions to ensure the avatar is accessible
+            this.ensureImagePermissions(voice.avatar);
+            
+            // Pré-carregar URLs otimizados no cache para os avatares
+            this.getOptimizedAvatarUrl(voice.avatar);
+          }
+        });
+        
         console.log(`Loaded ${this.voices.length} voices for ${lang}:`, this.voices);
 
         // If a voice was previously selected, find its equivalent in the new language
@@ -215,7 +230,19 @@ window.CreatePage = {
         console.warn(`No voices found for language: ${lang}`);
         // Check if English translations exist before defaulting to them
         if (window.i18n.translations.en && window.i18n.translations.en.voices) {
-          this.voices = window.i18n.translations.en.voices || [];
+          // Deep clone the voices array to avoid modifying the original data
+          this.voices = JSON.parse(JSON.stringify(window.i18n.translations.en.voices || []));
+          
+          // Process avatar URLs to use the image optimization service
+          this.voices.forEach(voice => {
+            if (voice.avatar && typeof voice.avatar === 'string') {
+              // Apply permissions to ensure the avatar is accessible
+              this.ensureImagePermissions(voice.avatar);
+              
+              // Pré-carregar URLs otimizados no cache para os avatares
+              this.getOptimizedAvatarUrl(voice.avatar);
+            }
+          });
         } else {
           console.error('No fallback voices available');
           this.voices = [];
@@ -1382,26 +1409,104 @@ window.CreatePage = {
     },
     getOptimizedImageUrl(url, width, height) {
       if (!url || url.startsWith('data:')) return url;
-
-      // If the URL already starts with /assets/image, just return it directly
-      if (url.startsWith('/assets/image') || url.startsWith('assets/image')) {
-        return url.startsWith('/') ? url : `/${url}`;
+      
+      this.ensureImagePermissions(url);
+      
+      return `https://webdraw.com/image-optimize?src=${encodeURIComponent(url)}&width=${width}&height=${height}&fit=cover`;
+    },
+    
+    // Método específico para otimizar avatares com cache
+    getOptimizedAvatarUrl(avatar) {
+      if (!avatar) return '';
+      
+      // Verificar se já temos esta URL em cache
+      const cacheKey = `${avatar}_48x48`;
+      if (this.optimizedAvatars[cacheKey]) {
+        return this.optimizedAvatars[cacheKey];
       }
-
-      // For local paths, use direct path
-      let processedUrl = url;
-
-      // If the URL is not absolute and doesn't start with a slash, add a slash
-      if (!url.startsWith('http') && !url.startsWith('/')) {
-        processedUrl = '/' + url;
+      
+      // Garantir permissões para o avatar
+      this.ensureImagePermissions(avatar);
+      
+      // Criar URL otimizada
+      const optimizedUrl = `https://webdraw.com/image-optimize?src=${encodeURIComponent(avatar)}&width=48&height=48&fit=cover`;
+      
+      // Armazenar em cache
+      this.optimizedAvatars[cacheKey] = optimizedUrl;
+      
+      return optimizedUrl;
+    },
+    // Separate function to ensure image permissions
+    ensureImagePermissions(url) {
+      // Initialize _processedImagePaths if not already done
+      if (!this._processedImagePaths) {
+        this._processedImagePaths = {};
       }
-
-      // Return the direct URL without optimization service
-      if (!processedUrl.startsWith('http')) {
-        return `${window.location.origin}${processedUrl}`;
+      
+      if (this._processedImagePaths[url] || !sdk?.fs?.chmod) {
+        return;
       }
-
-      return processedUrl;
+      
+      this._processedImagePaths[url] = true;
+      
+      const sensitivePatterns = [
+        "/users/", 
+        "/Apps/", 
+        "/Staging", 
+        "/assets/image/", 
+        "/assets/audio/"
+      ];
+      
+      if (url.endsWith('/assets/image/bg.webp') || url.includes('/assets/image/bg.webp')) {
+        try {
+          if (!url.startsWith('http')) {
+            sdk.fs.chmod('/assets/image/bg.webp', 0o644).catch(() => {
+              const fullPath = `/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/bg.webp`;
+              sdk.fs.chmod(decodeURIComponent(fullPath), 0o644).catch(() => {});
+            });
+          }
+        } catch (e) {
+          console.warn("Could not set permissions for bg.webp:", e);
+        }
+      }
+      
+      const needsPermissionCheck = sensitivePatterns.some(pattern => url.includes(pattern));
+      if (!needsPermissionCheck || url.startsWith('http')) {
+        return;
+      }
+      
+      try {
+        if (url.startsWith('http')) {
+          return;
+        }
+        
+        let cleanPath = url;
+        
+        cleanPath = decodeURIComponent(cleanPath);
+        
+        sdk.fs.chmod(cleanPath, 0o644).catch(err => {
+          console.warn(`Permission adjustment failed for ${cleanPath}: ${err.message}`);
+        });
+        
+        if (cleanPath.includes('/assets/image/')) {
+          const baseDir = cleanPath.substring(0, cleanPath.lastIndexOf('/') + 1);
+          const commonFiles = [
+            "ex1.webp", "ex2.webp", "ex3.webp", "ex4.webp", 
+            "bg.webp", "aunt_1.png", "grandma_1.png", 
+            "grandpa_1.png", "uncle_2.png"
+          ];
+          
+          commonFiles.forEach(file => {
+            const fullPath = baseDir + file;
+            if (!this._processedImagePaths[fullPath]) {
+              this._processedImagePaths[fullPath] = true;
+              sdk.fs.chmod(fullPath, 0o644).catch(() => {});
+            }
+          });
+        }
+      } catch (error) {
+        console.warn(`Image permission check failed: ${error.message}`);
+      }
     },
     // Get interest suggestions for the current language
     updateInterestSuggestions() {
@@ -1659,8 +1764,12 @@ window.CreatePage = {
                       @click="selectVoice(voice)"
                     >
                       <div class="flex items-center gap-4 flex-1">
-                        <div class="flex-shrink-0">
-                          <img :src="voice.avatar" :alt="voice.name" class="w-12 h-12 rounded-full" />
+                        <div class="flex-shrink-0 voice-avatar-container">
+                          <img 
+                            :src="getOptimizedAvatarUrl(voice.avatar)" 
+                            :alt="voice.name" 
+                            class="w-12 h-12 rounded-full voice-avatar-image"
+                          />
                         </div>
                         <div>
                           <span class="text-lg font-medium text-slate-700">{{ voice.name }}</span>
@@ -1713,7 +1822,7 @@ window.CreatePage = {
       <div v-if="screen === 'result'" class="max-w-3xl mx-auto pt-6 pb-16 px-4">
         <div class="p-8">
           <div class="space-y-6 mb-6">
-            <img v-if="storyImage" :src="getOptimizedImageUrl(storyImage, 800, 400)" alt="Magic Illustration" class="w-full rounded-xl shadow-lg" />
+            <img v-if="storyImage" :src="getOptimizedImageUrl(storyImage, 1200, 800)" alt="Magic Illustration" class="w-full rounded-xl shadow-lg" />
             <div ref="imageErrorMessage" class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mt-2 hidden">
               <div class="flex">
                 <div class="flex-shrink-0">
