@@ -168,6 +168,25 @@ window.StoryPage = {
                 </a>
             </div>
         </div>
+        
+        <!-- Toast Notification -->
+        <transition
+            enter-active-class="transform transition ease-out duration-300"
+            enter-from-class="translate-y-[-100%] opacity-0"
+            enter-to-class="translate-y-0 opacity-100"
+            leave-active-class="transform transition ease-in duration-300"
+            leave-from-class="translate-y-0 opacity-100"
+            leave-to-class="translate-y-[-100%] opacity-0"
+        >
+            <div v-if="showToast" class="fixed top-4 left-0 right-0 mx-auto w-auto max-w-xs z-50 flex justify-center">
+                <div class="bg-[#14B8A6] text-white px-3 py-2 rounded-full shadow-md flex items-center gap-2 border border-[#0D9488] text-sm">
+                    <div class="bg-white bg-opacity-25 rounded-full w-5 h-5 flex-shrink-0 flex items-center justify-center">
+                        <i class="fas fa-check text-white text-xs"></i>
+                    </div>
+                    <span>{{ toastMessage }}</span>
+                </div>
+            </div>
+        </transition>
     `,
     data() {
         return {
@@ -194,7 +213,12 @@ window.StoryPage = {
             fileCheckCurrentAttempt: 0,
             fileCheckMessage: "",
             coverReady: false,
-            audioReady: false
+            audioReady: false,
+            
+            // Toast notification
+            showToast: false,
+            toastMessage: '',
+            toastTimeout: null
         }
     },
     computed: {
@@ -982,12 +1006,50 @@ window.StoryPage = {
         fallbackShare(url) {
             // Fallback to copying to clipboard
             navigator.clipboard.writeText(url).then(() => {
-                alert(this.$t('ui.copied'));
+                // Show toast notification instead of alert
+                this.showToastNotification(this.$t('ui.copied') || 'Copied story');
             }).catch(err => {
                 console.error('Failed to copy:', err);
-                // Final fallback - show the URL to manually copy
-                prompt('Copy this link to share the story:', url);
+                // Instead of showing a prompt, show a toast notification with the URL
+                // Create a temporary textarea element to copy the text
+                try {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = url;
+                    textArea.style.position = 'fixed';  // Avoid scrolling to bottom
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    
+                    const successful = document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    
+                    if (successful) {
+                        this.showToastNotification(this.$t('ui.copied') || 'Copied story');
+                    } else {
+                        // Still failed with execCommand, show a different message
+                        this.showToastNotification(this.$t('ui.copyFailed') || 'Could not copy link automatically');
+                    }
+                } catch (e) {
+                    console.error('Secondary copy method failed:', e);
+                    this.showToastNotification(this.$t('ui.copyFailed') || 'Could not copy link automatically');
+                }
             });
+        },
+        
+        // Show toast notification with auto-dismiss
+        showToastNotification(message) {
+            // Clear any existing timeout
+            if (this.toastTimeout) {
+                clearTimeout(this.toastTimeout);
+            }
+            
+            this.toastMessage = message;
+            this.showToast = true;
+            
+            // Auto-dismiss after 5 seconds
+            this.toastTimeout = setTimeout(() => {
+                this.showToast = false;
+            }, 5000);
         },
         formatStoryText(text) {
             if (!text) return "";
