@@ -153,8 +153,8 @@
         "themes": "Sibling bonds, family love, empathy and belonging",
         "voice": "Grandpa Solomon",
         "voiceId": "NOpBlnGInO9m6vDvFkFC",
-        "voiceAvatar": "/assets/image/grandpa_1.png",
-        "image": "/assets/image/ex2.webp",
+        "voiceAvatar": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/grandpa_1.png",
+        "image": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/ex2.webp",
         "audio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-grandpa2.mp3",
         "isPlaying": false,
         "progress": "0%"
@@ -165,8 +165,8 @@
         "themes": "Curiosity, discovery, stars and constellations",
         "voice": "Grandma Beatriz",
         "voiceId": "S9EY1qVDizdxKWghP5FL",
-        "voiceAvatar": "/assets/image/grandma_1.png",
-        "image": "/assets/image/ex1.webp",
+        "voiceAvatar": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/grandma_1.png",
+        "image": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/ex1.webp",
         "audio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-grandma.mp3",
         "isPlaying": false,
         "progress": "0%"
@@ -177,8 +177,8 @@
         "themes": "Adventure, creativity, imagination",
         "voice": "Aunt Dora",
         "voiceId": "ZqvIIuD5aI9JFejebHiH",
-        "voiceAvatar": "/assets/image/aunt_1.png",
-        "image": "/assets/image/ex3.webp",
+        "voiceAvatar": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/aunt_1.png",
+        "image": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/ex3.webp",
         "audio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-aunt.mp3",
         "isPlaying": false,
         "progress": "0%"
@@ -189,8 +189,8 @@
         "themes": "Courage, friendship, overcoming fear",
         "voice": "Uncle Joe",
         "voiceId": "IKne3meq5aSn9XLyUdCD",
-        "voiceAvatar": "/assets/image/uncle_2.png",
-        "image": "/assets/image/ex4.webp",
+        "voiceAvatar": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/uncle_2.png",
+        "image": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/ex4.webp",
         "audio": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-uncle-joe.mp3",
         "isPlaying": false,
         "progress": "0%"
@@ -201,25 +201,25 @@
         "id": "IKne3meq5aSn9XLyUdCD",
         "name": "Uncle Joe",
         "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/uncle_2.mp3",
-        "avatar": "/assets/image/uncle_2.png"
+        "avatar": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/uncle_2.png"
       },
       {
         "id": "NOpBlnGInO9m6vDvFkFC",
         "name": "Grandpa Solomon",
         "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/grandpa_1.mp3",
-        "avatar": "/assets/image/grandpa_1.png"
+        "avatar": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/grandpa_1.png"
       },
       {
         "id": "ZqvIIuD5aI9JFejebHiH",
         "name": "Aunt Dora",
         "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/aunt_1.mp3",
-        "avatar": "/assets/image/aunt_1.png"
+        "avatar": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/aunt_1.png"
       },
       {
         "id": "S9EY1qVDizdxKWghP5FL",
         "name": "Grandma Beatriz",
         "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/grandma_1.mp3",
-        "avatar": "/assets/image/grandma_1.png"
+        "avatar": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/grandma_1.png"
       }
     ],
     "themeSuggestions": [
@@ -411,8 +411,8 @@
         "themes": "Laços entre irmãos, amor familiar, empatia e pertencimento",
         "voice": "Vô Pedro",
         "voiceId": "NOpBlnGInO9m6vDvFkFC",
-        "voiceAvatar": "/assets/image/grandpa_1.png",
-        "image": "/assets/image/ex2.webp",
+        "voiceAvatar": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/grandpa_1.png",
+        "image": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/ex2.webp",
         "audio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-grandpa-pt2.mp3",
         "isPlaying": false,
         "progress": "0%"
@@ -423,8 +423,8 @@
         "themes": "Curiosidade, descoberta, estrelas e constelações",
         "voice": "Vó Eunice",
         "voiceId": "S9EY1qVDizdxKWghP5FL",
-        "voiceAvatar": "/assets/image/grandma_1.png",
-        "image": "/assets/image/ex1.webp",
+        "voiceAvatar": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/grandma_1.png",
+        "image": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/ex1.webp",
         "audio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-grandma-pt.mp3",
         "isPlaying": false,
         "progress": "0%"
@@ -435,8 +435,8 @@
         "themes": "Aventura, criatividade, imaginação",
         "voice": "Tia Dora",
         "voiceId": "ZqvIIuD5aI9JFejebHiH",
-        "voiceAvatar": "/assets/image/aunt_1.png",
-        "image": "/assets/image/ex3.webp",
+        "voiceAvatar": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/aunt_1.png",
+        "image": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/ex3.webp",
         "audio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-aunt-pt.mp3",
         "isPlaying": false,
         "progress": "0%"
@@ -447,8 +447,8 @@
         "themes": "Coragem, amizade, superação do medo",
         "voice": "Tio José",
         "voiceId": "IKne3meq5aSn9XLyUdCD",
-        "voiceAvatar": "/assets/image/uncle_2.png",
-        "image": "/assets/image/ex4.webp",
+        "voiceAvatar": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/uncle_2.png",
+        "image": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/ex4.webp",
         "audio": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-uncle-jose.mp3",
         "isPlaying": false,
         "progress": "0%"
@@ -459,25 +459,25 @@
         "id": "IKne3meq5aSn9XLyUdCD",
         "name": "Tio José",
         "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/uncle_2pt.mp3",
-        "avatar": "/assets/image/uncle_2.png"
+        "avatar": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/uncle_2.png"
       },
       {
         "id": "NOpBlnGInO9m6vDvFkFC",
         "name": "Vô Pedro",
         "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/grandpa_1pt.mp3",
-        "avatar": "/assets/image/grandpa_1.png"
+        "avatar": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/grandpa_1.png"
       },
       {
         "id": "ZqvIIuD5aI9JFejebHiH",
         "name": "Tia Dora",
         "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/aunt_1pt.mp3",
-        "avatar": "/assets/image/aunt_1.png"
+        "avatar": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/aunt_1.png"
       },
       {
         "id": "S9EY1qVDizdxKWghP5FL",
         "name": "Vó Eunice",
         "previewAudio": "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/preview/grandma_1pt.mp3",
-        "avatar": "/assets/image/grandma_1.png"
+        "avatar": "https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/grandma_1.png"
       }
     ],
     "themeSuggestions": [
