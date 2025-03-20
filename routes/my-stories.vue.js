@@ -384,7 +384,7 @@ window.MyStoriesPage = {
             // Use 0o644 (rw-r--r--) to ensure web server can access the files
             if (typeof sdk.fs.chmod === "function") {
               await sdk.fs.chmod(filePath, 0o644);
-              // console.log(`Successfully set permissions (0o644) for: ${filePath}`);
+              console.log(`Setting permissions ENTROU AQUI`);
             } else {
               // console.log("chmod function not available, skipping permission setting");
             }
@@ -1366,6 +1366,15 @@ window.MyStoriesPage = {
       this.$router.push("/create");
     },
     getOptimizedImageUrl(url, width, height) {
+      // Return default for null/undefined URL with no story selected
+      if (!url && (!this.selectedStory || !this.selectedStory.imageBase64)) {
+        return '/assets/image/bg.webp';
+      }
+      
+      if (!url && this.selectedStory && this.selectedStory.imageBase64) {
+        return this.selectedStory.imageBase64;
+      }
+      
       if (!url || url.startsWith('data:')) return url;
        
       // Use the webdraw.com image optimization service with cover fit to fill the container
@@ -1389,8 +1398,11 @@ window.MyStoriesPage = {
       }
     },
     handleImageError(event, story) {
-      console.log(`Failed to load image for story: ${story.title}`);
-      // Set a fallback image
+      if (story.imageBase64) {
+        event.target.src = story.imageBase64;
+        return;
+      }
+      
       event.target.src = '/assets/image/bg.webp';
     },
     // Show delete confirmation modal

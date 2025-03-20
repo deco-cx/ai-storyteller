@@ -441,8 +441,10 @@ window.CreatePage = {
               }
             }
           });
+          console.log("Image generation request sent successfully");
         } catch (error) {
           console.error("Error starting image generation:", error);
+          console.error("Error details:", error.message, error.stack);
           imagePromise = Promise.resolve({ error: "Failed to initialize image generation" });
         }
 
@@ -526,58 +528,49 @@ window.CreatePage = {
         
         try {
           const imageResult = await imagePromise;
-          console.log("Raw image generation result:", JSON.stringify(imageResult));
-          
           if (imageResult.error) {
+            console.error("Error in image result:", imageResult.error);
             throw new Error(imageResult.error);
           }
-          
           // For stability:ultra model, the response structure is different from Replicate
           if (imageResult.images && imageResult.images.length > 0) {
-            // For Stability, images is an array of base64 strings
+            let imageBase64 = null;
             if (typeof imageResult.images[0] === 'string') {
-              // This is a base64 string from Stability
-              console.log("Using Stability base64 image data");
-              // The filepath should also be available
+              imageBase64 = `data:image/webp;base64,${imageResult.images[0]}`;
               this.storyImage = `https://fs.webdraw.com${imageResult.filepath.startsWith('/') ? '' : '/'}${imageResult.filepath}`;
             } else {
-              // Use the Replicate URL directly (if this was a Replicate response)
               this.storyImage = imageResult.images[0];
               console.log("Using direct URL for image:", this.storyImage);
+            }
+            
+            if (this.storyData) {
+              this.storyData.imageBase64 = imageBase64;
             }
           } else if (imageResult.url) {
             // Fallback to url if available
             this.storyImage = imageResult.url;
             console.log("Using URL for image:", this.storyImage);
           } else if (imageResult.filepath) {
-            // Last resort: use filepath with fs.webdraw.com prefix
             this.storyImage = `https://fs.webdraw.com${imageResult.filepath.startsWith('/') ? '' : '/'}${imageResult.filepath}`;
             console.log("Using filepath for image:", this.storyImage);
           } else {
             console.warn("Unexpected image result format:", imageResult);
+            console.warn("Image result keys:", Object.keys(imageResult));
             this.storyImage = null;
           }
 
           console.log("Final image URL:", this.storyImage);
 
-          // Store the local filepath separately for permission setting
-          const localImagePath = imageResult.filepath;
-          
-          // Set permissions for the image file immediately - ONLY for the local file
-          try {
-            if (localImagePath) {
-              // Pass true for skipExistsCheck because the file might not exist yet
-              await this.setFilePermissions(localImagePath, true);
-              console.log("Set permissions for local image file:", localImagePath);
-            }
-          } catch (permError) {
-            console.warn("Error setting permissions for image file:", permError);
-          }
-
         } catch (imageError) {
           console.error("Error generating story image:", imageError);
-          // Use uma imagem aleatória de backup
-          this.storyImage = this.getRandomFallbackImage();
+          console.error("Full error details:", imageError.message, imageError.stack);
+          
+          // Use fallback image with more detailed logging
+          console.log("Using fallback image due to error");
+          const fallbackImage = this.getRandomFallbackImage();
+          console.log("Selected fallback image:", fallbackImage);
+          this.storyImage = fallbackImage;
+          
           // Adiciona uma mensagem para o usuário informando sobre o problema
           this.$nextTick(() => {
             if (this.$refs.imageErrorMessage) {
@@ -603,7 +596,6 @@ window.CreatePage = {
           console.log("Story already starts with title, using story text as is");
           audioText = this.storyData.story;
         } else {
-          console.log("Adding title and story with separator for audio narration");
           audioText = `${this.storyData.title}. ${this.storyData.story}`;
         }
         
@@ -629,21 +621,15 @@ window.CreatePage = {
           },
         });
 
-        console.log("Audio generation complete:", audioResponse);
-
         let audioPath = null;
 
         if (audioResponse.filepath && audioResponse.filepath.length > 0) {
           audioPath = audioResponse.filepath[0];
-          console.log("Using filepath as audio source:", audioPath);
         } else if (audioResponse.audios && audioResponse.audios.length > 0) {
           audioPath = audioResponse.audios[0];
-          console.log("Using audios array as audio source:", audioPath);
         } else if (audioResponse.url) {
           audioPath = audioResponse.url;
-          console.log("Using url as audio source:", audioPath);
         } else {
-          console.warn("No recognizable audio source found in response:", audioResponse);
           alert("Audio was generated but the source format is not recognized. The audio playback may not work.");
         }
 
@@ -668,12 +654,8 @@ window.CreatePage = {
           this.audioSource = fullAudioUrl;
           this.audioLoading = true;
 
-          // Add an initial delay before checking to allow permissions to propagate
-          console.log("Waiting 4 seconds for file permissions to apply before checking...");
           await new Promise(resolve => setTimeout(resolve, 4000));
 
-          // Do an initial check with fewer attempts and less logging
-          console.log("Checking if audio file is ready...");
           const isAudioReady = await this.checkAudioReady(fullAudioUrl, 2, 3000);
 
           if (isAudioReady) {
@@ -687,7 +669,6 @@ window.CreatePage = {
         }
 
         if (fullAudioUrl) {
-          console.log("Waiting for audio file to be fully accessible before showing result screen...");
           let audioReady = false;
           let attempts = 0;
           const maxAttempts = 30;
@@ -695,11 +676,6 @@ window.CreatePage = {
 
           while (!audioReady && attempts < maxAttempts) {
             attempts++;
-            // Only log on first attempt or every 5th attempt to reduce console spam
-            if (attempts === 1 || attempts % 5 === 0 || attempts === maxAttempts) {
-              console.log(`Audio availability check attempt ${attempts}/${maxAttempts}`);
-            }
-
             // If previous attempt returned 403, only make actual request periodically
             const shouldSkipRequest = lastStatus === 403 && 
                                       attempts > 1 && 
@@ -990,17 +966,9 @@ window.CreatePage = {
     },
     async checkAudioReady(url, maxAttempts = 10, delayMs = 2000) {
       if (!url) return false;
-
       let lastStatus = null;
-
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
         try {
-          // Only log on first attempt or last attempt
-          if (attempt === 0 || attempt === maxAttempts - 1) {
-            console.log(`Checking audio availability (attempt ${attempt + 1}/${maxAttempts})...`);
-          }
-
-          // If previous attempt returned 403, only make actual network request on first, third, and last attempts
           // to reduce console errors while still checking periodically
           const shouldSkipActualRequest = lastStatus === 403 && 
                                           attempt > 0 && 
@@ -1023,14 +991,6 @@ window.CreatePage = {
           });
 
           lastStatus = response.status;
-
-          if (response.ok || response.status === 206) { // 206 is Partial Content
-            console.log(`Audio file response status: ${response.status}`);
-
-            // If we got a response, the file likely exists and is accessible
-            console.log('Audio file is ready!');
-            return true;
-          }
 
           // Only log on first attempt to reduce console spam
           if (attempt === 0 || attempt === maxAttempts - 1) {
@@ -1086,18 +1046,47 @@ window.CreatePage = {
     },
 
     getRandomFallbackImage() {
-      // Lista de imagens de fallback disponíveis
+      // Lista de imagens de fallback disponíveis - incluindo caminhos absolutos e relativos
       const fallbackImages = [
         '/assets/image/bg.png',
         '/assets/image/ex1.webp',
         '/assets/image/ex2.png',
         '/assets/image/ex3.webp',
-        '/assets/image/ex4.webp'
+        '/assets/image/ex4.webp',
+        'https://staging-ai-storyteller.webdraw.app/assets/image/bg.png',
+        'https://staging-ai-storyteller.webdraw.app/assets/image/ex1.webp',
+        'https://staging-ai-storyteller.webdraw.app/assets/image/ex2.png',
+        'https://staging-ai-storyteller.webdraw.app/assets/image/ex3.webp',
+        'https://staging-ai-storyteller.webdraw.app/assets/image/ex4.webp'
       ];
+
+      // Lista de URLs de imagens de fallback externas conhecidas por funcionar
+      const externalFallbackImages = [
+        'https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?q=80&w=1000&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1615486780246-76d3a0193145?q=80&w=1000&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1560159007-a4f7703adbeb?q=80&w=1000&auto=format&fit=crop'
+      ];
+
+      // Adiciona algumas imagens externas à lista principal
+      fallbackImages.push(...externalFallbackImages);
 
       // Seleciona uma imagem aleatória
       const randomIndex = Math.floor(Math.random() * fallbackImages.length);
-      return fallbackImages[randomIndex];
+      const selectedImage = fallbackImages[randomIndex];
+      
+      console.log("Selected fallback image:", selectedImage);
+      
+      // Verifica se selecionamos um caminho relativo e se estamos em localhost
+      if (selectedImage.startsWith('/') && 
+         (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+        // Se for localhost, talvez o caminho relativo não funcione corretamente
+        // Vamos tentar um caminho absoluto do staging
+        const fallbackIndex = Math.floor(Math.random() * externalFallbackImages.length);
+        console.log("Running on localhost, using external fallback image instead");
+        return externalFallbackImages[fallbackIndex];
+      }
+      
+      return selectedImage;
     },
 
     generateExcerpt(story) {
@@ -1113,71 +1102,28 @@ window.CreatePage = {
       }
 
       try {
-        console.log("DEBUG: Starting saveStory method");
-        console.log("DEBUG: SDK available?", !!sdk);
-        console.log("DEBUG: SDK.fs available?", !!(sdk && sdk.fs));
-        console.log("DEBUG: SDK.fs.write available?", !!(sdk && sdk.fs && typeof sdk.fs.write === 'function'));
+        console.log("SDK available?", !!sdk);
+        console.log("SDK.fs available?", !!(sdk && sdk.fs));
+        console.log("SDK.fs.write available?", !!(sdk && sdk.fs && typeof sdk.fs.write === 'function'));
 
         const timestamp = new Date().toISOString();
         const safeName = this.safeFolderName(this.storyData.title);
-        console.log("DEBUG: Safe folder name generated:", safeName);
-
         const excerpt = this.generateExcerpt(this.storyData.story);
-
-        // Comentando a criação de arquivos .txt que causa erros de sincronização "NoSuchKey"
-        /* 
-        // Create an empty text file to prevent NoSuchKey errors when the system tries to sync it
-        try {
-          // Create file without prefix
-          const textFilePath = `~/Documents/${safeName}.txt`;
-          console.log("Creating text file with plot to prevent sync errors:", textFilePath);
-          
-          // Write the plot to the file instead of just a comment
-          const fileContent = `# ${this.storyData.title}\n\n${this.storyData.plot}\n\n---\n\nNote: This file contains only the plot summary. The full story content is stored in the JSON file in the AI Storyteller directory.`;
-          
-          await sdk.fs.write(textFilePath, fileContent);
-          console.log("Text file with plot created successfully");
-          
-          // Set permissions for this file
-          await this.setFilePermissions(textFilePath, true);
-          console.log("Permissions set for text file");
-          
-          // Create file with "historia_" prefix
-          const prefixedTextFilePath = `~/Documents/historia_${safeName}.txt`;
-          console.log("Creating text file with 'historia_' prefix:", prefixedTextFilePath);
-          
-          // Use the same content for the prefixed file
-          await sdk.fs.write(prefixedTextFilePath, fileContent);
-          console.log("Prefixed text file with plot created successfully");
-          
-          // Set permissions for the prefixed file
-          await this.setFilePermissions(prefixedTextFilePath, true);
-          console.log("Permissions set for prefixed text file");
-        } catch (textFileError) {
-          // If we can't create the text file, just log it but continue
-          console.warn("Could not create text files with plot:", textFileError);
-        }
-        */
 
         console.log("Debug - Story image URL before processing:", this.storyImage);
 
         let imageFilepath = this.storyImage;
+        let imageBase64 = this.storyData.imageBase64 || null;
         
-        // No need to process or set permissions for Replicate URLs
         if (this.storyImage && this.storyImage.includes('replicate.delivery')) {
           console.log("Using Replicate image URL directly in story data:", this.storyImage);
         } else if (this.storyImage) {
-          // Only process non-Replicate URLs
           if (this.storyImage.includes(this.BASE_FS_URL)) {
             imageFilepath = this.storyImage.replace(this.BASE_FS_URL, '');
-            console.log("Extracted image filepath from URL:", imageFilepath);
-            // Set permissions for local files only using safeFileOperation
             await safeFileOperation(imageFilepath, async () => {
-              // Usar skipExistsCheck=true porque o arquivo pode ainda não estar sincronizado
               await this.setFilePermissions(imageFilepath, true);
             });
           } else if (!this.storyImage.startsWith('http')) {
-            // For local paths that don't have full URL
             imageFilepath = this.storyImage;
             console.log("Using image filepath:", imageFilepath);
             // Set permissions for local files using safeFileOperation
@@ -1194,7 +1140,6 @@ window.CreatePage = {
         if (this.audioSource) {
           if (this.audioSource.includes(this.BASE_FS_URL)) {
             audioFilepath = this.audioSource.replace(this.BASE_FS_URL, '');
-            console.log("Extracted audio filepath from URL:", audioFilepath);
           } else {
             audioFilepath = this.audioSource;
             console.log("Using full audio URL as filepath:", audioFilepath);
@@ -1212,6 +1157,7 @@ window.CreatePage = {
         const newGeneration = {
           title: this.storyData.title,
           coverUrl: this.storyImage || null,
+          imageBase64: imageBase64, // Adiciona o base64 aos dados
           excerpt: excerpt,
           story: this.storyData.story,
           audioUrl: this.audioSource || null,
@@ -1228,32 +1174,9 @@ window.CreatePage = {
         let counter = 1;
 
         try {
-          console.log("DEBUG: Checking if file already exists:", filename);
-          while (true) {
-            try {
-              await sdk.fs.read(filename);
-              console.log("DEBUG: File already exists, incrementing counter:", filename);
-              filename = `${baseFilename}_${counter}.json`;
-              counter++;
-            } catch (e) {
-              console.log("DEBUG: File does not exist, will use this filename:", filename);
-              break;
-            }
-          }
-        } catch (e) {
-          console.log("Error checking for existing file:", e);
-          console.log("DEBUG: Error details:", e.message, e.stack);
-        }
-
-        console.log("Saving story to:", filename);
-        try {
           await sdk.fs.write(filename, JSON.stringify(newGeneration, null, 2));
-          console.log("DEBUG: Write operation completed");
-
-          // Verify the file was written
           try {
             const content = await sdk.fs.read(filename);
-            console.log("DEBUG: Verification - File exists and has content:", !!content);
           } catch (verifyError) {
             console.error("DEBUG: Verification failed - Could not read the file after writing:", verifyError);
           }
@@ -1291,24 +1214,29 @@ window.CreatePage = {
 
     // Replace the setFilePermissions method
     async setFilePermissions(filepath, skipExistsCheck = false) {
-      if (!filepath) return;
+      if (!filepath) {
+        console.warn("setFilePermissions: No filepath provided");
+        return;
+      }
 
       try {
-        console.log("DEBUG: Starting setFilePermissions for:", filepath);
-        // Clean up the filepath
         let cleanPath = filepath;
 
         // Remove any URL prefix
         if (cleanPath.startsWith('http')) {
-          const url = new URL(cleanPath);
-          cleanPath = url.pathname;
-          console.log("DEBUG: Removed URL prefix, now:", cleanPath);
+          try {
+            const url = new URL(cleanPath);
+            cleanPath = url.pathname;
+            console.log("DEBUG: Removed URL prefix, now:", cleanPath);
+          } catch (urlError) {
+            console.warn("DEBUG: Error parsing URL:", urlError.message);
+            // Continue with the original path
+          }
         }
 
         // Remove the leading ~ if present
         if (cleanPath.startsWith('~')) {
           cleanPath = cleanPath.substring(1);
-          console.log("DEBUG: Removed leading ~, now:", cleanPath);
         }
 
         // Ensure the path doesn't start with double slashes
@@ -1317,40 +1245,80 @@ window.CreatePage = {
           console.log("DEBUG: Removed extra slash, now:", cleanPath);
         }
 
+        // Verify path is not empty after cleaning
+        if (!cleanPath || cleanPath.trim() === '' || cleanPath === '/') {
+          console.warn("DEBUG: Invalid filepath after cleaning:", cleanPath);
+          return;
+        }
+
+        // If the file doesn't exist and we're not skipping the check, verify existence
         if (!skipExistsCheck) {
-          const exists = await sdk.fs.exists(cleanPath);
-          if (!exists) {
-            console.warn(`File does not exist, cannot set permissions: ${cleanPath}`);
-            return;
+          try {
+            const exists = await sdk.fs.exists(cleanPath);
+            if (!exists) {
+              console.warn(`File does not exist, cannot set permissions: ${cleanPath}`);
+              return;
+            }
+            console.log(`File exists, proceeding with permissions: ${cleanPath}`);
+          } catch (existsError) {
+            console.warn(`Error checking if file exists: ${cleanPath}`, existsError.message);
+            // Continue anyway since we might still be able to set permissions
           }
         }
 
-        console.log(`Setting permissions for: ${cleanPath}`);
-        console.log("DEBUG: SDK.fs.chmod available?", !!(sdk && sdk.fs && typeof sdk.fs.chmod === 'function'));
+        if (!sdk || !sdk.fs || typeof sdk.fs.chmod !== 'function') {
+          console.error("DEBUG: sdk.fs.chmod is not available!");
+          return;
+        }
 
         try {
-          // Use 0o644 (rw-r--r--) instead of 0o444 (r--r--r--) to ensure web server can access the files
+          // Use 0o644 (rw-r--r--) to ensure web server can access the files
           await sdk.fs.chmod(cleanPath, 0o644);
-          console.log(`Successfully set permissions (0o644) for: ${cleanPath}`);
         } catch (chmodError) {
-          if (skipExistsCheck && chmodError.message && chmodError.message.includes('no such file')) {
-            console.log(`File not ready yet for permission setting: ${cleanPath} (this is expected)`);
-          } else {
-            console.warn(`Could not set file permissions with chmod for ${cleanPath}:`, chmodError);
-            console.log("DEBUG: Error details:", chmodError.message, chmodError.stack);
+          // Log more detailed error info
+          console.warn(`Could not set file permissions with chmod for ${cleanPath}:`, chmodError.message);
+          
+          if (chmodError.message && chmodError.message.includes('no such file')) {
+            if (skipExistsCheck) {
+              console.log(`File not ready yet for permission setting: ${cleanPath} (this is expected with skipExistsCheck=true)`);
+            } else {
+              console.warn(`File not found during chmod despite existence check passing: ${cleanPath}`);
+            }
           }
 
-          // Try again with a different approach if needed
+          // Try with fs.write approach - write to the same file to update permissions
           try {
-            console.log("DEBUG: Trying alternative chmod approach");
-            await sdk.fs.chmod(cleanPath, 0o644);
+            console.log("DEBUG: Trying alternative permission approach via fs.write");
+            // Try to read the content first
+            let fileContent = "";
+            try {
+              // If we can read the file, get its content
+              fileContent = await sdk.fs.read(cleanPath);
+              console.log(`Successfully read content from ${cleanPath} (length: ${fileContent.length})`);
+            } catch (readError) {
+              console.warn(`Could not read file content for alternative permission approach: ${cleanPath}`, readError.message);
+            }
+            
+            // If we have content, try to write it back (which should update permissions)
+            if (fileContent && fileContent.length > 0) {
+              await sdk.fs.write(cleanPath, fileContent);
+              console.log(`Alternative permission approach succeeded: wrote content back to ${cleanPath}`);
+            }
           } catch (retryError) {
-            // Ignoring retry errors
+            console.warn("Error in alternative permission approach:", retryError.message);
           }
         }
+        
+        // Try one more fallback approach - append empty string to file
+        try {
+          await sdk.fs.append(cleanPath, '');
+          console.log(`Appended empty string to file to update timestamp: ${cleanPath}`);
+        } catch (appendError) {
+          // Ignore append errors
+        }
       } catch (error) {
-        console.warn(`Could not set file permissions for ${filepath}:`, error);
-        console.log("DEBUG: Error details:", error.message, error.stack);
+        console.warn(`Overall error in setFilePermissions for ${filepath}:`, error.message);
+        console.log("DEBUG: Full error details:", error.message, error.stack);
       }
     },
     handleAudioError(event) {
@@ -1416,11 +1384,27 @@ window.CreatePage = {
       }
     },
     getOptimizedImageUrl(url, width, height) {
-      if (!url || url.startsWith('data:')) return url;
+      if (!url) return this.getRandomFallbackImage();
       
-      this.ensureImagePermissions(url);
+      // Se for uma URL de dados (data:), uma URL externa conhecida ou de fallback, retornar como está
+      if (url.startsWith('data:') || 
+          url.includes('unsplash.com') || 
+          url.includes('staging-ai-storyteller')) {
+        return url;
+      }
       
-      return `https://webdraw.com/image-optimize?src=${encodeURIComponent(url)}&width=${width}&height=${height}&fit=cover`;
+      // Só tenta garantir permissões se for um caminho local (não começa com http)
+      if (!url.startsWith('http')) {
+        this.ensureImagePermissions(url);
+      }
+      
+      try {
+        // Cria URL otimizada via serviço de imagem
+        const optimizedUrl = `https://webdraw.com/image-optimize?src=${encodeURIComponent(url)}&width=${width || 800}&height=${height || 600}&fit=cover`;
+        return optimizedUrl;
+      } catch (error) {
+        return url; // Retorna a URL original em caso de erro
+      }
     },
     
     // Método específico para otimizar avatares com cache
@@ -1690,6 +1674,20 @@ window.CreatePage = {
 
     closeWarningModal() {
       this.showWarningModal = false;
+    },
+
+    handleImageError(event) {
+      if (this.storyData && this.storyData.imageBase64) {
+        event.target.src = this.storyData.imageBase64;
+        return;
+      }
+      
+      const fallbackImage = this.getRandomFallbackImage();
+      
+      const currentSrc = event.target.src;
+      if (!currentSrc.includes('unsplash.com') && !currentSrc.includes('staging-ai-storyteller')) {
+        event.target.src = fallbackImage;
+      }
     }
   },
   template: `
@@ -1850,7 +1848,11 @@ window.CreatePage = {
       <div v-if="screen === 'result'" class="max-w-3xl mx-auto pt-6 pb-16 px-4">
         <div class="p-8">
           <div class="space-y-6 mb-6">
-            <img v-if="storyImage" :src="getOptimizedImageUrl(storyImage, 1200, 800)" alt="Magic Illustration" class="w-full rounded-xl shadow-lg" />
+            <img v-if="storyImage || (storyData && storyData.imageBase64)" 
+                :src="storyImage ? getOptimizedImageUrl(storyImage, 1200, 800) : storyData.imageBase64" 
+                alt="Magic Illustration" 
+                class="w-full rounded-xl shadow-lg" 
+                @error="handleImageError" />
             <div ref="imageErrorMessage" class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mt-2 hidden">
               <div class="flex">
                 <div class="flex-shrink-0">

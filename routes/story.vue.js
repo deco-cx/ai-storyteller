@@ -38,8 +38,16 @@ window.StoryPage = {
                             <!-- Book Cover -->
                             <div class="relative w-full max-w-xs aspect-[138/138] rounded-lg mb-6 overflow-hidden shadow-[0_1px_2px_0_rgba(22,109,149,0.2),0_3px_3px_0_rgba(22,109,149,0.17),0_7px_4px_0_rgba(22,109,149,0.1),0_12px_5px_0_rgba(22,109,149,0.03)]">
                                 <img 
+                                    v-if="story"
                                     :src="getOptimizedImageUrl(story.coverUrl, 800, 400)" 
                                     :alt="story.title" 
+                                    class="w-full h-full object-cover absolute inset-0"
+                                    @error="handleCoverImageError"
+                                >
+                                <img 
+                                    v-else
+                                    src="/assets/image/bg.webp" 
+                                    alt="Default Cover" 
                                     class="w-full h-full object-cover absolute inset-0"
                                 >
                                 <div class="absolute inset-0 bg-[url('/assets/image/book-texture.svg')] bg-cover bg-no-repeat opacity-30 mix-blend-multiply pointer-events-none"></div>
@@ -47,12 +55,12 @@ window.StoryPage = {
                             
                             <!-- Author and Title -->
                             <div class="text-center w-full">
-                                <h1 class="text-2xl font-semibold text-[#334155] mb-4">{{ formatTitle(story.title) }}</h1>
+                                <h1 class="text-2xl font-semibold text-[#334155] mb-4">{{ story ? formatTitle(story.title) : '' }}</h1>
                             </div>
                         </div>
 
                         <!-- Audio Player -->
-                        <div class="flex flex-col gap-2 mb-6">
+                        <div v-if="story" class="flex flex-col gap-2 mb-6">
                             <!-- Progress Bar -->
                             <div class="w-full relative">
                                 <div class="w-full h-1 bg-[#CBD5E1] rounded-full cursor-pointer" @click="seekAudio($event)">
@@ -83,12 +91,15 @@ window.StoryPage = {
                             
                             <audio ref="audioPlayer" :src="story.audioUrl" @timeupdate="updateProgress" @ended="audioEnded" @loadedmetadata="onAudioLoaded"></audio>
                         </div>
+                        <div v-else class="mb-6">
+                            <!-- Placeholder for audio player when story is not loaded -->
+                        </div>
                         
                         <!-- Story Text -->
                         <div class="border border-b border-gray-200 w-full my-8"/>
                         <!-- Story Text Container -->
                         <div class="mt-6 story-text-container">
-                            <div class="w-full text-slate-600 text-sm">
+                            <div v-if="story" class="w-full text-slate-600 text-sm">
                                 <div v-if="hasHtmlContent(story.story)" v-html="story.story" class="prose prose-sky max-w-none"></div>
                                 <div v-else class="whitespace-pre-wrap">{{ story.story }}</div>
                             </div>
@@ -124,7 +135,7 @@ window.StoryPage = {
                     </div>
                     
                     <!-- Story Settings (Collapsible) -->
-                    <details class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm mb-8 group">
+                    <details v-if="story" class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm mb-8 group">
                         <summary class="text-slate-700 font-medium cursor-pointer flex items-center justify-between">
                             <div class="flex items-center">
                                 <i class="fa-solid fa-gear mr-2 text-purple-500"></i>
@@ -275,7 +286,6 @@ window.StoryPage = {
         
         // If we're coming from the create page, skip the loading screen
         if (fromCreate) {
-            console.log("Coming from create page, skipping loading screen");
             this.loading = false;
         }
         
@@ -465,13 +475,9 @@ window.StoryPage = {
                 
                 // Check if the file path starts with ~ (indicating it's a local file path)
                 if (this.fileUrl.startsWith('~') && sdk && typeof sdk.fs?.read === 'function') {
-                    console.log("Loading story from local file system");
-                    
-                    // Set permissions for the story file itself first
                     if (sdk && sdk.fs && typeof sdk.fs.chmod === 'function') {
                         try {
                             await sdk.fs.chmod(this.fileUrl, 0o644);
-                            console.log(`Successfully set permissions (0o644) for story file: ${this.fileUrl}`);
                         } catch (chmodError) {
                             console.warn(`Could not set file permissions for story file ${this.fileUrl}:`, chmodError);
                         }
@@ -535,7 +541,6 @@ window.StoryPage = {
                             }
                         } else {
                             // Direct story JSON file
-                            console.log("Loading story from individual JSON file");
                             storyData = data;
                         }
                     } catch (parseError) {
@@ -608,8 +613,6 @@ window.StoryPage = {
                             storyData = candidateStory;
                         }
                     } else {
-                        // Direct story JSON file
-                        console.log("Loading story from individual JSON file");
                         storyData = data;
                     }
                 }
@@ -622,6 +625,7 @@ window.StoryPage = {
                     story: storyData.story || "",
                     audioUrl: storyData.audioUrl || null,
                     coverUrl: storyData.coverUrl || "/assets/image/bg.webp",
+                    imageBase64: storyData.imageBase64 || null,
                     createdAt: storyData.createdAt || new Date().toISOString(),
                     updatedAt: storyData.updatedAt || new Date().toISOString(),
                     isNew: storyData.isNew || false,
@@ -659,8 +663,6 @@ window.StoryPage = {
         
         // Fix permissions and verify accessibility of media files
         async verifyAndFixMediaFiles() {
-            console.log("Verifying media files accessibility...");
-            
             this.fileCheckCurrentAttempt = 0;
             this.coverReady = false;
             this.audioReady = false;
@@ -723,10 +725,6 @@ window.StoryPage = {
                 while (filePath.startsWith('//')) {
                     filePath = filePath.substring(1);
                 }
-                
-                console.log(`Setting permissions for media file: ${filePath}`);
-                
-                // Use 0o644 (rw-r--r--) to ensure web server can access the files
                 if (sdk && typeof sdk.fs?.chmod === 'function') {
                     await sdk.fs.chmod(filePath, 0o644);
                     console.log(`Successfully set permissions (0o644) for media file: ${filePath}`);
@@ -743,14 +741,12 @@ window.StoryPage = {
             this.fileCheckCurrentAttempt = 0;
             
             while (this.fileCheckCurrentAttempt < this.fileCheckMaxAttempts) {
-                console.log(`Verifying media files accessibility (attempt ${this.fileCheckCurrentAttempt + 1}/${this.fileCheckMaxAttempts})...`);
                 
                 // Check cover image if needed
                 if (!this.coverReady && this.story.coverUrl) {
                     this.fileCheckMessage = `${this.$t('story.verifyingCover')}`;
                     try {
                         await this.checkFileAccessibility(this.story.coverUrl);
-                        console.log("Cover image is accessible!");
                         this.coverReady = true;
                     } catch (error) {
                         console.warn(`Cover image not yet accessible (attempt ${this.fileCheckCurrentAttempt + 1}/${this.fileCheckMaxAttempts}):`, error);
@@ -762,7 +758,6 @@ window.StoryPage = {
                     this.fileCheckMessage = `${this.$t('story.verifyingAudio')}`;
                     try {
                         await this.checkFileAccessibility(this.story.audioUrl);
-                        console.log("Audio file is accessible!");
                         this.audioReady = true;
                     } catch (error) {
                         console.warn(`Audio file not yet accessible (attempt ${this.fileCheckCurrentAttempt + 1}/${this.fileCheckMaxAttempts}):`, error);
@@ -1255,22 +1250,30 @@ window.StoryPage = {
             }
         },
         getOptimizedImageUrl(url, width, height) {
+            // Null check for story object entirely - this prevents the TypeError
+            if (!this.story) return "/assets/image/bg.webp";
+            
+            // Se não houver URL mas houver base64, use o base64
+            if ((!url || url === "/assets/image/bg.webp") && this.story.imageBase64) {
+                return this.story.imageBase64;
+            }
+            
             if (!url || url.startsWith('data:')) return url;
             
-            // If the URL already starts with /assets/image, just return it directly
+            // Se a URL já começa com /assets/image, apenas retorne-a diretamente
             if (url.startsWith('/assets/image') || url.startsWith('assets/image')) {
                 return url.startsWith('/') ? url : `/${url}`;
             }
             
-            // For local paths, use direct path
+            // Para caminhos locais, use o caminho direto
             let processedUrl = url;
             
-            // If the URL is not absolute and doesn't start with a slash, add a slash
+            // Se a URL não é absoluta e não começa com uma barra, adicione uma barra
             if (!url.startsWith('http') && !url.startsWith('/')) {
                 processedUrl = '/' + url;
             }
             
-            // Return the direct URL without optimization service
+            // Retorne a URL direta sem serviço de otimização
             if (!processedUrl.startsWith('http')) {
                 return `${window.location.origin}${processedUrl}`;
             }
@@ -1327,6 +1330,14 @@ window.StoryPage = {
                 console.error("Error downloading audio:", error);
                 alert(this.$t('story.errorDownloadingAudio'));
             }
+        },
+        handleCoverImageError(event) {
+            if (this.story && this.story.imageBase64) {
+                event.target.src = this.story.imageBase64;
+                return;
+            }
+            
+            event.target.src = "/assets/image/bg.webp";
         }
     }
 };
