@@ -291,7 +291,7 @@ window.MyStoriesPage = {
         let storyFiles = [];
         try {
           const files = await sdk.fs.list("~/AI Storyteller");
-          console.log("Found files in AI Storyteller directory:", files);
+          // console.log("Found files in AI Storyteller directory:", files);
 
           // Process the files based on the format returned
           if (Array.isArray(files)) {
@@ -352,7 +352,7 @@ window.MyStoriesPage = {
           storyFiles = [];
         }
 
-        console.log("Found story files:", storyFiles);
+        console.log("Found story files:", storyFiles.length);
 
         // Track all media files that need permission fixes
         const mediaFiles = new Set();
@@ -371,26 +371,22 @@ window.MyStoriesPage = {
               } else if (file.path) {
                 filePath = file.path;
               } else {
-                console.log("Skipping file with invalid format:", file);
+                // console.log("Skipping file with invalid format:", file);
                 continue;
               }
             } else {
-              console.log("Skipping file with invalid format:", file);
+              // console.log("Skipping file with invalid format:", file);
               continue;
             }
 
-            console.log(`Setting permissions for: ${filePath}`);
+            // console.log(`Setting permissions for: ${filePath}`);
 
             // Use 0o644 (rw-r--r--) to ensure web server can access the files
             if (typeof sdk.fs.chmod === "function") {
               await sdk.fs.chmod(filePath, 0o644);
-              console.log(
-                `Successfully set permissions (0o644) for: ${filePath}`,
-              );
+              // console.log(`Successfully set permissions (0o644) for: ${filePath}`);
             } else {
-              console.log(
-                "chmod function not available, skipping permission setting",
-              );
+              // console.log("chmod function not available, skipping permission setting");
             }
 
             // Read the story file to find media references
@@ -422,25 +418,23 @@ window.MyStoriesPage = {
             // Try alternative approach if chmod fails
             try {
               if (typeof sdk.fs.chmod === "function") {
-                console.log("Trying alternative chmod approach");
+                // console.log("Trying alternative chmod approach");
                 await sdk.fs.chmod(file, 0o644);
-                console.log(
-                  `Successfully set permissions using alternative method for: ${file}`,
-                );
+                // console.log(`Successfully set permissions using alternative method for: ${file}`);
               }
             } catch (altError) {
-              console.warn(
-                "Alternative permission setting also failed:",
-                altError,
-              );
+              // console.warn("Alternative permission setting also failed:", altError);
             }
           }
         }
 
         // Now fix permissions for all the media files
-        console.log(
-          `Found ${mediaFiles.size} media files to fix permissions for`,
-        );
+        console.log(`Found ${mediaFiles.size} media files to fix permissions for`);
+        
+        // Limit logging for media files
+        let successCount = 0;
+        let failCount = 0;
+        
         for (const mediaFile of mediaFiles) {
           try {
             // Skip URLs that are not local files
@@ -461,24 +455,24 @@ window.MyStoriesPage = {
               cleanPath = cleanPath.substring(1);
             }
 
-            console.log(`Setting permissions for media file: ${cleanPath}`);
+            // Don't log each file permission setting
+            // console.log(`Setting permissions for media file: ${cleanPath}`);
 
             // Use 0o644 (rw-r--r--) to ensure web server can access the files
             if (typeof sdk.fs.chmod === "function") {
               await sdk.fs.chmod(cleanPath, 0o644);
-              console.log(
-                `Successfully set permissions (0o644) for media file: ${cleanPath}`,
-              );
-            } else {
-              console.log(
-                "chmod function not available, skipping permission setting for media file",
-              );
+              successCount++;
+              // Only log every 10th success to reduce log volume
+              if (successCount % 10 === 0) {
+                console.log(`Set permissions for ${successCount} media files so far`);
+              }
             }
           } catch (error) {
-            console.warn(
-              `Could not set file permissions for media file ${mediaFile}:`,
-              error,
-            );
+            failCount++;
+            // Only log the first few failures
+            if (failCount <= 4) {
+              console.warn(`Could not set permissions for media file ${mediaFile}`);
+            }
 
             // Try alternative approach if chmod fails
             try {
@@ -491,22 +485,16 @@ window.MyStoriesPage = {
                   cleanPath = cleanPath.substring(1);
                 }
 
-                console.log("Trying alternative chmod method for media file");
                 await sdk.fs.chmod(cleanPath, 0o644);
-                console.log(
-                  `Successfully set permissions using alternative method for media file: ${cleanPath}`,
-                );
+                successCount++;
               }
             } catch (altError) {
-              console.warn(
-                "Alternative permission setting also failed for media file:",
-                altError,
-              );
+              // Don't log alternative permission failures
             }
           }
         }
 
-        console.log("Finished fixing permissions for all files");
+        console.log(`Finished fixing permissions: ${successCount} successful, ${failCount} failed`);
       } catch (error) {
         console.error("Error fixing story permissions:", error);
       }
@@ -552,19 +540,6 @@ window.MyStoriesPage = {
         let storyFiles = [];
         let stories = [];
 
-        // Remove the localhost check
-        console.log("DEBUG: Starting loadGenerations method");
-        console.log("DEBUG: SDK available?", !!sdk);
-        console.log("DEBUG: SDK.fs available?", !!(sdk && sdk.fs));
-        console.log(
-          "DEBUG: SDK.fs.read available?",
-          !!(sdk && sdk.fs && typeof sdk.fs.read === "function"),
-        );
-        console.log(
-          "DEBUG: SDK.fs.list available?",
-          !!(sdk && sdk.fs && typeof sdk.fs.list === "function"),
-        );
-
         if (sdk && typeof sdk.fs?.read === "function") {
           try {
             // First try the old way - reading from generations.json
@@ -572,16 +547,12 @@ window.MyStoriesPage = {
             const content = await sdk.fs.read(
               "~/AI Storyteller/generations.json",
             );
-            console.log(
-              "DEBUG: Content from generations.json:",
-              content ? "Content exists" : "No content",
-            );
             const data = JSON.parse(content);
 
             if (data && data.generations && Array.isArray(data.generations)) {
               console.log("Successfully read from generations.json");
               console.log(
-                "DEBUG: Number of stories in generations.json:",
+                "Number of stories in generations.json:",
                 data.generations.length,
               );
               stories = data.generations.map((gen) => ({
@@ -593,20 +564,23 @@ window.MyStoriesPage = {
               }));
             }
           } catch (error) {
-            console.log(
-              "Could not read from generations.json, will try individual files:",
-              error,
-            );
+            // Verificar se já tentamos ler esse arquivo e se é um erro de "arquivo não encontrado"
+            if (!window._generationsFileChecked || !error.message.includes("no such file")) {
+              console.log(
+                `[${new Date().toLocaleTimeString()}] Could not read from generations.json, will try individual files:`,
+                error.message // Mostra apenas a mensagem de erro, não o objeto completo
+              );
+            }
+            
+            // Marcar que já tentamos ler esse arquivo
+            window._generationsFileChecked = true;
           }
 
           // Then try the new way - reading individual files
           if (typeof sdk.fs?.list === "function") {
             try {
               console.log("Trying to read individual story files...");
-              // List all files in the AI Storyteller directory
-              console.log("DEBUG: About to call sdk.fs.list");
               const files = await sdk.fs.list("~/AI Storyteller");
-              console.log("DEBUG: Files returned by sdk.fs.list:", files);
 
               // Process the files based on the format returned
               if (Array.isArray(files)) {
@@ -637,11 +611,10 @@ window.MyStoriesPage = {
                   return false;
                 });
               } else if (files && typeof files === "object") {
-                console.log("Files is an object, trying to convert to array");
                 // If it's not an array but an object, try to convert it
                 const filesArray = Object.values(files);
                 console.log(
-                  "Converted to array with length:",
+                  "Found files array with length:",
                   filesArray.length,
                 );
 
@@ -672,10 +645,12 @@ window.MyStoriesPage = {
               }
 
               console.log("Found individual story files:", storyFiles.length);
-              console.log("DEBUG: Story files:", JSON.stringify(storyFiles));
 
               // Read each story file
               const individualStories = [];
+              let emptyFilesCount = 0;
+              const successfullyReadFiles = [];
+              
               for (const file of storyFiles) {
                 try {
                   // Determine the file path
@@ -689,20 +664,29 @@ window.MyStoriesPage = {
                     } else if (file.path) {
                       filePath = file.path;
                     } else {
-                      console.log("Skipping file with invalid format:", file);
+                      // console.log("Skipping file with invalid format:", file);
                       continue;
                     }
                   } else {
-                    console.log("Skipping file with invalid format:", file);
+                    // console.log("Skipping file with invalid format:", file);
                     continue;
                   }
 
-                  console.log("Reading file:", filePath);
+                  // Don't log reading each file
+                  // console.log("Reading file:", filePath);
                   const content = await sdk.fs.read(filePath);
 
                   // Validate content
                   if (!content) {
                     console.log("Empty content for file:", filePath);
+                    // Remove empty files as requested by the user
+                    try {
+                      await sdk.fs.remove(filePath);
+                      console.log(`Removed empty file: ${filePath}`);
+                      emptyFilesCount++;
+                    } catch (removeError) {
+                      console.error(`Failed to remove empty file ${filePath}:`, removeError);
+                    }
                     continue;
                   }
 
@@ -710,11 +694,11 @@ window.MyStoriesPage = {
                   let storyData;
                   try {
                     storyData = JSON.parse(content);
-                    console.log(
-                      "DEBUG: Successfully parsed JSON for file:",
-                      filePath,
-                    );
-                    console.log("DEBUG: Story title:", storyData.title);
+                    // console.log(
+                    //   "DEBUG: Successfully parsed JSON for file:",
+                    //   filePath,
+                    // );
+                    // console.log("DEBUG: Story title:", storyData.title);
                   } catch (parseError) {
                     console.error(
                       `Error parsing JSON for file ${filePath}:`,
@@ -729,10 +713,12 @@ window.MyStoriesPage = {
                     continue;
                   }
 
-                  // Extract filename for logging
+                  // Extract filename for logging e adicionar ao array de histórias lidas com sucesso
                   const parts = filePath.split("/");
                   const filename = parts[parts.length - 1];
-                  console.log("Successfully read story from:", filename);
+                  // Agora não logamos mais individualmente
+                  // console.log("Successfully read story from:", filename);
+                  successfullyReadFiles.push(filename);
 
                   // Add the story to our array
                   individualStories.push({
@@ -753,21 +739,26 @@ window.MyStoriesPage = {
                   });
                 } catch (error) {
                   console.error(`Error reading story file:`, error);
-                  console.log(
-                    "DEBUG: Error details:",
-                    error.message,
-                    error.stack,
-                  );
+                  // console.log(
+                  //   "DEBUG: Error details:",
+                  //   error.message,
+                  //   error.stack,
+                  // );
                 }
+              }
+              
+              // Logar todas as histórias lidas com sucesso em uma única linha
+              if (successfullyReadFiles.length > 0) {
+                console.log(`Successfully read ${successfullyReadFiles.length} stories: ${successfullyReadFiles.join(", ")}`);
+              }
+              
+              if (emptyFilesCount > 0) {
+                console.log(`Removed ${emptyFilesCount} empty files`);
               }
 
               // Combine stories from both sources, avoiding duplicates
               if (individualStories.length > 0) {
-                console.log("Successfully read individual story files");
-                console.log(
-                  "DEBUG: Number of individual stories found:",
-                  individualStories.length,
-                );
+                console.log("Number of individual stories found:", individualStories.length);
 
                 // If we have stories from both sources, merge them
                 if (stories.length > 0) {
@@ -799,7 +790,7 @@ window.MyStoriesPage = {
               }
             } catch (error) {
               console.error("Error reading individual story files:", error);
-              console.log("DEBUG: Error details:", error.message, error.stack);
+              // console.log("DEBUG: Error details:", error.message, error.stack);
               // If we couldn't read individual files but have stories from generations.json, use those
               if (stories.length === 0) {
                 console.log("Falling back to fallback data");
@@ -807,7 +798,7 @@ window.MyStoriesPage = {
               }
             }
           } else {
-            console.log("DEBUG: sdk.fs.list is not a function");
+            // console.log("DEBUG: sdk.fs.list is not a function");
           }
 
           // If we still have no stories, use fallback data
@@ -829,7 +820,7 @@ window.MyStoriesPage = {
         }
       } catch (error) {
         console.error("Error loading stories:", error);
-        console.log("DEBUG: Error details:", error.message, error.stack);
+        // console.log("DEBUG: Error details:", error.message, error.stack);
         this.generations = [];
       } finally {
         this.loading = false;
@@ -1011,10 +1002,10 @@ window.MyStoriesPage = {
           this.updateGenerationsFile();
         })
         .catch((err) => {
-          console.log(
-            "Individual story file not found or could not be deleted by title:",
-            err,
-          );
+          // console.log(
+          //   "Individual story file not found or could not be deleted by title:",
+          //   err,
+          // );
 
           // Try with counter suffixes if the base name doesn't work
           this.tryDeleteWithCounters(safeName, story)
@@ -1045,7 +1036,7 @@ window.MyStoriesPage = {
             deleted = true;
             break; // Exit the loop if successful
           } catch (err) {
-            console.log(`File with counter ${i} not found:`, err);
+            // console.log(`File with counter ${i} not found:`, err);
           }
         }
 
@@ -1068,10 +1059,13 @@ window.MyStoriesPage = {
         console.log("Deleting associated media files for story:", story.title);
 
         const attemptedPaths = new Set();
+        let deletedCount = 0;
 
         // 1. Delete audio file
         if (story.audioUrl) {
-          await this.deleteFileFromUrl(story.audioUrl);
+          if (await this.deleteFileFromUrl(story.audioUrl)) {
+            deletedCount++;
+          }
           
           // Extract filename from URL if possible
           try {
@@ -1085,15 +1079,16 @@ window.MyStoriesPage = {
                 console.log(
                   `Deleted audio file using extracted filename: ~/Audio/${audioFilename}`,
                 );
+                deletedCount++;
               } catch (err) {
-                console.log(
-                  `Could not delete audio file using extracted filename: ~/Audio/${audioFilename}`,
-                  err,
-                );
+                // console.log(
+                //   `Could not delete audio file using extracted filename: ~/Audio/${audioFilename}`,
+                //   err,
+                // );
               }
             }
           } catch (err) {
-            console.log("Error extracting audio filename from URL:", err);
+            // console.log("Error extracting audio filename from URL:", err);
           }
           
           // Try with safe name format - this is the format specified by the user
@@ -1103,19 +1098,22 @@ window.MyStoriesPage = {
             try {
               await sdk.fs.remove(audioFileName);
               console.log("Deleted audio file:", audioFileName);
+              deletedCount++;
             } catch (err) {
-              console.log(
-                "Could not delete audio file or not found:",
-                audioFileName,
-                err,
-              );
+              // console.log(
+              //   "Could not delete audio file or not found:",
+              //   audioFileName,
+              //   err,
+              // );
             }
           }
         }
 
-        // 2. Delete image file
+        // 2. Delete image file - similar code pattern as audio file
         if (story.coverUrl) {
-          await this.deleteFileFromUrl(story.coverUrl);
+          if (await this.deleteFileFromUrl(story.coverUrl)) {
+            deletedCount++;
+          }
           
           // Extract filename from URL if possible
           try {
@@ -1129,99 +1127,38 @@ window.MyStoriesPage = {
                 console.log(
                   `Deleted image file using extracted filename: ~/Pictures/${imageFilename}`,
                 );
+                deletedCount++;
               } catch (err) {
-                console.log(
-                  `Could not delete image file using extracted filename: ~/Pictures/${imageFilename}`,
-                  err,
-                );
+                // console.log(
+                //   `Could not delete image file using extracted filename: ~/Pictures/${imageFilename}`,
+                //   err,
+                // );
               }
             }
           } catch (err) {
-            console.log("Error extracting image filename from URL:", err);
+            // console.log("Error extracting image filename from URL:", err);
           }
           
-          // Try with safe name format - this is the format specified by the user
+          // Try with safe name format
           const imageFileName = `~/Pictures/${safeName}.webp`;
           if (!attemptedPaths.has(imageFileName)) {
             attemptedPaths.add(imageFileName);
             try {
               await sdk.fs.remove(imageFileName);
               console.log("Deleted image file:", imageFileName);
+              deletedCount++;
             } catch (err) {
-              console.log(
-                "Could not delete image file or not found:",
-                imageFileName,
-                err,
-              );
-            }
-          }
-        }
-
-        // 3. Delete text file - handle the "historia_" prefix as specified in requirements
-        // According to the requirements, text files are saved as:
-        // ~/Documents/historia_[safeName].txt
-        if (story.story) {
-          // First, attempt to delete the most common filename format (with the "historia_" prefix)
-          const textFileName = `~/Documents/historia_${safeName}.txt`;
-          if (!attemptedPaths.has(textFileName)) {
-            attemptedPaths.add(textFileName);
-            try {
-              await sdk.fs.remove(textFileName);
-              console.log("Deleted text file with prefix:", textFileName);
-            } catch (err) {
-              console.log(
-                "Could not delete text file with prefix or not found:",
-                textFileName,
-                err,
-              );
-            }
-          }
-          
-          // Also try looking for text files mentioned in the story content
-          const textFileRegex = /historia_([a-zA-Z0-9_]+)\.txt/g;
-          const matches = [...story.story.matchAll(textFileRegex)];
-          
-          for (const match of matches) {
-            if (match[1]) {
-              const textFilename = `historia_${match[1]}.txt`;
-              const textFilePath = `~/Documents/${textFilename}`;
-              if (!attemptedPaths.has(textFilePath)) {
-                attemptedPaths.add(textFilePath);
-                try {
-                  await sdk.fs.remove(textFilePath);
-                  console.log(
-                    `Deleted text file found in story content: ${textFilePath}`,
-                  );
-                } catch (err) {
-                  console.log(
-                    `Could not delete text file from story content: ${textFilePath}`,
-                    err,
-                  );
-                }
-              }
-            }
-          }
-          
-          // As a fallback, try without the "historia_" prefix
-          const altTextFileName = `~/Documents/${safeName}.txt`;
-          if (!attemptedPaths.has(altTextFileName)) {
-            attemptedPaths.add(altTextFileName);
-            try {
-              await sdk.fs.remove(altTextFileName);
-              console.log("Deleted text file without prefix:", altTextFileName);
-            } catch (err) {
-              console.log(
-                "Could not delete text file without prefix or not found:",
-                altTextFileName,
-                err,
-              );
+              // console.log(
+              //   "Could not delete image file or not found:",
+              //   imageFileName,
+              //   err,
+              // );
             }
           }
         }
 
         console.log(
-          "Completed media file deletion process for story:",
-          story.title,
+          `Completed media file deletion process: deleted ${deletedCount} files`,
         );
       } catch (error) {
         console.error("Error deleting associated media files:", error);
@@ -1229,7 +1166,7 @@ window.MyStoriesPage = {
     },
 
     async deleteFileFromUrl(url) {
-      if (!url) return;
+      if (!url) return false;
 
       try {
         // For URLs that include the file system domain
@@ -1250,10 +1187,10 @@ window.MyStoriesPage = {
                 console.log("Deleted file from URL path:", relativePath);
                 return true;
               } catch (err) {
-                console.log(
-                  "Could not delete using full path, trying alternative approaches:",
-                  err,
-                );
+                // console.log(
+                //   "Could not delete using full path, trying alternative approaches:",
+                //   err,
+                // );
               }
 
               // Extract filename and directory from path
@@ -1269,9 +1206,9 @@ window.MyStoriesPage = {
                   altPath = `~/Audio/${filename}`;
                 } else if (directory === "Pictures" || directory.toLowerCase() === "pictures") {
                   altPath = `~/Pictures/${filename}`;
-                } else if (directory === "Documents" || directory.toLowerCase() === "documents") {
-                  altPath = `~/Documents/${filename}`;
-                }
+                } //else if (directory === "Documents" || directory.toLowerCase() === "documents") {
+                //  altPath = `~/Documents/${filename}`;
+                //}
 
                 if (altPath) {
                   try {
@@ -1279,7 +1216,7 @@ window.MyStoriesPage = {
                     console.log("Deleted file using directory-based path:", altPath);
                     return true;
                   } catch (dirErr) {
-                    console.log("Could not delete using directory-based path:", altPath, dirErr);
+                    // console.log("Could not delete using directory-based path:", altPath, dirErr);
                   }
                 }
                 
@@ -1291,9 +1228,9 @@ window.MyStoriesPage = {
                   inferredPath = `~/Audio/${filename}`;
                 } else if (['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(extension)) {
                   inferredPath = `~/Pictures/${filename}`;
-                } else if (['txt', 'md', 'json', 'doc'].includes(extension)) {
-                  inferredPath = `~/Documents/${filename}`;
-                }
+                }// else if (['json', 'doc'].includes(extension)) {
+                //  inferredPath = `~/Documents/${filename}`;
+                //}
                 
                 if (inferredPath && inferredPath !== altPath) {
                   try {
@@ -1301,13 +1238,13 @@ window.MyStoriesPage = {
                     console.log("Deleted file using inferred path:", inferredPath);
                     return true;
                   } catch (infErr) {
-                    console.log("Could not delete using inferred path:", inferredPath, infErr);
+                    // console.log("Could not delete using inferred path:", inferredPath, infErr);
                   }
                 }
               }
             }
           } catch (e) {
-            console.log("Could not parse or delete URL:", url, e);
+            // console.log("Could not parse or delete URL:", url, e);
           }
         } else if (url.startsWith('/') || !url.startsWith('http')) {
           // Handle relative or local paths
@@ -1330,13 +1267,9 @@ window.MyStoriesPage = {
               paths.push(`~/Audio/${filename}`);
             } else if (['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(extension)) {
               paths.push(`~/Pictures/${filename}`);
-            } else if (['txt', 'md', 'json', 'doc'].includes(extension)) {
-              paths.push(`~/Documents/${filename}`);
-              // Also try with "historia_" prefix for text files
-              if (extension === 'txt' && !filename.startsWith('historia_')) {
-                paths.push(`~/Documents/historia_${filename}`);
-              }
-            }
+            } //else if (['json', 'doc'].includes(extension)) {
+            //  paths.push(`~/Documents/${filename}`);
+            //}
             
             // Try each path
             for (const path of paths) {
@@ -1345,7 +1278,7 @@ window.MyStoriesPage = {
                 console.log("Deleted file using inferred directory:", path);
                 return true;
               } catch (pathErr) {
-                console.log("Could not delete using inferred directory:", path, pathErr);
+                // console.log("Could not delete using inferred directory:", path, pathErr);
               }
             }
           }
@@ -1387,7 +1320,7 @@ window.MyStoriesPage = {
           // Set file permissions to be readable
           try {
             await sdk.fs.chmod(generationsPath, 0o644);
-            console.log("Set read-only permissions for generations.json");
+            // console.log("Set read-only permissions for generations.json");
           } catch (permErr) {
             console.log("Could not set permissions for generations.json:", permErr);
           }
@@ -1411,7 +1344,7 @@ window.MyStoriesPage = {
           // Set file permissions
           try {
             await sdk.fs.chmod(generationsPath, 0o644);
-            console.log("Set read-only permissions for generations.json");
+            // console.log("Set read-only permissions for generations.json");
           } catch (permErr) {
             console.log("Could not set permissions for generations.json:", permErr);
           }

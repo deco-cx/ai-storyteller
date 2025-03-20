@@ -1,5 +1,23 @@
 import { sdk } from "../sdk.js";
 
+// Utility function for safe file operations
+async function safeFileOperation(filepath, operation) {
+  try {
+    const exists = await sdk.fs.exists(filepath);
+    if (!exists) {
+      console.warn(`File does not exist: ${filepath}`);
+      return;
+    }
+    await operation();
+  } catch (error) {
+    if (error.message.includes("NoSuchKey")) {
+      console.warn(`NoSuchKey error for file: ${filepath}`);
+    } else {
+      console.error(`Error during file operation: ${error.message}`);
+    }
+  }
+}
+
 window.CreatePage = {
   data() {
     return {
@@ -35,12 +53,13 @@ window.CreatePage = {
         type: "warning"
       },
       // Cache para URLs de avatar otimizados
-      optimizedAvatars: {}
+      optimizedAvatars: {},
+      _loadedAudioPreviews: [],
+      _previewLogTimeout: null
     };
   },
   watch: {
     currentLanguage(newLang, oldLang) {
-      console.log(`Language changed from ${oldLang} to ${newLang}`);
       // Update the voices array when language changes
       this.updateVoicesForLanguage();
       this.$forceUpdate();
@@ -164,60 +183,46 @@ window.CreatePage = {
       audioPlayer.removeEventListener('timeupdate', this.updateAudioProgress);
       audioPlayer.removeEventListener('ended', () => {});
     }
-
-    // Clean up language change event listener
     if (window.eventBus) {
       window.eventBus.events['language-changed'] = window.eventBus.events['language-changed']?.filter(
         callback => callback !== this.handleLanguageChange
       );
-
-      // Clean up translations-loaded event listener
       if (window.eventBus.events['translations-loaded']) {
         window.eventBus.events['translations-loaded'] = window.eventBus.events['translations-loaded'].filter(
           callback => typeof callback === 'function' && callback.toString().includes('updateVoicesForLanguage')
         );
       }
     }
-
-    // Clean up audio check interval
     if (this.audioCheckInterval) {
       clearInterval(this.audioCheckInterval);
       this.audioCheckInterval = null;
+    }
+    if (this._previewLogTimeout) {
+      clearTimeout(this._previewLogTimeout);
+      this._previewLogTimeout = null;
     }
   },
   methods: {
     // Get translations for the current language
     updateVoicesForLanguage() {
       const lang = this.currentLanguage;
-      console.log(`Updating voices for language: ${lang}`);
-
-      // Check if window.i18n and translations exist
       if (!window.i18n || !window.i18n.translations) {
         console.warn('Translations not loaded yet, will retry later');
-        // Set a timeout to try again in a moment
         setTimeout(() => this.updateVoicesForLanguage(), 500);
         return;
       }
-
-      // Check if the current language exists in translations
       if (lang && window.i18n.translations[lang] && window.i18n.translations[lang].voices) {
-        // Deep clone the voices array to avoid modifying the original data
         this.voices = JSON.parse(JSON.stringify(window.i18n.translations[lang].voices));
-        
-        // Process avatar URLs to use the image optimization service
         this.voices.forEach(voice => {
           if (voice.avatar && typeof voice.avatar === 'string') {
-            // Apply permissions to ensure the avatar is accessible
             this.ensureImagePermissions(voice.avatar);
-            
-            // Pré-carregar URLs otimizados no cache para os avatares
             this.getOptimizedAvatarUrl(voice.avatar);
           }
         });
         
-        console.log(`Loaded ${this.voices.length} voices for ${lang}:`, this.voices);
-
-        // If a voice was previously selected, find its equivalent in the new language
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          console.log(`Loaded ${this.voices.length} voices for ${lang}`);
+        }
         if (this.selectedVoice) {
           const previousIndex = this.voices.findIndex(v => v.id === this.selectedVoice.id);
           if (previousIndex !== -1) {
@@ -228,18 +233,11 @@ window.CreatePage = {
         }
       } else {
         console.warn(`No voices found for language: ${lang}`);
-        // Check if English translations exist before defaulting to them
         if (window.i18n.translations.en && window.i18n.translations.en.voices) {
-          // Deep clone the voices array to avoid modifying the original data
           this.voices = JSON.parse(JSON.stringify(window.i18n.translations.en.voices || []));
-          
-          // Process avatar URLs to use the image optimization service
           this.voices.forEach(voice => {
             if (voice.avatar && typeof voice.avatar === 'string') {
-              // Apply permissions to ensure the avatar is accessible
               this.ensureImagePermissions(voice.avatar);
-              
-              // Pré-carregar URLs otimizados no cache para os avatares
               this.getOptimizedAvatarUrl(voice.avatar);
             }
           });
@@ -250,37 +248,21 @@ window.CreatePage = {
       }
     },
 
-    // Handle language change events
     handleLanguageChange(lang) {
-      console.log('Language change event received in CreatePage:', lang);
       this.currentLanguage = lang;
-
-      // Update voices for the new language
       this.updateVoicesForLanguage();
-
-      // Update interest suggestions for the new language
       this.updateInterestSuggestions();
-
-      // Debug translations
-      this.debugTranslations();
-
-      // Force re-render
-      this.$forceUpdate();
     },
 
     // Debug translations
     debugTranslations() {
-      console.log('Current language:', this.currentLanguage);
-      console.log('i18n language:', window.i18n.getLanguage());
-      console.log('Translation for create.title:', window.i18n.t('create.title'));
-      console.log('Translation for create.nameLabel:', window.i18n.t('create.nameLabel'));
-      console.log('Available translations:', window.i18n.translations);
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        console.log('Debug - CreatePage initialized with language:', this.currentLanguage);
+      }
     },
 
     selectVoice(voice) {
       this.selectedVoice = voice;
-      // Add a visual feedback when a voice is selected
-      console.log(`Voice selected: ${voice.name}`);
     },
     addInterest(suggestion) {
       const interestText = suggestion;
@@ -429,19 +411,33 @@ window.CreatePage = {
           title: object.title,
           plot: object.plot
         });
-        console.log("Using image prompt:", imagePrompt);
+        
+        // Check if we're in Portuguese and need to extract English prompt
+        let finalImagePrompt = imagePrompt;
+        if (this.currentLanguage === 'pt') {
+          // Extract the English part after "IMPORTANT: THIS PROMPT MUST BE PROCESSED IN ENGLISH"
+          const englishMatch = imagePrompt.match(/IMPORTANT: THIS PROMPT MUST BE PROCESSED IN ENGLISH.*?\n\n(.*)/s);
+          if (englishMatch && englishMatch[1]) {
+            finalImagePrompt = englishMatch[1];
+            console.log("Extracted English prompt for image generation:", finalImagePrompt);
+          }
+        }
+        
+        console.log("Using image prompt:", finalImagePrompt);
 
         let imagePromise;
         try {
           imagePromise = sdk.ai.generateImage({
-            //model: "openai:dall-e-3",
-            model: "replicate:recraft-ai/recraft-v3",
-            prompt: imagePrompt,
+            model: "stability:ultra",
+            prompt: finalImagePrompt,
+            aspect_ratio: "1:1",
             providerOptions: {
-              replicate: {
-                size: "1024x1024",
-                style: "digital_illustration",
-                prompt: imagePrompt
+              stability: {
+                negative_prompt: "ugly, deformed, disfigured, poor quality, low resolution, bad anatomy",
+                style_preset: "fantasy-art", // Using fantasy-art style which is perfect for children's stories
+                output_format: "webp",
+                aspect_ratio: "1:1",
+                seed: Math.floor(Math.random() * 4294967294)
               }
             }
           });
@@ -474,16 +470,19 @@ window.CreatePage = {
           });
           
           this.storyData.story = "";
+          this.streamingText = "";
           let chunkCount = 0;
+          let fullStoryText = "";
+          
           for await (const chunk of storyStream) {
             chunkCount++;
             if (chunkCount === 1) {
               console.log("Received first chunk of story stream");
             }
+            fullStoryText += chunk.text;
             this.streamingText += chunk.text;
-            this.storyData.story += chunk.text;
           }
-          
+          this.storyData.story = fullStoryText;
           console.log(`Story stream completed with ${chunkCount} chunks`);
         } catch (streamError) {
           console.error("Error during story streaming:", streamError);
@@ -525,76 +524,27 @@ window.CreatePage = {
         this.storyData.story = this.formatStoryText(this.storyData.story);
         this.taskStatus.story = "done";
         
-        // Save a text version of the story to prevent sync errors
-        try {
-          const safeName = this.safeFolderName(this.storyData.title);
-          
-          // Ensure all content is properly converted to strings
-          const titleText = String(this.storyData.title || "");
-          const storyText = String(this.storyData.story || "");
-          const fullText = `${titleText}\n\n${storyText}`;
-          
-          // Extract user ID from existing file paths if available, or use a default path
-          let userPath = "";
-          if (sdk.user && sdk.user.id) {
-            userPath = `/users/${sdk.user.id}`;
-          } else if (this.storyImage && this.storyImage.includes('/users/')) {
-            // Extract user path from image URL
-            const match = this.storyImage.match(/\/users\/[a-zA-Z0-9-]+/);
-            if (match) {
-              userPath = match[0];
-            }
-          }
-          
-          // Create an array of possible file paths that might be accessed
-          const possiblePaths = [];
-          
-          // Base path
-          possiblePaths.push(userPath ? `${userPath}/Documents/${safeName}Story.txt` : `~/Documents/${safeName}Story.txt`);
-          
-          // Also try variations with different formatting
-          possiblePaths.push(userPath ? `${userPath}/Documents/${safeName}.txt` : `~/Documents/${safeName}.txt`);
-          possiblePaths.push(userPath ? `${userPath}/Documents/${safeName}_1.txt` : `~/Documents/${safeName}_1.txt`);
-          possiblePaths.push(userPath ? `${userPath}/Documents/${safeName}_2.txt` : `~/Documents/${safeName}_2.txt`);
-          possiblePaths.push(userPath ? `${userPath}/Documents/historia_${safeName}.txt` : `~/Documents/historia_${safeName}.txt`);
-          
-          // Try to save to all possible paths
-          for (const path of possiblePaths) {
-            try {
-              console.log("Saving story text to:", path);
-              await sdk.fs.write(path, fullText);
-              console.log("Successfully saved story text file at:", path);
-              
-              // Set permissions
-              try {
-                await this.setFilePermissions(path);
-              } catch (permError) {
-                console.log(`Error setting permissions for ${path} (non-critical):`, permError);
-              }
-            } catch (writeError) {
-              console.log(`Error saving to ${path} (trying next path):`, writeError);
-            }
-          }
-        } catch (textFileError) {
-          console.log("Error in text file saving process (non-critical):", textFileError);
-          // This is non-critical so we continue even if it fails
-        }
-
-        // Tente obter o resultado da imagem, mas lide com falhas graciosamente
         try {
           const imageResult = await imagePromise;
           console.log("Raw image generation result:", JSON.stringify(imageResult));
-          console.log("partes do imageResult", imageResult.images);
-
+          
           if (imageResult.error) {
             throw new Error(imageResult.error);
           }
-
-          // ALWAYS use the Replicate URL if available
+          
+          // For stability:ultra model, the response structure is different from Replicate
           if (imageResult.images && imageResult.images.length > 0) {
-            // Use the Replicate URL directly - this is what we want
-            this.storyImage = imageResult.images[0];
-            console.log("Using Replicate URL for image:", this.storyImage);
+            // For Stability, images is an array of base64 strings
+            if (typeof imageResult.images[0] === 'string') {
+              // This is a base64 string from Stability
+              console.log("Using Stability base64 image data");
+              // The filepath should also be available
+              this.storyImage = `https://fs.webdraw.com${imageResult.filepath.startsWith('/') ? '' : '/'}${imageResult.filepath}`;
+            } else {
+              // Use the Replicate URL directly (if this was a Replicate response)
+              this.storyImage = imageResult.images[0];
+              console.log("Using direct URL for image:", this.storyImage);
+            }
           } else if (imageResult.url) {
             // Fallback to url if available
             this.storyImage = imageResult.url;
@@ -615,8 +565,9 @@ window.CreatePage = {
           
           // Set permissions for the image file immediately - ONLY for the local file
           try {
-            if (localImagePath && !this.storyImage.includes('replicate.delivery')) {
-              await this.setFilePermissions(localImagePath);
+            if (localImagePath) {
+              // Pass true for skipExistsCheck because the file might not exist yet
+              await this.setFilePermissions(localImagePath, true);
               console.log("Set permissions for local image file:", localImagePath);
             }
           } catch (permError) {
@@ -1173,6 +1124,41 @@ window.CreatePage = {
 
         const excerpt = this.generateExcerpt(this.storyData.story);
 
+        // Comentando a criação de arquivos .txt que causa erros de sincronização "NoSuchKey"
+        /* 
+        // Create an empty text file to prevent NoSuchKey errors when the system tries to sync it
+        try {
+          // Create file without prefix
+          const textFilePath = `~/Documents/${safeName}.txt`;
+          console.log("Creating text file with plot to prevent sync errors:", textFilePath);
+          
+          // Write the plot to the file instead of just a comment
+          const fileContent = `# ${this.storyData.title}\n\n${this.storyData.plot}\n\n---\n\nNote: This file contains only the plot summary. The full story content is stored in the JSON file in the AI Storyteller directory.`;
+          
+          await sdk.fs.write(textFilePath, fileContent);
+          console.log("Text file with plot created successfully");
+          
+          // Set permissions for this file
+          await this.setFilePermissions(textFilePath, true);
+          console.log("Permissions set for text file");
+          
+          // Create file with "historia_" prefix
+          const prefixedTextFilePath = `~/Documents/historia_${safeName}.txt`;
+          console.log("Creating text file with 'historia_' prefix:", prefixedTextFilePath);
+          
+          // Use the same content for the prefixed file
+          await sdk.fs.write(prefixedTextFilePath, fileContent);
+          console.log("Prefixed text file with plot created successfully");
+          
+          // Set permissions for the prefixed file
+          await this.setFilePermissions(prefixedTextFilePath, true);
+          console.log("Permissions set for prefixed text file");
+        } catch (textFileError) {
+          // If we can't create the text file, just log it but continue
+          console.warn("Could not create text files with plot:", textFileError);
+        }
+        */
+
         console.log("Debug - Story image URL before processing:", this.storyImage);
 
         let imageFilepath = this.storyImage;
@@ -1185,14 +1171,20 @@ window.CreatePage = {
           if (this.storyImage.includes(this.BASE_FS_URL)) {
             imageFilepath = this.storyImage.replace(this.BASE_FS_URL, '');
             console.log("Extracted image filepath from URL:", imageFilepath);
-            // Set permissions for local files only
-            await this.setFilePermissions(imageFilepath);
+            // Set permissions for local files only using safeFileOperation
+            await safeFileOperation(imageFilepath, async () => {
+              // Usar skipExistsCheck=true porque o arquivo pode ainda não estar sincronizado
+              await this.setFilePermissions(imageFilepath, true);
+            });
           } else if (!this.storyImage.startsWith('http')) {
             // For local paths that don't have full URL
             imageFilepath = this.storyImage;
             console.log("Using image filepath:", imageFilepath);
-            // Set permissions for local files
-            await this.setFilePermissions(imageFilepath);
+            // Set permissions for local files using safeFileOperation
+            await safeFileOperation(imageFilepath, async () => {
+              // Usar skipExistsCheck=true porque o arquivo pode ainda não estar sincronizado
+              await this.setFilePermissions(imageFilepath, true);
+            });
           }
         } else {
           console.warn("No story image URL available");
@@ -1208,8 +1200,11 @@ window.CreatePage = {
             console.log("Using full audio URL as filepath:", audioFilepath);
           }
 
-          // Set permissions for audio file
-          await this.setFilePermissions(audioFilepath);
+          // Set permissions for audio file using safeFileOperation
+          await safeFileOperation(audioFilepath, async () => {
+            // Usar skipExistsCheck=true porque o arquivo pode ainda não estar sincronizado
+            await this.setFilePermissions(audioFilepath, true);
+          });
         } else {
           console.warn("No audio source URL available");
         }
@@ -1263,8 +1258,10 @@ window.CreatePage = {
             console.error("DEBUG: Verification failed - Could not read the file after writing:", verifyError);
           }
 
-          // Set permissions for story JSON file
-          await this.setFilePermissions(filename);
+          // Set permissions for story JSON file using safeFileOperation
+          await safeFileOperation(filename, async () => {
+            await this.setFilePermissions(filename);
+          });
 
           console.log("Story saved successfully!");
 
@@ -1292,8 +1289,8 @@ window.CreatePage = {
       }
     },
 
-    // Helper method to set file permissions
-    async setFilePermissions(filepath) {
+    // Replace the setFilePermissions method
+    async setFilePermissions(filepath, skipExistsCheck = false) {
       if (!filepath) return;
 
       try {
@@ -1320,6 +1317,14 @@ window.CreatePage = {
           console.log("DEBUG: Removed extra slash, now:", cleanPath);
         }
 
+        if (!skipExistsCheck) {
+          const exists = await sdk.fs.exists(cleanPath);
+          if (!exists) {
+            console.warn(`File does not exist, cannot set permissions: ${cleanPath}`);
+            return;
+          }
+        }
+
         console.log(`Setting permissions for: ${cleanPath}`);
         console.log("DEBUG: SDK.fs.chmod available?", !!(sdk && sdk.fs && typeof sdk.fs.chmod === 'function'));
 
@@ -1328,16 +1333,19 @@ window.CreatePage = {
           await sdk.fs.chmod(cleanPath, 0o644);
           console.log(`Successfully set permissions (0o644) for: ${cleanPath}`);
         } catch (chmodError) {
-          console.warn(`Could not set file permissions with chmod for ${cleanPath}:`, chmodError);
-          console.log("DEBUG: Error details:", chmodError.message, chmodError.stack);
+          if (skipExistsCheck && chmodError.message && chmodError.message.includes('no such file')) {
+            console.log(`File not ready yet for permission setting: ${cleanPath} (this is expected)`);
+          } else {
+            console.warn(`Could not set file permissions with chmod for ${cleanPath}:`, chmodError);
+            console.log("DEBUG: Error details:", chmodError.message, chmodError.stack);
+          }
 
           // Try again with a different approach if needed
           try {
             console.log("DEBUG: Trying alternative chmod approach");
             await sdk.fs.chmod(cleanPath, 0o644);
-            console.log(`Successfully set permissions using alternative approach for: ${cleanPath}`);
-          } catch (altError) {
-            console.warn("Alternative permission setting also failed:", altError);
+          } catch (retryError) {
+            // Ignoring retry errors
           }
         }
       } catch (error) {
@@ -1511,8 +1519,7 @@ window.CreatePage = {
     // Get interest suggestions for the current language
     updateInterestSuggestions() {
       const lang = this.currentLanguage;
-      console.log(`Updating interest suggestions for language: ${lang}`);
-
+      
       // Check if window.i18n and translations exist
       if (!window.i18n || !window.i18n.translations) {
         console.warn('Translations not loaded yet, will retry later');
@@ -1524,7 +1531,11 @@ window.CreatePage = {
       // Check if the current language exists in translations
       if (lang && window.i18n.translations[lang] && window.i18n.translations[lang].interestSuggestions) {
         this.interestSuggestions = window.i18n.translations[lang].interestSuggestions;
-        console.log(`Loaded ${this.interestSuggestions.length} interest suggestions for ${lang}:`, this.interestSuggestions);
+        
+        // Only log in development environment
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          console.log(`Loaded ${this.interestSuggestions.length} interest suggestions for ${lang}`);
+        }
       } else {
         console.warn(`No interest suggestions found for language: ${lang}`);
         // Check if English translations exist before defaulting to them
@@ -1545,7 +1556,6 @@ window.CreatePage = {
       }
     },
     preloadVoiceAudios() {
-      console.log("Starting voice preview audio preloading...");
       if (!this.voices || this.voices.length === 0) {
         console.log("No voices to preload audio for");
         return;
@@ -1577,9 +1587,6 @@ window.CreatePage = {
           // Set preload attribute to auto
           audioElement.preload = "auto";
 
-          // Log preload start
-          console.log(`Started preloading audio for voice "${voice.name}": ${audioUrl}`);
-
           // Mark as being loaded
           voice.isLoading = true;
 
@@ -1609,7 +1616,29 @@ window.CreatePage = {
     },
 
     previewAudioReady(voice) {
-      console.log(`Preview audio for "${voice.name}" loaded and ready to play`);
+      this._loadedAudioPreviews.push(voice.name);
+      
+      // Limpar qualquer timeout existente para evitar logs duplicados
+      if (this._previewLogTimeout) {
+        clearTimeout(this._previewLogTimeout);
+        this._previewLogTimeout = null;
+      }
+      
+      if (this._loadedAudioPreviews.length >= 4) {
+        console.log(`Preview audio loaded and ready to play for: ${this._loadedAudioPreviews.join(", ")}`);
+        this._loadedAudioPreviews = [];
+      } 
+      // Caso contrário, configurar um timeout para mostrar as vozes acumuladas
+      else {
+        this._previewLogTimeout = setTimeout(() => {
+          if (this._loadedAudioPreviews.length > 0) {
+            console.log(`Preview audio loaded and ready to play for: ${this._loadedAudioPreviews.join(", ")}`);
+            this._loadedAudioPreviews = [];
+          }
+          this._previewLogTimeout = null;
+        }, 2000);
+      }
+      
       voice.isLoading = false;
 
       // Mark as preloaded
@@ -1623,7 +1652,6 @@ window.CreatePage = {
     },
 
     previewAudioEnded(voice) {
-      console.log(`Preview audio for "${voice.name}" playback completed`);
       this.isPreviewPlaying = null;
     },
 

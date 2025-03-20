@@ -279,20 +279,27 @@ window.StoryPage = {
             this.loading = false;
         }
         
-        // Check if the translations file exists
-        await this.checkTranslationsFile();
+        // Check if the translations file exists - não precisamos de logs no início
+        await this.checkTranslationsFile(true);
         
         // Check if the user is an admin (can access admin page)
-        const adminCheckResult = await this.checkIfAdmin();
-        console.log("Admin check result:", adminCheckResult);
+        const adminCheckResult = await this.checkIfAdmin(true);
+        // Apenas um log simplificado
         this.isAdmin = adminCheckResult;
-        console.log("Final admin status:", this.isAdmin);
         
         // Periodically check admin status
         this.adminCheckInterval = setInterval(async () => {
-            await this.checkTranslationsFile();
-            const periodicAdminCheck = await this.checkIfAdmin();
-            console.log("Periodic admin check result:", periodicAdminCheck);
+            // Se já temos acesso de admin, não precisamos logar nada
+            const prevAdminStatus = this.isAdmin;
+            
+            await this.checkTranslationsFile(prevAdminStatus);
+            const periodicAdminCheck = await this.checkIfAdmin(prevAdminStatus);
+            
+            // Somente logar se houver uma mudança no status ou se não for admin
+            if (!prevAdminStatus || prevAdminStatus !== periodicAdminCheck) {
+                console.log("Periodic admin check result:", periodicAdminCheck);
+            }
+            
             this.isAdmin = periodicAdminCheck;
         }, 30000); // Check every 30 seconds
         
@@ -321,7 +328,7 @@ window.StoryPage = {
         },
         
         // Check if the translations file exists
-        async checkTranslationsFile() {
+        async checkTranslationsFile(silentCheck = false) {
             if (!this.sdkAvailable) {
                 this.translationsFileExists = false;
                 return;
@@ -333,7 +340,11 @@ window.StoryPage = {
                 if (typeof sdk.fs.exists === 'function') {
                     const exists = await sdk.fs.exists(translatorPath);
                     this.translationsFileExists = exists;
-                    console.log("Translations file exists:", exists);
+                    
+                    // Somente logar se não for uma verificação silenciosa
+                    if (!silentCheck) {
+                        console.log("Translations file exists:", exists);
+                    }
                 } else {
                     // If exists method is not available, try to read the file
                     try {
@@ -344,30 +355,41 @@ window.StoryPage = {
                     }
                 }
             } catch (error) {
+                // Logar erros mesmo em verificações silenciosas
                 console.warn("Error checking translations file:", error);
                 this.translationsFileExists = false;
             }
         },
         
         // Check if the user is an admin
-        async checkIfAdmin() {
-            console.log("Checking admin status...");
+        async checkIfAdmin(silentCheck = false) {
+            // Somente logar se não for uma verificação silenciosa
+            if (!silentCheck) {
+                console.log("Checking admin status...");
+            }
             
             // First check if AdminPage is defined
             if (typeof window.AdminPage !== 'undefined') {
-                console.log("Admin check: AdminPage is defined");
+                // Somente logar se não for uma verificação silenciosa
+                if (!silentCheck) {
+                    console.log("Admin check: AdminPage is defined");
+                }
                 return true;
             }
             
             // Check if SDK is properly initialized
             if (!this.sdkAvailable) {
-                console.warn("Admin check: SDK is not available");
+                if (!silentCheck) {
+                    console.warn("Admin check: SDK is not available");
+                }
                 return false;
             }
             
             // Check if translations file exists
             if (!this.translationsFileExists) {
-                console.warn("Admin check: translations.json does not exist");
+                if (!silentCheck) {
+                    console.warn("Admin check: translations.json does not exist");
+                }
                 return false;
             }
             
@@ -382,24 +404,34 @@ window.StoryPage = {
                     
                     // Ensure the content is valid JSON and not empty
                     if (!content) {
-                        console.warn("Admin check: translations.json is empty");
+                        if (!silentCheck) {
+                            console.warn("Admin check: translations.json is empty");
+                        }
                         return false;
                     }
                     
                     try {
                         JSON.parse(content);
-                        console.log("Admin check: Successfully read and parsed translations.json");
+                        if (!silentCheck) {
+                            console.log("Admin check: Successfully read and parsed translations.json");
+                        }
                         return true; // Return true if we can read and parse the file
                     } catch (parseError) {
-                        console.warn("Admin check: translations.json contains invalid JSON:", parseError);
+                        if (!silentCheck) {
+                            console.warn("Admin check: translations.json contains invalid JSON:", parseError);
+                        }
                         return false;
                     }
                 } catch (readError) {
-                    console.warn("Error reading translations.json:", readError);
+                    if (!silentCheck) {
+                        console.warn("Error reading translations.json:", readError);
+                    }
                     return false;
                 }
             } catch (error) {
-                console.warn("User doesn't have admin access:", error);
+                if (!silentCheck) {
+                    console.warn("User doesn't have admin access:", error);
+                }
                 return false;
             }
             
