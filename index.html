@@ -148,67 +148,6 @@
     <script type="module">
         import './app.js';
         
-        const preloadSampleAudios = () => {
-            console.log("Iniciando pré-carregamento ativo dos áudios de exemplo...");
-            
-            const sampleAudios = [
-                "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-grandpa-pt2.mp3",
-                "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-grandma-pt.mp3",
-                "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-aunt-pt.mp3",
-                "https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-grandpa-pt.mp3"
-            ];
-            
-            window._preloadedAudios = {};
-            
-            sampleAudios.forEach(url => {
-                const audio = new Audio();
-                
-                audio.addEventListener('canplaythrough', () => {
-                    window._preloadedAudios[url] = {
-                        loaded: true,
-                        element: audio
-                    };
-                    console.log(`Áudio pré-carregado com sucesso: ${url}`);
-                    
-                    checkAllLoaded();
-                }, { once: true });
-                
-                audio.addEventListener('error', (error) => {
-                    window._preloadedAudios[url] = {
-                        loaded: false,
-                        error: error
-                    };
-                    console.error(`Erro ao pré-carregar áudio: ${url}`, error);
-                    
-                    checkAllLoaded();
-                }, { once: true });
-                
-                audio.crossOrigin = "anonymous";
-                
-                audio.src = url;
-                audio.load();
-                
-                window._preloadedAudios[url] = {
-                    loaded: false,
-                    loading: true
-                };
-            });
-            
-            function checkAllLoaded() {
-                const total = sampleAudios.length;
-                const loaded = Object.values(window._preloadedAudios).filter(a => a.loaded).length;
-                const failed = Object.values(window._preloadedAudios).filter(a => a.error).length;
-                
-                console.log(`Progresso de pré-carregamento de áudio: ${loaded} carregados, ${failed} falhas, de ${total} total`);
-                
-                if (loaded + failed === total) {
-                    console.log("Pré-carregamento de áudios concluído");
-                }
-            }
-        };
-        
-        preloadSampleAudios();
-        
         document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 const initialLoader = document.getElementById('initial-loader');

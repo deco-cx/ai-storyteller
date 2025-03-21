@@ -214,11 +214,17 @@ window.IndexPage = {
       _loggedAudios: {}, // Track already logged audios
       preloadedAudios: {}, // Track preloaded audio files
       _processedImagePaths: {}, // Track image paths that already had permissions processed
+      _preloadAttempted: false, // Track whether preloading has been attempted for the current examples
+      _componentMounted: true // Track whether the component is mounted
     };
   },
   async mounted() {
     console.log("IndexPage mounted");
 
+    // Initialize flags
+    this._preloadAttempted = false;
+    this._componentMounted = true;
+    
     // Check for custom translator file
     await this.checkTranslatorFile();
 
@@ -227,25 +233,19 @@ window.IndexPage = {
     if (window.i18n && window.i18n.translations && window.i18n.translations[currentLang]) {
       this.examples = window.i18n.translations[currentLang].examples || [];
       
+      // Load examples with proper properties
       if (this.examples && this.examples.length > 0) {
-        console.log("Examples loaded:", this.examples.length);
-        this.examples.forEach((example, idx) => {
-          console.log("Example", idx + ":", example.title, "- Audio:", example.audio);
-        });
-      } else {
-        console.log("No examples found in translations");
+        this.initializeExamples();
+        
+        // Fix permissions for example audio files
+        await this.fixExampleAudioPermissions();
+        
+        // Preload audio files
+        this.preloadAudios();
       }
     } else {
       console.log("Translations not fully loaded yet");
       this.examples = [];
-    }
-
-    // Fix permissions for example audio files
-    await this.fixExampleAudioPermissions();
-
-    // Start preloading audio files for examples
-    if (this.examples && this.examples.length > 0) {
-      this.preloadAudios();
     }
 
     try {
@@ -276,10 +276,16 @@ window.IndexPage = {
             translationsContent ? translationsContent.substring(0, 500) : "N/A",
           );
         } catch (readError) {
-          console.log(
-            "Translator file doesn't exist yet:",
-            readError.message,
-          );
+          // Apenas loga se for um erro diferente de "não existe" ou se for a primeira execução
+          if (!window._translatorFileStartupChecked || !readError.message.includes("no such file")) {
+            console.log(
+              `[${new Date().toLocaleTimeString()}] Translator file doesn't exist yet:`,
+              readError.message,
+            );
+          }
+          
+          // Marcar que já verificamos o arquivo na inicialização
+          window._translatorFileStartupChecked = true;
         }
       } else {
         console.log(
@@ -290,93 +296,16 @@ window.IndexPage = {
       console.error("Error reading translator file on startup:", error);
     }
 
-    // Get examples from translations for the current language
-    try {
-      const currentLang = window.i18n.getLanguage();
-
-      // Check if translations are loaded
-      if (!window.i18n || !window.i18n.translations) {
-        console.log("Translations not loaded yet, will wait for them");
-        // Set up a listener for translations loaded event
-        if (window.eventBus) {
-          window.eventBus.on(
-            "translations-loaded",
-            this.handleTranslationsLoaded,
-          );
-        }
-        return;
-      }
-
-      if (
-        window.i18n.translations &&
-        window.i18n.translations[currentLang] &&
-        window.i18n.translations[currentLang].examples
-      ) {
-        this.examples = window.i18n.translations[currentLang].examples;
-
-        // Debug: Log examples to check for missing audio properties
-        console.log("Examples loaded:", this.examples.length);
-        this.examples.forEach((example, index) => {
-          console.log({ example });
-          console.log(
-            `Example ${index}: "${example.title}" - Audio: ${
-              example.audio || "MISSING"
-            }`,
-          );
-        });
-
-        // Preload all audio files
-        this.preloadAudios();
-      } else if (
-        window.i18n.translations && window.i18n.translations.en &&
-        window.i18n.translations.en.examples
-      ) {
-        // Fallback to English if current language doesn't have examples
-        this.examples = window.i18n.translations.en.examples;
-
-        // Debug: Log examples to check for missing audio properties
-        console.log(
-          "Using English examples fallback:",
-          this.examples.length,
+    // Check if translations are loaded
+    if (!window.i18n || !window.i18n.translations) {
+      console.log("Translations not loaded yet, will wait for them");
+      // Set up a listener for translations loaded event
+      if (window.eventBus) {
+        window.eventBus.on(
+          "translations-loaded",
+          this.handleTranslationsLoaded,
         );
-        this.examples.forEach((example, index) => {
-          console.log(
-            `Example ${index}: "${example.title}" - Audio: ${
-              example.audio || "MISSING"
-            }`,
-          );
-        });
-
-        // Preload all audio files
-        this.preloadAudios();
-      } else {
-        console.error("No examples found in translations");
-        this.examples = [];
       }
-
-      // Ensure all examples have the required properties
-      this.examples = this.examples.map((example, index) => {
-        // Keep the original images for each example instead of assigning based on index
-        return {
-          ...example,
-          isPlaying: false,
-          loading: false,
-          progress: "0%",
-          // Ensure audio property exists
-          audio: example.audio || null,
-          // Don't modify images, just ensure they exist
-          image: example.image ||
-            `/assets/image/ex${index + 1}${index === 1 ? ".png" : ".webp"}`,
-          coverImage: example.coverImage || example.image ||
-            `/assets/image/ex${index + 1}${index === 1 ? ".png" : ".webp"}`,
-        };
-      });
-
-      this._loggedImages = {};
-      this._loggedAudios = {};
-    } catch (error) {
-      console.error("Error setting up examples:", error);
-      this.examples = [];
     }
 
     // Check if we're in the preview environment
@@ -407,6 +336,29 @@ window.IndexPage = {
   methods: {
     handleLogin() {
       sdk.redirectToLogin({ appReturnUrl: "?goToCreate=true" });
+    },
+
+    // Initialize examples with additional properties they need
+    initializeExamples() {
+      this.examples = this.examples.map((example, index) => {
+        return {
+          ...example,
+          isPlaying: false,
+          loading: false,
+          progress: "0%",
+          // Ensure audio property exists
+          audio: example.audio || null,
+          // Don't modify images, just ensure they exist
+          image: example.image ||
+            `/assets/image/ex${index + 1}${index === 1 ? ".png" : ".webp"}`,
+          coverImage: example.coverImage || example.image ||
+            `/assets/image/ex${index + 1}${index === 1 ? ".png" : ".webp"}`,
+        };
+      });
+
+      // Reset tracking objects
+      this._loggedImages = {};
+      this._loggedAudios = {};
     },
 
     // Ensure all necessary translation keys exist
@@ -531,88 +483,47 @@ window.IndexPage = {
 
     // Handle translations loaded event
     handleTranslationsLoaded() {
-      console.log(
-        "Translations loaded/updated, refreshing IndexPage component",
-      );
-
-      // Ensure all necessary translation keys exist
       this.ensureTranslationKeys();
-
-      // Update examples if needed
       try {
         const currentLang = window.i18n.getLanguage();
-
+        
+        // Check if we already preloaded for this set of examples
+        const needsPreload = !this._preloadAttempted;
+        
+        // Get examples from either current language or English fallback
         if (
-          window.i18n.translations &&
-          window.i18n.translations[currentLang] &&
+          window.i18n.translations && window.i18n.translations[currentLang] &&
           window.i18n.translations[currentLang].examples
         ) {
+          // Update examples from translations
           this.examples = window.i18n.translations[currentLang].examples;
-
-          // Debug: Log examples to check for missing audio properties
-          console.log("Examples updated:", this.examples.length);
-          this.examples.forEach((example, index) => {
-            console.log(
-              `Example ${index}: "${example.title}" - Audio: ${
-                example.audio || "MISSING"
-              }`,
-            );
-          });
         } else if (
           window.i18n.translations && window.i18n.translations.en &&
           window.i18n.translations.en.examples
         ) {
           // Fallback to English if current language doesn't have examples
           this.examples = window.i18n.translations.en.examples;
-
-          // Debug: Log examples to check for missing audio properties
-          console.log(
-            "Examples updated (fallback to English):",
-            this.examples.length,
-          );
-          this.examples.forEach((example, index) => {
-            console.log(
-              `Example ${index}: "${example.title}" - Audio: ${
-                example.audio || "MISSING"
-              }`,
-            );
-          });
+          console.log("Using English examples fallback:", this.examples.length);
+        } else {
+          console.error("No examples found in translations");
+          this.examples = [];
         }
 
-        // Ensure all examples have the required properties
-        this.examples = this.examples.map((example, index) => {
-          // Keep the original images for each example instead of assigning based on index
-          return {
-            ...example,
-            isPlaying: false,
-            loading: false,
-            progress: "0%",
-            // Ensure audio property exists
-            audio: example.audio || null,
-            // Don't modify images, just ensure they exist
-            image: example.image ||
-              `/assets/image/ex${index + 1}${index === 1 ? ".png" : ".webp"}`,
-            coverImage: example.coverImage || example.image ||
-              `/assets/image/ex${index + 1}${index === 1 ? ".png" : ".webp"}`,
-          };
-        });
-
-        // Reset tracking objects when examples change
-        this._loggedImages = {};
-        this._loggedAudios = {};
-
-        // Preload audio files after examples are updated
-        this.preloadAudios();
+        // Initialize examples with required properties
+        if (this.examples && this.examples.length > 0) {
+          this.initializeExamples();
+          
+          // Only preload audio if we haven't already attempted for this set
+          if (needsPreload) {
+            this.preloadAudios();
+          }
+        }
       } catch (error) {
         console.error(
           "Error updating examples after translations loaded:",
           error,
         );
       }
-
-      // Force component re-render by incrementing the refresh key
-      this.refreshKey++;
-      this.$forceUpdate();
     },
     getOptimizedImageUrl(url, width, height) {
       if (!url || url.startsWith('data:')) return url;
@@ -813,7 +724,7 @@ window.IndexPage = {
             audioUrl.startsWith("http") &&
             !audioUrl.includes(window.location.hostname)
           ) {
-            audioElement.crossOrigin = "anonymous";
+            audioLoader.crossOrigin = "anonymous";
           }
 
           audioElement.src = audioUrl;
@@ -859,63 +770,74 @@ window.IndexPage = {
       example.progress = "0%";
     },
     logAudioLoaded(title, originalSrc) {
-      // Only log once for each audio
-      if (!this._loggedAudios[originalSrc]) {
-        console.log(`Audio loaded successfully: "${title}"`);
-        this._loggedAudios[originalSrc] = true;
+      // Don't log anything here - preloadAudios will handle consolidated logging
+      if (this._loggedAudios[originalSrc]) {
+        return;
       }
+      this._loggedAudios[originalSrc] = {
+        loaded: true,
+        title
+      };
     },
 
     logAudioError(title, originalSrc, error) {
-      console.error(`Failed to load audio: "${title}"`, {
-        source: originalSrc,
-        error: error ? error.message : "Unknown error",
-      });
+      console.error(`Error loading audio for "${title}" (${originalSrc}):`, error);
+      this._loggedAudios[originalSrc] = {
+        loaded: false,
+        error,
+        title
+      };
     },
     preloadAudios() {
-      console.log("Starting audio preloading in component...");
-      if (!this.examples || this.examples.length === 0) {
-        console.log("No examples to preload audio for");
+      // Skip if already attempted for the current set of examples
+      if (this._preloadAttempted) {
+        console.log("Audio preloading already attempted for current examples - skipping");
         return;
       }
 
-      const globalPreloadedAudios = window._preloadedAudios || {};
-      console.log(
-        "Checking for globally preloaded audios:",
-        Object.keys(globalPreloadedAudios).length,
-      );
+      if (!this.examples || this.examples.length === 0) {
+        console.log("No examples to preload audio for");
+        this._preloadAttempted = true;
+        return;
+      }
+
+      // Set flag to avoid duplicate preloading
+      this._preloadAttempted = true;
+      
+      console.log("Starting audio preloading...");
+      
+      // Initialize _componentMounted if it doesn't exist
+      if (this._componentMounted === undefined) {
+        this._componentMounted = true;
+      }
+      
+      // Collect all titles to be preloaded at once
+      const titlesToPreload = this.examples
+        .filter(example => example.audio)
+        .map(example => example.title);
+      
+      if (titlesToPreload.length === 0) {
+        console.log("No audio files to preload in the examples");
+        return;
+      }
+      
+      console.log("Preloading audio for examples:", titlesToPreload.join(", "));
 
       const loadPromises = [];
 
       this.examples.forEach((example, index) => {
+        // Stop processing if component is unmounting
+        if (!this._componentMounted) return;
+        
         if (!example.audio) {
-          console.log(
-            `Example ${index}: "${example.title}" - No audio to preload`,
-          );
           return;
         }
 
         try {
           const audioUrl = example.audio;
 
-          if (
-            globalPreloadedAudios[audioUrl] &&
-            globalPreloadedAudios[audioUrl].loaded
-          ) {
-            console.log(
-              `Using globally preloaded audio for "${example.title}"`,
-            );
-            this.preloadedAudios[audioUrl] = {
-              loaded: true,
-              element: globalPreloadedAudios[audioUrl].element,
-            };
-            return;
-          }
-
-          if (this.preloadedAudios[audioUrl]) {
-            console.log(
-              `Audio for "${example.title}" already preloaded`,
-            );
+          if (this.preloadedAudios[audioUrl] && this.preloadedAudios[audioUrl].loaded) {
+            // Already preloaded in this component
             return;
           }
 
@@ -923,9 +845,12 @@ window.IndexPage = {
 
           const loadPromise = new Promise((resolve, reject) => {
             audioLoader.addEventListener("canplaythrough", () => {
-              console.log(
-                `Audio preloaded successfully: "${example.title}"`,
-              );
+              // Check if component is still mounted
+              if (!this._componentMounted) {
+                resolve("component_unmounted");
+                return;
+              }
+              
               this.preloadedAudios[audioUrl] = {
                 loaded: true,
                 element: audioLoader,
@@ -934,6 +859,12 @@ window.IndexPage = {
             }, { once: true });
 
             audioLoader.addEventListener("error", (error) => {
+              // Check if component is still mounted
+              if (!this._componentMounted) {
+                resolve("component_unmounted");
+                return;
+              }
+              
               console.error(
                 `Error preloading audio for "${example.title}":`,
                 error,
@@ -947,6 +878,12 @@ window.IndexPage = {
             }, { once: true });
 
             setTimeout(() => {
+              // Check if component is still mounted
+              if (!this._componentMounted) {
+                resolve("component_unmounted");
+                return;
+              }
+              
               if (!this.preloadedAudios[audioUrl]?.loaded) {
                 console.warn(
                   `Timeout preloading audio for "${example.title}"`,
@@ -972,10 +909,6 @@ window.IndexPage = {
 
           audioLoader.src = audioUrl;
           audioLoader.load();
-
-          console.log(
-            `Started preloading audio for "${example.title}": ${audioUrl}`,
-          );
         } catch (error) {
           console.error(
             `Exception while trying to preload audio for "${example.title}":`,
@@ -985,13 +918,17 @@ window.IndexPage = {
       });
 
       Promise.allSettled(loadPromises).then((results) => {
-        console.log(
-          "All audio preloading attempts completed:",
-          results.filter((r) => r.status === "fulfilled").length,
-          "successful,",
-          results.filter((r) => r.status === "rejected").length,
-          "failed",
-        );
+        // Don't process results if component is unmounting or unmounted
+        if (!this._componentMounted) return;
+        
+        // List all successfully preloaded titles in one log
+        const loadedTitles = this.examples
+          .filter(ex => ex.audio && this.preloadedAudios[ex.audio]?.loaded)
+          .map(ex => ex.title);
+          
+        if (loadedTitles.length > 0) {
+          console.log("Successfully preloaded audio for:", loadedTitles.join(", "));
+        }
       });
     },
     handleAudioError(example, audioElement, audioUrl, error) {
@@ -1226,15 +1163,28 @@ window.IndexPage = {
         "/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-uncle-jose.mp3",
       ];
       
-      console.log("Fixing permissions for example audio files...");
+      // Only log once for all audio files, not for each file
+      console.log("Setting permissions for example audio files...");
+      
+      let successCount = 0;
+      let failedFiles = [];
       
       for (const filePath of audioFiles) {
         try {
           await sdk.fs.chmod(filePath, 0o644);
-          console.log(`Successfully set permissions (0o644) for audio file: ${filePath}`);
+          successCount++;
         } catch (error) {
-          console.warn(`Could not set file permissions for ${filePath}:`, error);
+          failedFiles.push(filePath);
         }
+      }
+      
+      // Log a summary instead of individual messages
+      if (successCount > 0) {
+        console.log(`Successfully set permissions for ${successCount} audio files`);
+      }
+      
+      if (failedFiles.length > 0) {
+        console.warn(`Could not set permissions for ${failedFiles.length} files (likely don't exist)`);
       }
     },
     async checkTranslatorFile() {
@@ -1254,10 +1204,16 @@ window.IndexPage = {
               window.i18n.updateTranslations(customTranslations);
             }
           } catch (readError) {
-            console.log(
-              "Translator file doesn't exist or can't be read:",
-              readError.message,
-            );
+            // Apenas loga se for um erro diferente de "não existe" ou se for a primeira execução
+            if (!window._translatorFileChecked || !readError.message.includes("no such file")) {
+              console.log(
+                `[${new Date().toLocaleTimeString()}] Translator file doesn't exist or can't be read:`,
+                readError.message,
+              );
+            }
+            
+            // Marcar que já verificamos o arquivo uma vez
+            window._translatorFileChecked = true;
           }
         } else {
           console.log(
@@ -1270,6 +1226,9 @@ window.IndexPage = {
     },
   },
   beforeUnmount() {
+    // Signal that component is unmounting to cancel preloading operations
+    this._componentMounted = false;
+    
     if (window.eventBus && window.eventBus.events) {
       if (window.eventBus.events["translations-loaded"]) {
         const index = window.eventBus.events["translations-loaded"]
