@@ -256,9 +256,11 @@ window.CreatePage = {
 
     // Debug translations
     debugTranslations() {
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        console.log('Debug - CreatePage initialized with language:', this.currentLanguage);
-      }
+      console.log('Current language:', this.currentLanguage);
+      console.log('i18n language:', window.i18n.getLanguage());
+      console.log('Translation for create.title:', window.i18n.t('create.title'));
+      console.log('Translation for create.nameLabel:', window.i18n.t('create.nameLabel'));
+      console.log('Available translations:', window.i18n.translations);
     },
 
     selectVoice(voice) {
