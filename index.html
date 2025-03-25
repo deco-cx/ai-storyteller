@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <base href="/">
-    <title>AI Storytime: Create Stories with Your Child's Imagination</title>
+    <title>AI Storytime: Crie histórias com a imaginação do seu filho</title>
     <!-- Preloading Audio Files -->
     <!-- English audio files -->
     <link rel="preload" href="https://fs.webdraw.com/users/043b6c01-d97c-47e9-9285-fc4eee62b919/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-grandpa2.mp3" as="audio" type="audio/mpeg" crossorigin>
@@ -38,13 +38,13 @@
     <script src="https://unpkg.com/vue-router@4"></script>
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#ffffff">
-    <meta name="description" content="Turn your child's imagination into stories where they're the hero! AI Storytime creates personalized, narrated tales in seconds. Try it for free!">
+    <meta name="description" content="Transforme a imaginação do seu filho em histórias onde ele é o protagonista! AI Storytime cria contos personalizados e narrados em segundos. Experimente grátis!">
     <link rel="manifest" href="manifest.json">
     
     <!-- Open Graph / Social Media Meta Tags -->
-    <meta property="og:title" content="AI Storytime: Create Stories with Your Child's Imagination">
-    <meta property="og:description" content="Turn your child's imagination into stories where they're the hero! AI Storytime creates personalized, narrated tales in seconds. Try it for free!">
-    <meta property="og:image" content="/assets/image/seo-img-en.jpg">
+    <meta property="og:title" content="AI Storytime: Crie histórias com a imaginação do seu filho">
+    <meta property="og:description" content="Transforme a imaginação do seu filho em histórias onde ele é o protagonista! AI Storytime cria contos personalizados e narrados em segundos. Experimente grátis!">
+    <meta property="og:image" content="/assets/image/seo-img-pt.jpg">
     <meta property="og:type" content="website">
     
     <!-- Language-specific SEO script -->
@@ -53,12 +53,12 @@
         function updateMetaTags(lang) {
             const metaTags = {
                 en: {
-                    title: "AI Storytime: Create Stories with Your Child's Imagination",
+                    title: "AI Storytime: Create stories with your child's imagination",
                     description: "Turn your child's imagination into stories where they're the hero! AI Storytime creates personalized, narrated tales in seconds. Try it for free!",
                     image: "/assets/image/seo-img-en.jpg"
                 },
                 pt: {
-                    title: "AI Storytime: Crie Histórias com a Imaginação do Seu Filho",
+                    title: "AI Storytime: Crie histórias com a imaginação do seu filho",
                     description: "Transforme a imaginação do seu filho em histórias onde ele é o protagonista! AI Storytime cria contos personalizados e narrados em segundos. Experimente grátis!",
                     image: "/assets/image/seo-img-pt.jpg"
                 }
@@ -95,8 +95,8 @@
         
         // Initial language setup
         window.addEventListener('DOMContentLoaded', function() {
-            // Get initial language from localStorage or default to 'en'
-            const initialLang = localStorage.getItem('appLanguage') || 'en';
+            // Get initial language from localStorage or default to 'pt'
+            const initialLang = localStorage.getItem('appLanguage') || 'pt';
             updateMetaTags(initialLang);
         });
     </script>
