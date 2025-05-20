@@ -5,7 +5,7 @@ window.IndexPage = {
         <div class="min-h-screen bg-gradient-to-b from-[#E1F5FE] to-[#BBDEFB] pb-16 relative">
             <!-- Background image for mobile only -->
             <div class="absolute inset-0 z-0 md:hidden">
-                <img :src="getOptimizedImageUrl('https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/bg.webp', 1200, 1200)" alt="Background" class="w-full h-full object-cover fixed" />
+                <img :src="getOptimizedImageUrl(backgroundImageUrl || 'assets/image/bg.webp', 1200, 1200)" alt="Background" class="w-full h-full object-cover fixed" />
             </div>
             
             <!-- Fixed full-height gradient overlay that transitions to white -->
@@ -215,7 +215,9 @@ window.IndexPage = {
       preloadedAudios: {}, // Track preloaded audio files
       _processedImagePaths: {}, // Track image paths that already had permissions processed
       _preloadAttempted: false, // Track whether preloading has been attempted for the current examples
-      _componentMounted: true // Track whether the component is mounted
+      _componentMounted: true, // Track whether the component is mounted
+      userId: null,
+      backgroundImageUrl: null,
     };
   },
   async mounted() {
@@ -224,6 +226,28 @@ window.IndexPage = {
     // Initialize flags
     this._preloadAttempted = false;
     this._componentMounted = true;
+    
+    // First try to get user ID
+    try {
+      this.user = await sdk.getUser();
+      console.log("User authenticated:", this.user ? "Yes" : "No");
+    } catch (error) {
+      console.error("Error getting user:", error);
+      this.user = null;
+    }
+    
+    // Get user ID for asset paths
+    let userId = "EXAMPLE-USER-ID-FOR-DEVELOPMENT";
+    if (this.user && this.user.id) {
+      userId = this.user.id;
+      console.log("Using authenticated user ID for assets");
+    }
+    
+    // Store the user ID for future use
+    this.userId = userId;
+    
+    // Set the background image URL with the user ID
+    this.backgroundImageUrl = `https://fs.webdraw.com/users/${userId}/Apps/Staging%20AI%20Storyteller/assets/image/bg.webp`;
     
     // Check for custom translator file
     await this.checkTranslatorFile();
@@ -246,13 +270,6 @@ window.IndexPage = {
     } else {
       console.log("Translations not fully loaded yet");
       this.examples = [];
-    }
-
-    try {
-      this.user = await sdk.getUser();
-    } catch (error) {
-      console.error("Error getting user:", error);
-      this.user = null;
     }
 
     // Ensure we have all the necessary translation keys
@@ -553,7 +570,7 @@ window.IndexPage = {
         try {
           if (!url.startsWith('http')) {
             sdk.fs.chmod('/assets/image/bg.webp', 0o644).catch(() => {
-              const fullPath = `/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/bg.webp`;
+              const fullPath = `/users/EXAMPLE-USER-ID-FOR-DEVELOPMENT/Apps/Staging%20AI%20Storyteller/assets/image/bg.webp`;
               sdk.fs.chmod(decodeURIComponent(fullPath), 0o644).catch(() => {});
             });
           }
@@ -1158,9 +1175,24 @@ window.IndexPage = {
         return;
       }
       
+      // Use the stored user ID or get it again if needed
+      let userId = this.userId;
+      if (!userId) {
+        try {
+          const user = await sdk.getUser();
+          if (user && user.id) {
+            userId = user.id;
+          } else {
+            userId = "EXAMPLE-USER-ID-FOR-DEVELOPMENT";
+          }
+        } catch (error) {
+          userId = "EXAMPLE-USER-ID-FOR-DEVELOPMENT";
+        }
+      }
+      
       const audioFiles = [
-        "/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-uncle-joe.mp3",
-        "/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-uncle-jose.mp3",
+        `/users/${userId}/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-uncle-joe.mp3`,
+        `/users/${userId}/Apps/Staging%20AI%20Storyteller/assets/audio/sample/audio-uncle-jose.mp3`,
       ];
       
       // Only log once for all audio files, not for each file

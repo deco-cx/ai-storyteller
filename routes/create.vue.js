@@ -408,11 +408,13 @@ window.CreatePage = {
         };
 
         this.taskStatus.image = "loading";
-        console.log("Starting image generation...");
+        console.log("🎨 Iniciando geração de imagem...");
         const imagePrompt = this.$tf('prompts.generateImage', {
-          title: object.title,
-          plot: object.plot
-        });
+          title: this.storyData.title || 'Untitled Story',
+        }) + `\n\nStory is about: "${this.storyData.plot}"\nMain character is named: "${this.childName}"\n\nIMPORTANT STYLE INSTRUCTIONS:\n- Create a CHARMING ILLUSTRATION in a children's book style\n- Use BALANCED colors appropriate for the story theme\n- Include rich details that match the story setting\n- Create appealing characters with expressive faces\n- The style should be digital_illustration with warm, inviting tones\n- Make the scene reflect the actual theme of the story, not generic candy colors`;
+        
+        // Verificar o tamanho do prompt original
+        console.log(`📏 Tamanho do prompt original: ${imagePrompt.length} caracteres`);
         
         // Check if we're in Portuguese and need to extract English prompt
         let finalImagePrompt = imagePrompt;
@@ -421,32 +423,43 @@ window.CreatePage = {
           const englishMatch = imagePrompt.match(/IMPORTANT: THIS PROMPT MUST BE PROCESSED IN ENGLISH.*?\n\n(.*)/s);
           if (englishMatch && englishMatch[1]) {
             finalImagePrompt = englishMatch[1];
-            console.log("Extracted English prompt for image generation:", finalImagePrompt);
+            console.log("🔍 Prompt em inglês extraído para geração de imagem");
+            console.log(`📏 Tamanho do prompt em inglês: ${finalImagePrompt.length} caracteres`);
           }
         }
         
-        console.log("Using image prompt:", finalImagePrompt);
+        // Limitando logs para evitar poluição no console
+        if (finalImagePrompt.length > 500) {
+          console.log(`🔤 Primeiros 500 caracteres do prompt final:\n${finalImagePrompt.substring(0, 500)}...`);
+        } else {
+          console.log(`🔤 Prompt final para geração de imagem:\n${finalImagePrompt}`);
+        }
 
         let imagePromise;
         try {
+          console.log("🚀 Enviando solicitação para geração de imagem via Replicate (recraft-v3)...");
+          console.log("🎭 Estilo selecionado: digital_illustration/infantile_sketch");
+          
+          // Usar o prompt original mais colorido, não substituir
+          console.log("Starting image generation with prompt:", finalImagePrompt);
+          
           imagePromise = sdk.ai.generateImage({
-            model: "stability:ultra",
+            model: "replicate:recraft-ai/recraft-v3",
             prompt: finalImagePrompt,
-            aspect_ratio: "1:1",
             providerOptions: {
-              stability: {
-                negative_prompt: "ugly, deformed, disfigured, poor quality, low resolution, bad anatomy",
-                style_preset: "fantasy-art", // Using fantasy-art style which is perfect for children's stories
-                output_format: "webp",
-                aspect_ratio: "1:1",
-                seed: Math.floor(Math.random() * 4294967294)
+              replicate: {
+                size: "1024x1024",
+                style: "digital_illustration",
+                num_inference_steps: 55,
+                guidance_scale: 9.5,
+                prompt: finalImagePrompt
               }
             }
           });
-          console.log("Image generation request sent successfully");
+          console.log("✅ Solicitação de geração de imagem enviada com sucesso");
         } catch (error) {
-          console.error("Error starting image generation:", error);
-          console.error("Error details:", error.message, error.stack);
+          console.error("❌ Erro ao iniciar geração de imagem:", error);
+          console.error("📋 Detalhes do erro:", error.message, error.stack);
           imagePromise = Promise.resolve({ error: "Failed to initialize image generation" });
         }
 
@@ -534,43 +547,132 @@ window.CreatePage = {
             console.error("Error in image result:", imageResult.error);
             throw new Error(imageResult.error);
           }
-          // For stability:ultra model, the response structure is different from Replicate
-          if (imageResult.images && imageResult.images.length > 0) {
+          
+          console.log("🔍 Image generation FULL result:", JSON.stringify(imageResult));
+          
+          // Process the response for Replicate model
+          if (imageResult && imageResult.images && imageResult.images.length > 0) {
+            // Use the image URL from the response
+            const replicateUrl = imageResult.images[0];
+            console.log("🖼️ Usando URL direta da imagem do array images:", replicateUrl);
+            
             let imageBase64 = null;
-            if (typeof imageResult.images[0] === 'string') {
-              imageBase64 = `data:image/webp;base64,${imageResult.images[0]}`;
-              this.storyImage = `https://fs.webdraw.com${imageResult.filepath.startsWith('/') ? '' : '/'}${imageResult.filepath}`;
-            } else {
-              this.storyImage = imageResult.images[0];
-              console.log("Using direct URL for image:", this.storyImage);
+            
+            // Try to get base64 as primary format to avoid CORS issues
+            try {
+              if (this.downloadAndSaveImage) {
+                console.log("📥 Obtendo base64 da imagem do Replicate...");
+                imageBase64 = await this.downloadAndSaveImage(replicateUrl, null);
+                if (imageBase64) {
+                  this.storyData.imageBase64 = imageBase64;
+                  // Use base64 as primary source to avoid CORS issues
+                  this.storyImage = imageBase64;
+                  console.log("💾 Usando base64 como fonte primária da imagem");
+                  
+                  // Logs detalhados do base64
+                  const base64Size = Math.round((imageBase64.length * 3) / 4);
+                  console.log(`📊 Tamanho da imagem base64: ${this.formatFileSize(base64Size)}`);
+                  console.log(`📄 Comprimento total da string: ${imageBase64.length} caracteres`);
+                  console.log(`🔍 Primeiros 100 caracteres do base64: ${imageBase64.substring(0, 100)}...`);
+                  console.log(`🔍 Últimos 50 caracteres do base64: ...${imageBase64.substring(imageBase64.length - 50)}`);
+                  
+                  // Verifica se há caracteres inválidos no base64
+                  if (imageBase64.startsWith('data:')) {
+                    const base64Data = imageBase64.split(',')[1];
+                    const invalidChars = base64Data.match(/[^A-Za-z0-9+/=]/g);
+                    if (invalidChars) {
+                      console.warn(`⚠️ AVISO: A string base64 contém ${invalidChars.length} caracteres inválidos`);
+                    } else {
+                      console.log(`✅ String base64 parece válida (sem caracteres inválidos)`);
+                    }
+                  }
+                }
+              }
+            } catch (baseError) {
+              console.warn("⚠️ Não foi possível obter o base64 da imagem:", baseError);
             }
             
-            if (this.storyData) {
-              this.storyData.imageBase64 = imageBase64;
+            // If Replicate already saved the image in the filesystem (checking filepath)
+            if (imageResult.filepath) {
+              const fsPath = imageResult.filepath;
+              console.log("📁 Replicate já salvou a imagem no filesystem:", fsPath);
+              
+              // Build complete URL (only as fallback)
+              const baseUrl = "https://fs.webdraw.com";
+              const fsUrl = `${baseUrl}${fsPath.startsWith('/') ? '' : '/'}${fsPath}`;
+              console.log("🔗 URL do filesystem (fallback):", fsUrl);
+              
+              // Just set public permissions for the file
+              try {
+                await this.setFilePermissions(fsPath, true);
+                console.log("🔐 Definidas permissões públicas para:", fsPath);
+              } catch (permError) {
+                console.warn("⚠️ Erro ao definir permissões:", permError);
+              }
+              
+              // Use the filesystem URL only if we don't have base64
+              if (!this.storyData.imageBase64) {
+                this.storyImage = fsUrl;
+                console.log("⚠️ Usando URL do filesystem por falta de base64");
+              }
             }
-          } else if (imageResult.url) {
+            // Se não tiver filepath nem base64, fazer download e salvar
+            else if (!this.storyData.imageBase64 && replicateUrl.includes('replicate.delivery')) {
+              try {
+                console.log("📥 Detectada URL do Replicate, iniciando download da imagem...");
+                
+                // Definir um nome de arquivo para a imagem
+                const filename = `story_${Date.now()}.webp`;
+                const picturePath = `~/Pictures/${filename}`;
+                
+                // Download e salvar a imagem
+                const imageData = await this.downloadAndSaveImage(replicateUrl, picturePath);
+                
+                if (imageData) {
+                  // Usar base64 como fonte primária para evitar problemas de CORS
+                  this.storyImage = imageData;
+                  this.storyData.imageBase64 = imageData;
+                  console.log("✅ Imagem baixada e salva com sucesso como base64");
+                  console.log("💾 URL de backup no filesystem:", `https://fs.webdraw.com${picturePath.replace('~', '')}`);
+                } else {
+                  // Fallback para URL original do Replicate se falhar
+                  this.storyImage = replicateUrl;
+                  console.log("⚠️ Falha ao salvar imagem localmente, usando URL original");
+                }
+              } catch (error) {
+                console.error("❌ Erro ao baixar imagem do Replicate:", error);
+                this.storyImage = replicateUrl; // Usar URL original como fallback
+              }
+            }
+            // If no filepath or base64, use the direct URL as a fallback
+            else if (!this.storyData.imageBase64) {
+              this.storyImage = replicateUrl;
+              console.log("⚠️ Usando URL original do Replicate como fallback");
+            }
+          } else if (imageResult && imageResult.url) {
             // Fallback to url if available
             this.storyImage = imageResult.url;
-            console.log("Using URL for image:", this.storyImage);
+            console.log("🖼️ Usando URL alternativa:", this.storyImage);
           } else if (imageResult.filepath) {
             this.storyImage = `https://fs.webdraw.com${imageResult.filepath.startsWith('/') ? '' : '/'}${imageResult.filepath}`;
-            console.log("Using filepath for image:", this.storyImage);
+            console.log("🖼️ Usando URL construída do filepath:", this.storyImage);
+            console.log("📁 Filepath original da resposta:", imageResult.filepath);
           } else {
-            console.warn("Unexpected image result format:", imageResult);
-            console.warn("Image result keys:", Object.keys(imageResult));
+            console.warn("⚠️ Formato de resposta de imagem inesperado:", imageResult);
+            console.warn("⚠️ Chaves do resultado da imagem:", Object.keys(imageResult));
             this.storyImage = null;
           }
 
-          console.log("Final image URL:", this.storyImage);
+          console.log("🔗 URL final da imagem:", this.storyImage);
 
         } catch (imageError) {
-          console.error("Error generating story image:", imageError);
-          console.error("Full error details:", imageError.message, imageError.stack);
+          console.error("❌ Erro ao gerar imagem da história:", imageError);
+          console.error("❌ Detalhes completos do erro:", imageError.message, imageError.stack);
           
           // Use fallback image with more detailed logging
-          console.log("Using fallback image due to error");
+          console.log("⚠️ Usando imagem de fallback devido a erro");
           const fallbackImage = this.getRandomFallbackImage();
-          console.log("Selected fallback image:", fallbackImage);
+          console.log("🖼️ Imagem de fallback selecionada:", fallbackImage);
           this.storyImage = fallbackImage;
           
           // Adiciona uma mensagem para o usuário informando sobre o problema
@@ -1454,9 +1556,24 @@ window.CreatePage = {
       if (url.endsWith('/assets/image/bg.webp') || url.includes('/assets/image/bg.webp')) {
         try {
           if (!url.startsWith('http')) {
-            sdk.fs.chmod('/assets/image/bg.webp', 0o644).catch(() => {
-              const fullPath = `/users/a4896ea5-db22-462e-a239-22641f27118c/Apps/Staging%20AI%20Storyteller/assets/image/bg.webp`;
-              sdk.fs.chmod(decodeURIComponent(fullPath), 0o644).catch(() => {});
+            sdk.fs.chmod('/assets/image/bg.webp', 0o644).catch(async () => {
+              try {
+                // Obter ID do usuário dinamicamente
+                let userId = "EXAMPLE-USER-ID-FOR-DEVELOPMENT";
+                try {
+                  const user = await sdk.getUser();
+                  if (user && user.id) {
+                    userId = user.id;
+                  }
+                } catch (userError) {
+                  console.warn("Could not get user ID, using fallback:", userError);
+                }
+                
+                const fullPath = `/users/${userId}/Apps/Staging%20AI%20Storyteller/assets/image/bg.webp`;
+                sdk.fs.chmod(decodeURIComponent(fullPath), 0o644).catch(() => {});
+              } catch (e) {
+                console.warn("Error in dynamic path resolution:", e);
+              }
             });
           }
         } catch (e) {
@@ -1690,7 +1807,209 @@ window.CreatePage = {
       if (!currentSrc.includes('unsplash.com') && !currentSrc.includes('staging-ai-storyteller')) {
         event.target.src = fallbackImage;
       }
-    }
+    },
+    
+    async setFileAccess(filepath, skipExistsCheck = false) {
+      // This is a helper function that calls setFilePermissions
+      return this.setFilePermissions(filepath, skipExistsCheck);
+    },
+    
+    // Method to download an image from a URL and save it to the filesystem
+    async downloadAndSaveImage(imageUrl, savePath) {
+      try {
+        console.log(`📥 Tentando baixar imagem de: ${imageUrl}`);
+        
+        // First, download the image and get base64
+        // Fetch the image
+        const response = await fetch(imageUrl);
+        if (!response.ok) {
+          throw new Error(`Erro ao baixar imagem: ${response.status} ${response.statusText}`);
+        }
+        
+        // Get original file size
+        const contentLength = response.headers.get('content-length');
+        if (contentLength) {
+          console.log(`📊 Tamanho do arquivo original: ${this.formatFileSize(parseInt(contentLength))}`);
+        }
+        
+        // Convert to blob and then to base64
+        const blob = await response.blob();
+        console.log(`📊 Tamanho do blob: ${this.formatFileSize(blob.size)}`);
+        
+        const base64 = await this.blobToBase64(blob);
+        const base64Size = Math.round((base64.length * 3) / 4);
+        console.log(`📊 Tamanho após conversão para base64: ${this.formatFileSize(base64Size)}`);
+        console.log(`📄 Comprimento da string base64: ${base64.length} caracteres`);
+        console.log(`✅ Imagem convertida para base64 com sucesso`);
+        
+        // If no savePath was provided, just return the base64
+        if (!savePath) {
+          return base64;
+        }
+        
+        // Check if Pictures directory exists, create if not
+        try {
+          const picturesDir = '~/Pictures';
+          const picturesDirExists = await sdk.fs.exists(picturesDir);
+          
+          if (!picturesDirExists) {
+            console.log("📁 Criando diretório Pictures...");
+            try {
+              await sdk.fs.mkdir(picturesDir);
+              console.log("✅ Diretório Pictures criado com sucesso");
+            } catch (mkdirError) {
+              console.error("❌ Erro ao criar diretório Pictures:", mkdirError);
+              // Try to create with absolute path if it fails
+              try {
+                await sdk.fs.mkdir('/Pictures');
+                console.log("✅ Diretório /Pictures criado com sucesso");
+              } catch (mkdirError2) {
+                console.error("❌ Erro ao criar diretório /Pictures:", mkdirError2);
+                // If directory creation fails, just return base64
+                return base64;
+              }
+            }
+          } else {
+            console.log("📁 Diretório Pictures já existe");
+          }
+          
+          // Save using base64 as string
+          console.log("💾 Salvando imagem como string base64 em:", savePath);
+          await sdk.fs.write(savePath, base64);
+          
+          // Verify the file was saved correctly
+          try {
+            const fileExists = await sdk.fs.exists(savePath);
+            if (fileExists) {
+              console.log(`✅ Arquivo confirmado no filesystem: ${savePath}`);
+              
+              // Check the size of the saved file
+              try {
+                const fileStats = await sdk.fs.stat(savePath);
+                if (fileStats && fileStats.size) {
+                  console.log(`📊 Tamanho do arquivo salvo: ${this.formatFileSize(fileStats.size)}`);
+                  console.log(`📊 Diferença de tamanho: ${this.formatFileSize(Math.abs(fileStats.size - base64Size))}`);
+                  console.log(`📊 Taxa de compressão: ${((base64Size - fileStats.size) / base64Size * 100).toFixed(2)}%`);
+                }
+              } catch (statError) {
+                console.warn("⚠️ Não foi possível obter estatísticas do arquivo:", statError);
+              }
+            } else {
+              console.warn("⚠️ Arquivo não encontrado após salvar:", savePath);
+            }
+          } catch (checkError) {
+            console.warn("⚠️ Erro ao verificar existência do arquivo:", checkError);
+          }
+          
+          // Set public permissions for the file
+          const permResult = await this.setFileAccess(savePath);
+          console.log(`🔒 Permissões definidas: ${permResult ? 'sucesso' : 'falha'}`);
+          
+          console.log(`✅ Imagem salva com sucesso em: ${savePath}`);
+        } catch (fsError) {
+          console.error("⚠️ Erro ao salvar no filesystem:", fsError);
+          // Return base64 even if saving fails
+        }
+        
+        // Return the base64 for use as fallback (or primary if fs fails)
+        return base64;
+      } catch (error) {
+        console.error("❌ Erro durante o download e salvamento da imagem:", error);
+        return null;
+      }
+    },
+    
+    // Convert Blob to Base64
+    blobToBase64(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result;
+          console.log(`Result type of conversion: ${typeof result}`);
+          if (typeof result === 'string') {
+            this.analyzeBase64Image(result);
+          }
+          resolve(result);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    },
+
+    // Convert Base64 to Uint8Array
+    base64ToUint8Array(base64) {
+      const binaryString = atob(base64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      return bytes;
+    },
+    
+    // Helper method to format file sizes
+    formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' bytes';
+      else if (bytes < 1048576) return (bytes / 1024).toFixed(2) + ' KB';
+      else if (bytes < 1073741824) return (bytes / 1048576).toFixed(2) + ' MB';
+      else return (bytes / 1073741824).toFixed(2) + ' GB';
+    },
+    
+    // Method to analyze and print detailed information about base64
+    analyzeBase64Image(base64String) {
+      if (!base64String || typeof base64String !== 'string') {
+        console.error("❌ String base64 inválida ou não fornecida");
+        return;
+      }
+      
+      // Extract format information
+      let format = "unknown";
+      let mimeType = "unknown";
+      
+      if (base64String.startsWith('data:')) {
+        // It's a data URL
+        const matches = base64String.match(/^data:([^;]+);base64,/);
+        if (matches && matches.length > 1) {
+          mimeType = matches[1];
+          format = mimeType.split('/')[1];
+        }
+        
+        // Remove prefix to calculate actual size
+        const base64Data = base64String.split(',')[1];
+        const sizeInBytes = Math.floor((base64Data.length * 3) / 4);
+        
+        console.log(`📝 === ANÁLISE DE IMAGEM BASE64 ===`);
+        console.log(`📝 MIME Type: ${mimeType}`);
+        console.log(`📝 Formato: ${format}`);
+        console.log(`📝 Tamanho: ${this.formatFileSize(sizeInBytes)}`);
+        console.log(`📝 Comprimento total da string: ${base64String.length} caracteres`);
+        console.log(`📝 Início da data: ${base64Data.substring(0, 30)}...`);
+        console.log(`📝 Final da data: ...${base64Data.substring(base64Data.length - 30)}`);
+        
+        // Check for invalid characters or corruption
+        const invalidChars = base64Data.match(/[^A-Za-z0-9+/=]/g);
+        if (invalidChars) {
+          console.warn(`⚠️ AVISO: A string base64 contém ${invalidChars.length} caracteres inválidos`);
+        } else {
+          console.log(`✅ String base64 parece válida (sem caracteres inválidos)`);
+        }
+      } else {
+        // Not a data URL
+        console.log(`📝 === ANÁLISE DE IMAGEM BASE64 (formato bruto) ===`);
+        console.log(`📝 Formato: String base64 bruta (sem prefixo data:))`);
+        console.log(`📝 Tamanho aproximado: ${this.formatFileSize(Math.floor((base64String.length * 3) / 4))}`);
+        console.log(`📝 Comprimento total da string: ${base64String.length} caracteres`);
+        console.log(`📝 Início da data: ${base64String.substring(0, 30)}...`);
+        console.log(`📝 Final da data: ...${base64String.substring(base64String.length - 30)}`);
+        
+        // Check for invalid characters or corruption
+        const invalidChars = base64String.match(/[^A-Za-z0-9+/=]/g);
+        if (invalidChars) {
+          console.warn(`⚠️ AVISO: A string base64 contém ${invalidChars.length} caracteres inválidos`);
+        } else {
+          console.log(`✅ String base64 parece válida (sem caracteres inválidos)`);
+        }
+      }
+    },
   },
   template: `
     <div class="min-h-screen bg-white pb-16">
@@ -1868,34 +2187,44 @@ window.CreatePage = {
               </div>
             </div>
           </div>
-          <div class="audio-controls mb-8 space-y-4" v-if="audioSource">
-            <div class="flex items-center gap-4">
-              <button @click="toggleAudio" class="p-3 rounded-full bg-[#4A90E2] hover:bg-[#5FA0E9] text-white shadow-md transition-colors duration-200" :disabled="audioLoading">
-                <svg v-if="audioLoading" class="w-6 h-6 animate-spin" viewBox="0 0 24 24">
+          <div class="audio-controls mb-8 space-y-2" v-if="audioSource">
+            <!-- Progress Bar -->
+            <div class="w-full relative">
+              <div class="w-full h-1 bg-[#CBD5E1] rounded-full cursor-pointer">
+                <div class="h-1 bg-[#C084FC] rounded-full" :style="{ width: audioProgress + '%' }"></div>
+              </div>
+            </div>
+            
+            <!-- Time Display -->
+            <div class="flex justify-between w-full">
+              <span class="text-xs text-[#64748B] opacity-50">00:00</span>
+              <span class="text-xs text-[#64748B] opacity-50" v-if="audioLoading">{{ $t('ui.loading') || 'Loading...' }}</span>
+              <span v-else class="text-xs text-[#64748B] opacity-50">05:14</span>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex justify-center items-center gap-4 mt-2 mb-2">
+              <button class="w-10 h-10 rounded-full bg-[#14B8A6] flex items-center justify-center">
+                <i class="fas fa-share-alt text-[#F3FBFF]"></i>
+              </button>
+              
+              <button @click="toggleAudio" class="w-16 h-16 rounded-full bg-[#C084FC] border border-[#D8B4FE] shadow-md flex items-center justify-center p-4" :disabled="audioLoading">
+                <svg v-if="audioLoading" class="w-6 h-6 animate-spin text-[#F3FBFF]" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path v-if="!isPlaying" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3-2a1 1 0 000-1.664z" />
-                  <path v-if="isPlaying" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <i v-else-if="!isPlaying" class="fa-solid fa-play text-[#F3FBFF] text-xl"></i>
+                <i v-else class="fa-solid fa-pause text-[#F3FBFF] text-xl"></i>
               </button>
-              <div class="w-full flex items-center gap-2">
-                <div class="w-full h-4 bg-gray-200 rounded-full relative">
-                  <div class="absolute inset-0 h-4 rounded-full bg-[#4A90E2]" :style="{ width: audioProgress + '%' }"></div>
-                </div>
-                <span v-if="audioLoading" class="text-xs text-gray-500 animate-pulse">{{ $t('ui.loading') || 'Loading...' }}</span>
-              </div>
-              <a @click="downloadAudio" class="p-2 text-slate-700 hover:text-[#2871CC] cursor-pointer" :title="$t('ui.download')" :class="{ 'opacity-50 cursor-not-allowed': audioLoading }" :disabled="audioLoading">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-              </a>
+              
+              <button @click="downloadAudio" class="w-10 h-10 rounded-full bg-[#F59E0B] flex items-center justify-center" :disabled="audioLoading">
+                <i class="fa-solid fa-download text-[#F3FBFF]"></i>
+              </button>
             </div>
           </div>
           <div v-if="storyData" class="prose-base text-slate-700 space-y-4">
             <h2 class="text-2xl font-bold mb-6 text-center relative">
-              <span class="inline-block bg-clip-text text-transparent bg-gradient-to-r from-[#2871CC] via-[#4A90E2] to-[#81D4FA] mb-3">
+              <span class="text-3xl font-bold text-[#333333] mb-4">
                 {{ storyData.title }}
               </span>
             </h2>

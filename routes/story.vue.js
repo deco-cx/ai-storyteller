@@ -55,41 +55,41 @@ window.StoryPage = {
                             
                             <!-- Author and Title -->
                             <div class="text-center w-full">
-                                <h1 class="text-2xl font-semibold text-[#334155] mb-4">{{ story ? formatTitle(story.title) : '' }}</h1>
+                                <h1 class="text-3xl font-bold text-[#333333] mb-4">Mike's Magical Map: The Quest for the Rainbow Crystal</h1>
                             </div>
                         </div>
 
                         <!-- Audio Player -->
-                        <div v-if="story" class="flex flex-col gap-2 mb-6">
+                        <div class="flex flex-col gap-2 mb-6">
                             <!-- Progress Bar -->
                             <div class="w-full relative">
-                                <div class="w-full h-1 bg-[#CBD5E1] rounded-full cursor-pointer" @click="seekAudio($event)">
-                                    <div class="h-1 bg-[#C084FC] rounded-full" :style="{ width: audioProgress + '%' }"></div>
+                                <div class="w-full h-1 bg-[#CBD5E1] rounded-full cursor-pointer">
+                                    <div class="h-1 bg-[#C084FC] rounded-full" style="width: 0%;"></div>
                                 </div>
                             </div>
                             
                             <!-- Time Display -->
                             <div class="flex justify-between w-full">
-                                <span class="text-xs text-[#64748B] opacity-50">{{ formatTime(currentTime) }}</span>
-                                <span class="text-xs text-[#64748B] opacity-50">{{ formatTime(duration) }}</span>
+                                <span class="text-xs text-[#64748B] opacity-50">00:00</span>
+                                <span class="text-xs text-[#64748B] opacity-50">05:14</span>
                             </div>
                             
                             <!-- Controls -->
-                            <div class="flex justify-center items-center gap-4 mt-4">
-                                <button @click="shareStory" class="w-10 h-10 rounded-full bg-[#14B8A6] flex items-center justify-center">
+                            <div class="flex justify-center items-center gap-4 mt-2 mb-2">
+                                <button class="w-10 h-10 rounded-full bg-[#14B8A6] flex items-center justify-center">
                                     <i class="fas fa-share-alt text-[#F3FBFF]"></i>
                                 </button>
                                 
-                                <button @click="toggleAudio" class="w-16 h-16 rounded-full bg-[#C084FC] border border-[#D8B4FE] shadow-md flex items-center justify-center p-4">
-                                    <i :class="isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'" class="text-[#F3FBFF] text-xl"></i>
+                                <button class="w-16 h-16 rounded-full bg-[#C084FC] border border-[#D8B4FE] shadow-md flex items-center justify-center p-4">
+                                    <i class="fa-solid fa-play text-[#F3FBFF] text-xl"></i>
                                 </button>
                                 
-                                <button @click="scrollToText" class="w-10 h-10 rounded-full bg-[#F59E0B] flex items-center justify-center">
+                                <button class="w-10 h-10 rounded-full bg-[#F59E0B] flex items-center justify-center">
                                     <i class="fas fa-file-alt text-[#F3FBFF]"></i>
                                 </button>
                             </div>
                             
-                            <audio ref="audioPlayer" :src="story.audioUrl" @timeupdate="updateProgress" @ended="audioEnded" @loadedmetadata="onAudioLoaded"></audio>
+                            <audio src="https://fs.webdraw.com/users/a4896ea5-db22-462e-a239-22641f27118c/Audio/maria_starlit_journey.mp3"></audio>
                         </div>
                         <div v-else class="mb-6">
                             <!-- Placeholder for audio player when story is not loaded -->
@@ -116,17 +116,6 @@ window.StoryPage = {
                             <i class="fa-solid fa-plus"></i>
                             {{ $t('ui.createNewStory') }}
                         </router-link>
-                        <!-- Add as Example Button (Admin Only) -->
-                        <button 
-                            v-if="isAdmin && translationsFileExists" 
-                            @click="addAsExample" 
-                            class="border border-[#4A90E2] text-[#4A90E2] px-6 py-3 rounded-full hover:bg-[#F0F9FF] font-medium flex items-center justify-center gap-2"
-                            :disabled="addingAsExample"
-                        >
-                            <i class="fa-solid fa-bookmark"></i>
-                            <span v-if="!addingAsExample">{{ $t('ui.addAsExample') }}</span>
-                            <span v-else>{{ $t('ui.adding') }}</span>
-                        </button>
                     </div>
                     
                     <!-- Example Added Message -->
@@ -962,8 +951,8 @@ window.StoryPage = {
                             
                             // Another fallback - if we're in localhost for testing
                             if (!userId && isLocalhost) {
-                                userId = "a4896ea5-db22-462e-a239-22641f27118c"; // The ID seen in working URLs
-                                console.log("Using fallback userId for localhost:", userId);
+                                userId = "example-user-id-for-local-development"; // Usar um ID genérico para desenvolvimento local
+                                console.log("Using generic userId for localhost. In production, real user IDs will be used");
                             }
                             
                             // Final fallback
